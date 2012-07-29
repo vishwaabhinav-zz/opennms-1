@@ -152,6 +152,19 @@ embedded in the main OpenNMS core process.
 %{extrainfo2}
 
 
+%package ncs
+Summary:	Network Component Services for OpenNMS
+Group:		Applications/System
+Requires:	opennms-webapp-jetty = %{version}-%{release}
+
+%description ncs
+NCS provides a framework for doing correlation of service events across
+disparate nodes.
+
+%{extrainfo}
+%{extrainfo2}
+
+
 %package plugins
 Summary:	All Plugins for OpenNMS
 Group:		Applications/System
@@ -435,6 +448,8 @@ find $RPM_BUILD_ROOT%{instprefix}/etc ! -type d | \
 	sed -e "s,^$RPM_BUILD_ROOT,%config(noreplace) ," | \
 	grep -v '%{_initrddir}/opennms-remote-poller' | \
 	grep -v '%{_sysconfdir}/sysconfig/opennms-remote-poller' | \
+	grep -v 'ncs-northbounder-configuration.xml' | \
+	grep -v 'drools-engine.d/ncs' | \
 	grep -v '3gpp' | \
 	grep -v 'dhcpd-configuration.xml' | \
 	grep -v 'endpoint-configuration.xml' | \
@@ -453,6 +468,9 @@ find $RPM_BUILD_ROOT%{sharedir}/etc-pristine ! -type d | \
 	sed -e "s,^$RPM_BUILD_ROOT,," | \
 	grep -v '%{_initrddir}/opennms-remote-poller' | \
 	grep -v '%{_sysconfdir}/sysconfig/opennms-remote-poller' | \
+	grep -v 'ncs-northbounder-configuration.xml' | \
+	grep -v 'ncs.xml' | \
+	grep -v 'drools-engine.d/ncs' | \
 	grep -v '3gpp' | \
 	grep -v 'dhcpd-configuration.xml' | \
 	grep -v 'endpoint-configuration.xml' | \
@@ -475,6 +493,7 @@ find $RPM_BUILD_ROOT%{instprefix}/bin ! -type d | \
 find $RPM_BUILD_ROOT%{sharedir} ! -type d | \
 	sed -e "s,^$RPM_BUILD_ROOT,," | \
 	grep -v 'etc-pristine' | \
+	grep -v 'ncs-' | \
 	grep -v 'nsclient-config.xsd' | \
 	grep -v 'nsclient-datacollection.xsd' | \
 	grep -v 'xmp-config.xsd' | \
@@ -488,13 +507,17 @@ find $RPM_BUILD_ROOT%{instprefix}/contrib ! -type d | \
 	sort >> %{_tmppath}/files.main
 find $RPM_BUILD_ROOT%{instprefix}/lib ! -type d | \
 	sed -e "s|^$RPM_BUILD_ROOT|%attr(755,root,root) |" | \
+	grep -v 'ncs-' | \
 	grep -v 'provisioning-adapter' | \
 	grep -v 'org.opennms.protocols.dhcp' | \
+	grep -v 'jdhcp' | \
 	grep -v 'org.opennms.protocols.nsclient' | \
 	grep -v 'org.opennms.protocols.radius' | \
 	grep -v 'gnu-crypto' | \
+	grep -v 'jradius' | \
 	grep -v 'org.opennms.protocols.xml' | \
 	grep -v 'org.opennms.protocols.xmp' | \
+	grep -v 'Xmp' | \
 	grep -v 'org.opennms.features.juniper-tca-collector' | \
 	sort >> %{_tmppath}/files.main
 find $RPM_BUILD_ROOT%{instprefix}/etc -type d | \
@@ -506,6 +529,13 @@ find $RPM_BUILD_ROOT%{jettydir} ! -type d | \
 	sed -e "s,^$RPM_BUILD_ROOT,," | \
 	grep -v '/WEB-INF/[^/]*\.xml$' | \
 	grep -v '/WEB-INF/[^/]*\.properties$' | \
+	grep -v '/WEB-INF/jsp/alarm/ncs' | \
+	grep -v '/WEB-INF/jsp/ncs/' | \
+	grep -v '/WEB-INF/lib/ncs' | \
+	sort >> %{_tmppath}/files.jetty
+find $RPM_BUILD_ROOT%{jettydir}/*/WEB-INF/*.xml | \
+	sed -e "s,^$RPM_BUILD_ROOT,%config ," | \
+	grep -v '/WEB-INF/ncs' | \
 	sort >> %{_tmppath}/files.jetty
 find $RPM_BUILD_ROOT%{jettydir} -type d | \
 	sed -e "s,^$RPM_BUILD_ROOT,%dir ," | \
@@ -530,6 +560,9 @@ rm -rf $RPM_BUILD_ROOT
 			%{logdir}/controller
 			%{logdir}/daemon
 			%{logdir}/webapp
+			%{instprefix}/data
+			%{instprefix}/deploy
+			%{instprefix}/system
 
 %if %{with_docs}
 %files docs
@@ -543,10 +576,21 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{bindir}/remote-poller.sh
 %{instprefix}/bin/remote-poller.jar
 
+%files ncs
+%defattr(644 root root 755)
+%{instprefix}/lib/ncs-*.jar
+%{jettydir}/%{servletdir}/WEB-INF/lib/ncs*
+%config(noreplace) %{instprefix}/etc/drools-engine.d/ncs/*
+%config(noreplace) %{instprefix}/etc/ncs-northbounder-configuration.xml
+%{sharedir}/xsds/ncs-*.xsd
+%config %{jettydir}/%{servletdir}/WEB-INF/ncs*.xml
+%config %{jettydir}/%{servletdir}/WEB-INF/jsp/alarm/ncs-*
+%config %{jettydir}/%{servletdir}/WEB-INF/jsp/ncs
+%{sharedir}/etc-pristine/drools-engine.d/ncs/*
+%{sharedir}/etc-pristine/ncs-northbounder-configuration.xml
+
 %files webapp-jetty -f %{_tmppath}/files.jetty
 %defattr(644 root root 755)
-%{instprefix}/jetty-webapps
-%config %{jettydir}/%{servletdir}/WEB-INF/*.xml
 %config %{jettydir}/opennms-remoting/WEB-INF/*.xml
 %config %{jettydir}/%{servletdir}/WEB-INF/*.properties
 %config %{jettydir}/opennms-remoting/WEB-INF/*.properties
@@ -585,6 +629,7 @@ rm -rf $RPM_BUILD_ROOT
 %files plugin-protocol-dhcp
 %defattr(664 root root 775)
 %config(noreplace) %{instprefix}/etc/dhcp*.xml
+%{instprefix}/lib/jdhcp-*.jar
 %{instprefix}/lib/org.opennms.protocols.dhcp*.jar
 %{sharedir}/etc-pristine/dhcp*.xml
 %{sharedir}/xsds/dhcp*.xsd
@@ -600,6 +645,7 @@ rm -rf $RPM_BUILD_ROOT
 %files plugin-protocol-radius
 %defattr(664 root root 775)
 %{instprefix}/lib/gnu-crypto*.jar
+%{instprefix}/lib/jradius-*.jar
 %{instprefix}/lib/org.opennms.protocols.radius*.jar
 
 %files plugin-protocol-xml
@@ -617,6 +663,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(664 root root 775)
 %config(noreplace) %{instprefix}/etc/xmp*.xml
 %{instprefix}/lib/org.opennms.protocols.xmp-*.jar
+%{instprefix}/lib/Xmp-*.jar
 %{sharedir}/etc-pristine/xmp*.xml
 %{sharedir}/xsds/xmp*.xsd
 

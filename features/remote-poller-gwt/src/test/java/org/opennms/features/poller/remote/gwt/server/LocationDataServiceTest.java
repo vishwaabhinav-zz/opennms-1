@@ -38,6 +38,9 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.opennms.core.test.MockLogAppender;
+import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
+import org.opennms.core.utils.BeanUtils;
 import org.opennms.features.poller.remote.gwt.client.ApplicationDetails;
 import org.opennms.features.poller.remote.gwt.client.ApplicationInfo;
 import org.opennms.features.poller.remote.gwt.client.LocationMonitorState;
@@ -55,7 +58,6 @@ import org.opennms.netmgt.dao.NodeDao;
 import org.opennms.netmgt.dao.ServiceTypeDao;
 import org.opennms.netmgt.dao.db.JUnitConfigurationEnvironment;
 import org.opennms.netmgt.dao.db.JUnitTemporaryDatabase;
-import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
 import org.opennms.netmgt.dao.db.TemporaryDatabase;
 import org.opennms.netmgt.dao.db.TemporaryDatabaseAware;
 import org.opennms.netmgt.dao.hibernate.LocationMonitorDaoHibernate;
@@ -70,7 +72,7 @@ import org.opennms.netmgt.model.OnmsServiceType;
 import org.opennms.netmgt.model.PollStatus;
 import org.opennms.netmgt.model.OnmsLocationMonitor.MonitorStatus;
 import org.opennms.netmgt.poller.remote.PollerBackEnd;
-import org.opennms.test.mock.MockLogAppender;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
@@ -78,6 +80,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RunWith(OpenNMSJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
         "classpath:META-INF/opennms/mockEventIpcManager.xml",
+        "classpath:/META-INF/opennms/applicationContext-soa.xml",
         "classpath:/META-INF/opennms/applicationContext-dao.xml",
         "classpath*:/META-INF/opennms/component-dao.xml",
         "classpath:/META-INF/opennms/applicationContext-daemon.xml",
@@ -87,7 +90,7 @@ import org.springframework.transaction.annotation.Transactional;
 @JUnitConfigurationEnvironment
 @JUnitTemporaryDatabase
 @Transactional
-public class LocationDataServiceTest implements TemporaryDatabaseAware<TemporaryDatabase>{
+public class LocationDataServiceTest implements TemporaryDatabaseAware<TemporaryDatabase>, InitializingBean {
     @Autowired
     private LocationDataService m_locationDataService;
 
@@ -122,6 +125,11 @@ public class LocationDataServiceTest implements TemporaryDatabaseAware<Temporary
     // private Date m_pollingEnd = getMidnight();
     private Date m_pollingEnd = new Date();
     private Date m_pollingStart = new Date(m_pollingEnd.getTime() - (1000 * 60 * 60 * 24));
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+    	BeanUtils.assertAutowiring(this);
+    }
 
     @Before
     public void setUp() throws Exception {

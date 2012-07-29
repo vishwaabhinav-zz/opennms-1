@@ -29,7 +29,6 @@
 package org.opennms.netmgt.provision;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
@@ -38,9 +37,11 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
+import org.opennms.core.utils.BeanUtils;
 import org.opennms.netmgt.dao.db.JUnitConfigurationEnvironment;
 import org.opennms.netmgt.dao.db.JUnitTemporaryDatabase;
-import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -53,11 +54,12 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @RunWith(OpenNMSJUnit4ClassRunner.class)
 @ContextConfiguration(locations= {
+        "classpath:/META-INF/opennms/applicationContext-soa.xml",
         "classpath:/META-INF/opennms/applicationContext-dao.xml"
 })
 @JUnitConfigurationEnvironment
 @JUnitTemporaryDatabase
-public class SimplerProvisioningAdapterTest {
+public class SimplerProvisioningAdapterTest implements InitializingBean {
     
     public static String NAME = "MyProvisioningAdapter";
     
@@ -69,6 +71,11 @@ public class SimplerProvisioningAdapterTest {
     // From applicationContext-dao.xml
     @Autowired
     private TransactionTemplate m_txTemplate;
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        BeanUtils.assertAutowiring(this);
+    }
 
     class MyProvisioningAdapter extends SimplerQueuedProvisioningAdapter {
         
@@ -103,7 +110,6 @@ public class SimplerProvisioningAdapterTest {
 
     @Before
     public void setUp() {
-        assertNotNull(m_txTemplate);
         m_adapter = new MyProvisioningAdapter();
         m_adapter.init();
     }

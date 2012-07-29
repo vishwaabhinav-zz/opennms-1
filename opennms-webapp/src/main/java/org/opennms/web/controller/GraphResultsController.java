@@ -36,10 +36,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.jrobin.core.RrdException;
 import org.jrobin.core.timespec.TimeParser;
 import org.jrobin.core.timespec.TimeSpec;
-import org.opennms.web.MissingParameterException;
-import org.opennms.web.WebSecurityUtils;
+import org.opennms.core.utils.WebSecurityUtils;
 import org.opennms.web.graph.GraphResults;
 import org.opennms.web.graph.RelativeTimePeriod;
+import org.opennms.web.servlet.MissingParameterException;
 import org.opennms.web.svclayer.GraphResultsService;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.util.Assert;
@@ -251,6 +251,7 @@ public class GraphResultsController extends AbstractController implements Initia
      * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet()
      * @throws java.lang.Exception if any.
      */
+    @Override
     public void afterPropertiesSet() throws Exception {
         Assert.state(m_graphResultsService != null, "graphResultsService property must be set to a non-null value");
     }

@@ -40,6 +40,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.opennms.core.utils.InetAddressUtils;
+import org.opennms.core.utils.WebSecurityUtils;
 import org.opennms.netmgt.EventConstants;
 import org.opennms.netmgt.config.EventconfFactory;
 import org.opennms.netmgt.config.ThresholdingConfigFactory;
@@ -54,7 +55,6 @@ import org.opennms.netmgt.model.OnmsResourceType;
 import org.opennms.netmgt.model.events.EventBuilder;
 import org.opennms.netmgt.xml.event.Event;
 import org.opennms.netmgt.xml.eventconf.Logmsg;
-import org.opennms.web.WebSecurityUtils;
 import org.opennms.web.api.Util;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.web.servlet.ModelAndView;
@@ -176,7 +176,12 @@ public class ThresholdController extends AbstractController implements Initializ
         thresholdTypes.add("absoluteChange");
         thresholdTypes.add("rearmingAbsoluteChange");
         modelAndView.addObject("thresholdTypes",thresholdTypes);
-      
+
+        Collection<String> filterOperators=new ArrayList<String>();
+        filterOperators.add("and");
+        filterOperators.add("or");
+        modelAndView.addObject("filterOperators",filterOperators);
+
         modelAndView.addObject("saveButtonTitle", SAVE_BUTTON_TITLE);
         modelAndView.addObject("cancelButtonTitle", CANCEL_BUTTON_TITLE);
         modelAndView.addObject("addFilterButtonTitle", ADDFILTER_BUTTON_TITLE);
@@ -560,7 +565,7 @@ public class ThresholdController extends AbstractController implements Initializ
             event.setUei(uei);
             event.setEventLabel("User-defined threshold event "+uei);
             event.setDescr("Threshold "+typeDesc+" for %service% datasource " +
-                        "%parm[ds]% on interface %interface%, parms: %parm[all]");
+                        "%parm[ds]% on interface %interface%, parms: %parm[all]%");
             Logmsg logmsg=new Logmsg();
             logmsg.setDest("logndisplay");
             logmsg.setContent("Threshold "+typeDesc+" for %service% datasource %parm[ds]% on interface %interface%, parms: %parm[all]%");
@@ -590,7 +595,8 @@ public class ThresholdController extends AbstractController implements Initializ
             if (dsName == null || dsName.equals("")) {
             	throw new ServletException("ds-name cannot be null or empty string");
             }
-            threshold.setDsName(request.getParameter("dsName"));
+            threshold.setDsName(dsName);
+            threshold.setFilterOperator(request.getParameter("filterOperator"));
             saveChanges();
          } else if (CANCEL_BUTTON_TITLE.equals(submitAction)) {
             String isNew=request.getParameter("isNew");
@@ -634,6 +640,7 @@ public class ThresholdController extends AbstractController implements Initializ
             	throw new ServletException("expression content cannot be null or empty string");
             }
             expression.setExpression(expDef);
+            expression.setFilterOperator(request.getParameter("filterOperator"));
             saveChanges();
          } else if (CANCEL_BUTTON_TITLE.equals(submitAction)) {
             String isNew=request.getParameter("isNew");
@@ -682,6 +689,7 @@ public class ThresholdController extends AbstractController implements Initializ
      *
      * @throws java.lang.Exception if any.
      */
+    @Override
     public void afterPropertiesSet() throws Exception {
         //Check all properties set (see example if needed)
         /*if (m_resourceService == null) {

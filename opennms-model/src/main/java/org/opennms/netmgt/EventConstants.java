@@ -1020,6 +1020,13 @@ public class EventConstants {
     public static final String PARM_ENDPOINT2 = "endPoint2";
 
     //
+    // for NCS service
+    //
+    public static final String COMPONENT_ADDED_UEI   = "uei.opennms.org/internal/ncs/componentAdded";
+    public static final String COMPONENT_DELETED_UEI = "uei.opennms.org/internal/ncs/componentDeleted";
+    public static final String COMPONENT_UPDATED_UEI = "uei.opennms.org/internal/ncs/componentUpdated";
+
+    //
     // For Trapd
     //
 
@@ -1074,7 +1081,7 @@ public class EventConstants {
     /** Constant <code>OID_SNMP_IFINDEX</code> */
     public final static SnmpObjId OID_SNMP_IFINDEX = SnmpObjId.get(".1.3.6.1.2.1.2.2.1.1");
 
-    static final ThreadLocal<DateFormat> FORMATTER_FULL = new ThreadLocal<DateFormat>() {
+    public static final ThreadLocal<DateFormat> FORMATTER_FULL = new ThreadLocal<DateFormat>() {
         protected synchronized DateFormat initialValue() {
             int timeFormat = DateFormat.FULL;
             // The DateFormat.FULL format for France/Germany do not include the seconds digit
@@ -1094,7 +1101,7 @@ public class EventConstants {
         }
     };
 
-    static final ThreadLocal<DateFormat> FORMATTER_LONG = new ThreadLocal<DateFormat>() {
+    public static final ThreadLocal<DateFormat> FORMATTER_LONG = new ThreadLocal<DateFormat>() {
         protected synchronized DateFormat initialValue() {
             final DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.LONG);
             formatter.setLenient(true);
@@ -1102,7 +1109,7 @@ public class EventConstants {
         }
     };
     
-    static final ThreadLocal<DateFormat> FORMATTER_FULL_GMT = new ThreadLocal<DateFormat>() {
+    public static final ThreadLocal<DateFormat> FORMATTER_FULL_GMT = new ThreadLocal<DateFormat>() {
         protected synchronized DateFormat initialValue() {
             int timeFormat = DateFormat.FULL;
             // The DateFormat.FULL format for France/Germany do not include the seconds digit
@@ -1123,7 +1130,7 @@ public class EventConstants {
         }
     };
 
-    static final ThreadLocal<DateFormat> FORMATTER_LONG_GMT = new ThreadLocal<DateFormat>() {
+    public static final ThreadLocal<DateFormat> FORMATTER_LONG_GMT = new ThreadLocal<DateFormat>() {
         protected synchronized DateFormat initialValue() {
             final DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.LONG);
             formatter.setLenient(true);
@@ -1132,7 +1139,7 @@ public class EventConstants {
         }
     };
 
-    static final ThreadLocal<DateFormat> FORMATTER_CUSTOM = new ThreadLocal<DateFormat>() {
+    public static final ThreadLocal<DateFormat> FORMATTER_CUSTOM = new ThreadLocal<DateFormat>() {
         protected synchronized DateFormat initialValue() {
             final DateFormat formatter = new SimpleDateFormat("EEEEE, d MMMMM yyyy k:mm:ss 'o''clock' z");
             formatter.setLenient(true);
@@ -1140,7 +1147,7 @@ public class EventConstants {
         }
     };
 
-    static final ThreadLocal<DateFormat> FORMATTER_DEFAULT = new ThreadLocal<DateFormat>() {
+    public static final ThreadLocal<DateFormat> FORMATTER_DEFAULT = new ThreadLocal<DateFormat>() {
         protected synchronized DateFormat initialValue() {
             final DateFormat formatter = DateFormat.getDateTimeInstance();
             formatter.setLenient(true);
@@ -1171,6 +1178,18 @@ public class EventConstants {
                 return FORMATTER_FULL.get().parse(timeString);
             }
         }
+    }
+
+    /**
+     * A utility method to format a 'Date' into a string in the locale-specific
+     * FULL DateFormat style for both the date and time.
+     *
+     * @see java.text.DateFormat
+     * @param date a {@link java.util.Date} object.
+     * @return a {@link java.lang.String} object.
+     */
+    public static final String formatToFullString(final Date date) {
+    	return FORMATTER_FULL_GMT.get().format(date);
     }
 
     /**

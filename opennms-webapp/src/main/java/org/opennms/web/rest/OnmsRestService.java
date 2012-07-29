@@ -31,6 +31,8 @@ package org.opennms.web.rest;
 
 import java.beans.IntrospectionException;
 import java.lang.reflect.Method;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
@@ -44,9 +46,11 @@ import org.opennms.core.criteria.CriteriaBuilder;
 import org.opennms.core.utils.LogUtils;
 import org.opennms.core.utils.ThreadCategory;
 import org.opennms.netmgt.model.OnmsSeverity;
+import org.opennms.netmgt.model.OnmsSeverityEditor;
+import org.opennms.netmgt.model.PrimaryType;
+import org.opennms.netmgt.model.PrimaryTypeEditor;
 import org.opennms.netmgt.provision.persist.StringXmlCalendarPropertyEditor;
 import org.opennms.web.rest.support.InetAddressTypeEditor;
-import org.opennms.web.rest.support.OnmsSeverityTypeEditor;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.PropertyAccessorFactory;
@@ -61,6 +65,9 @@ import com.sun.jersey.core.util.MultivaluedMapImpl;
  * @since 1.8.1
  */
 public class OnmsRestService {
+    private final ReentrantReadWriteLock m_globalLock = new ReentrantReadWriteLock();
+    private final Lock m_readLock = m_globalLock.readLock();
+    private final Lock m_writeLock = m_globalLock.writeLock();
 
 	protected static final int DEFAULT_LIMIT = 10;
 
@@ -73,7 +80,32 @@ public class OnmsRestService {
 		super();
 	}
 
-    protected void applyQueryFilters(final MultivaluedMap<String,String> p, final CriteriaBuilder builder) {
+	protected void readLock() {
+	    m_readLock.lock();
+	}
+	
+	protected void readUnlock() {
+	    if (m_globalLock.getReadHoldCount() > 0) {
+	        m_readLock.unlock();
+	    }
+	}
+
+	protected void writeLock() {
+	    if (m_globalLock.getWriteHoldCount() == 0) {
+	        while (m_globalLock.getReadHoldCount() > 0) {
+	            m_readLock.unlock();
+	        }
+	        m_writeLock.lock();
+	    }
+	}
+
+	protected void writeUnlock() {
+	    if (m_globalLock.getWriteHoldCount() > 0) {
+	        m_writeLock.unlock();
+	    }
+	}
+
+	protected void applyQueryFilters(final MultivaluedMap<String,String> p, final CriteriaBuilder builder) {
 		final MultivaluedMap<String, String> params = new MultivaluedMapImpl();
 	    params.putAll(p);
 
@@ -123,10 +155,8 @@ public class OnmsRestService {
 		}
 		builder.match(matchType);
 
-		final BeanWrapper wrapper = new BeanWrapperImpl(builder.toCriteria().getCriteriaClass());
-		wrapper.registerCustomEditor(java.util.Date.class, new ISO8601DateEditor());
-		wrapper.registerCustomEditor(java.net.InetAddress.class, new InetAddressTypeEditor());
-		wrapper.registerCustomEditor(OnmsSeverity.class, new OnmsSeverityTypeEditor());
+		final Class<?> criteriaClass = builder.toCriteria().getCriteriaClass();
+		final BeanWrapper wrapper = getBeanWrapperForClass(criteriaClass);
 
 		final String comparatorParam = removeParameter(params, "comparator", "eq").toLowerCase();
 		final Criteria currentCriteria = builder.toCriteria();
@@ -172,6 +202,16 @@ public class OnmsRestService {
 			}
 		}
     }
+
+	protected BeanWrapper getBeanWrapperForClass(final Class<?> criteriaClass) {
+		final BeanWrapper wrapper = new BeanWrapperImpl(criteriaClass);
+		wrapper.registerCustomEditor(XMLGregorianCalendar.class, new StringXmlCalendarPropertyEditor());
+		wrapper.registerCustomEditor(java.util.Date.class, new ISO8601DateEditor());
+		wrapper.registerCustomEditor(java.net.InetAddress.class, new InetAddressTypeEditor());
+		wrapper.registerCustomEditor(OnmsSeverity.class, new OnmsSeverityEditor());
+		wrapper.registerCustomEditor(PrimaryType.class, new PrimaryTypeEditor());
+		return wrapper;
+	}
 
 
     protected String removeParameter(final MultivaluedMap<java.lang.String, java.lang.String> params, final String key) {
@@ -265,14 +305,18 @@ public class OnmsRestService {
      * @param params a {@link org.opennms.web.rest.MultivaluedMapImpl} object.
      * @param req a {@link java.lang.Object} object.
      */
-	protected void setProperties(org.opennms.web.rest.MultivaluedMapImpl params, Object req) {
-        BeanWrapper wrapper = PropertyAccessorFactory.forBeanPropertyAccess(req);
+	protected void setProperties(final org.opennms.web.rest.MultivaluedMapImpl params, final Object req) {
+        final BeanWrapper wrapper = PropertyAccessorFactory.forBeanPropertyAccess(req);
         wrapper.registerCustomEditor(XMLGregorianCalendar.class, new StringXmlCalendarPropertyEditor());
-        for(String key : params.keySet()) {
-            String propertyName = convertNameToPropertyName(key);
+        wrapper.registerCustomEditor(java.util.Date.class, new ISO8601DateEditor());
+        wrapper.registerCustomEditor(java.net.InetAddress.class, new InetAddressTypeEditor());
+        wrapper.registerCustomEditor(OnmsSeverity.class, new OnmsSeverityEditor());
+        wrapper.registerCustomEditor(PrimaryType.class, new PrimaryTypeEditor());
+        for(final String key : params.keySet()) {
+            final String propertyName = convertNameToPropertyName(key);
             if (wrapper.isWritableProperty(propertyName)) {
                 Object value = null;
-                String stringValue = params.getFirst(key);
+                final String stringValue = params.getFirst(key);
                 value = convertIfNecessary(wrapper, propertyName, stringValue);
                 wrapper.setPropertyValue(propertyName, value);
             }

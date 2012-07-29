@@ -30,7 +30,6 @@ package org.opennms.netmgt.poller.remote;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Properties;
@@ -40,6 +39,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
+import org.opennms.core.utils.BeanUtils;
 import org.opennms.netmgt.dao.DatabasePopulator;
 import org.opennms.netmgt.dao.db.JUnitConfigurationEnvironment;
 import org.opennms.netmgt.dao.db.JUnitTemporaryDatabase;
@@ -55,6 +55,7 @@ import org.springframework.test.context.ContextConfiguration;
 @RunWith(OpenNMSJUnit4ClassRunner.class)
 @ContextConfiguration(locations={
         "classpath:/META-INF/opennms/mockEventIpcManager.xml",
+        "classpath:/META-INF/opennms/applicationContext-soa.xml",
         "classpath:/META-INF/opennms/applicationContext-dao.xml",
         "classpath*:/META-INF/opennms/component-dao.xml",
         "classpath:/META-INF/opennms/applicationContext-daemon.xml",
@@ -76,13 +77,14 @@ public class PollerFrontEndIntegrationTest implements InitializingBean, Temporar
 
     private TemporaryDatabase m_database;
 
+    @Override
     public void setTemporaryDatabase(TemporaryDatabase database) {
         m_database = database;
     }
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        assertNotNull(m_populator);
+        BeanUtils.assertAutowiring(this);
     }
 
     @After

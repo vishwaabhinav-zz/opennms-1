@@ -44,6 +44,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
+import org.opennms.core.utils.BeanUtils;
 import org.opennms.netmgt.config.DatabaseSchemaConfigFactory;
 import org.opennms.netmgt.dao.DatabasePopulator;
 import org.opennms.netmgt.dao.IpInterfaceDao;
@@ -75,6 +76,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @RunWith(OpenNMSJUnit4ClassRunner.class)
 @ContextConfiguration(locations={
+        "classpath:/META-INF/opennms/applicationContext-soa.xml",
         "classpath:/META-INF/opennms/applicationContext-dao.xml",
         "classpath:/META-INF/opennms/applicationContext-databasePopulator.xml",
         "classpath:/META-INF/opennms/applicationContext-setupIpLike-enabled.xml",
@@ -108,10 +110,7 @@ public class JdbcFilterDaoTest implements InitializingBean, TemporaryDatabaseAwa
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        assertNotNull(m_nodeDao);
-        assertNotNull(m_interfaceDao);
-        assertNotNull(m_populator);
-        assertNotNull(m_transTemplate);
+        BeanUtils.assertAutowiring(this);
     }
 
     @Before

@@ -35,11 +35,12 @@ import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.opennms.core.test.MockLogAppender;
 import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
+import org.opennms.core.utils.BeanUtils;
 import org.opennms.netmgt.dao.JavaMailConfigurationDao;
 import org.opennms.netmgt.dao.db.JUnitConfigurationEnvironment;
 import org.opennms.netmgt.dao.db.JUnitTemporaryDatabase;
-import org.opennms.test.mock.MockLogAppender;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -52,6 +53,7 @@ import org.springframework.test.context.ContextConfiguration;
  */
 @RunWith(OpenNMSJUnit4ClassRunner.class)
 @ContextConfiguration(locations={
+        "classpath:/META-INF/opennms/applicationContext-soa.xml",
         "classpath:/META-INF/opennms/applicationContext-dao.xml",
         "classpath*:/META-INF/opennms/component-dao.xml",
         "classpath:/META-INF/opennms/applicationContext-setupIpLike-enabled.xml",
@@ -72,11 +74,12 @@ public class DefaultJavamailConfigurationDaoTest implements InitializingBean {
         props.setProperty("log4j.logger.org.hibernate.SQL", "DEBUG");
         MockLogAppender.setupLogging(props);
     }
-    
-    public void afterPropertiesSet() {
-        Assert.assertNotNull(m_jmcDao);
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        BeanUtils.assertAutowiring(this);
     }
-    
+
     @Test
     public void testMarshalling() {
         Assert.assertEquals("localhost", m_jmcDao.getDefaultReadmailConfig().getName());

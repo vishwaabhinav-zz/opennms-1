@@ -29,6 +29,7 @@
 
 package org.opennms.netmgt.collectd;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.util.LinkedHashSet;
 import java.util.Properties;
@@ -38,10 +39,11 @@ import org.opennms.core.utils.InetAddressUtils;
 import org.opennms.core.utils.ThreadCategory;
 import org.opennms.netmgt.config.SnmpPeerFactory;
 import org.opennms.netmgt.dao.IpInterfaceDao;
+import org.opennms.netmgt.dao.support.DefaultResourceDao;
 import org.opennms.netmgt.model.OnmsIpInterface;
 import org.opennms.netmgt.model.OnmsNode;
 import org.opennms.netmgt.model.OnmsSnmpInterface;
-import org.opennms.netmgt.model.OnmsIpInterface.PrimaryType;
+import org.opennms.netmgt.model.PrimaryType;
 import org.opennms.netmgt.snmp.SnmpAgentConfig;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.interceptor.TransactionProxyFactoryBean;
@@ -113,6 +115,18 @@ public class DefaultCollectionAgentService implements CollectionAgentService {
         return InetAddressUtils.str(getInetAddress());
     }
 
+    /* (non-Javadoc)
+     * @see org.opennms.netmgt.collectd.CollectionAgent#isStoreByForeignSource()
+     */
+    /**
+     * <p>isStoreByForeignSource</p>
+     *
+     * @return a {@link java.lang.Boolean} object.
+     */
+    public Boolean isStoreByForeignSource() {
+        return Boolean.getBoolean("org.opennms.rrd.storeByForeignSource");
+    }
+    
      /* (non-Javadoc)
      * @see org.opennms.netmgt.collectd.CollectionAgent#getNodeId()
      */
@@ -125,6 +139,47 @@ public class DefaultCollectionAgentService implements CollectionAgentService {
         return getIpInterface().getNode().getId() == null ? -1 : getIpInterface().getNode().getId().intValue();
     }
 
+    /* (non-Javadoc)
+     * @see org.opennms.netmgt.collectd.CollectionAgent#getForeignSource()
+     */
+    /**
+     * <p>getForeignSource</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public String getForeignSource() {
+       return getIpInterface().getNode().getForeignSource() == null ? null : getIpInterface().getNode().getForeignSource();
+    }
+
+    /* (non-Javadoc)
+     * @see org.opennms.netmgt.collectd.CollectionAgent#getForeignId()
+     */
+    /**
+     * <p>getForeignId</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public String getForeignId() {
+       return getIpInterface().getNode().getForeignId() == null ? null : getIpInterface().getNode().getForeignId();
+    }
+    
+    /* (non-Javadoc)
+     * @see org.opennms.netmgt.collectd.CollectionAgent#getStorageDir()
+     */
+    /**
+     * <p>getStorageDir</p>
+     *
+     * @return a {@link java.io.File} object.
+     */
+    public File getStorageDir() {
+        File dir = new File(String.valueOf(getIpInterface().getNode().getId()));
+        if(isStoreByForeignSource() && !(getIpInterface().getNode().getForeignSource() == null) && !(getIpInterface().getNode().getForeignId() == null)) {
+               File fsDir = new File(DefaultResourceDao.FOREIGN_SOURCE_DIRECTORY, getIpInterface().getNode().getForeignSource());
+            dir = new File(fsDir, getIpInterface().getNode().getForeignId());
+        }
+        return dir;
+    }
+    
     /**
      * <p>getIfIndex</p>
      *
@@ -149,7 +204,7 @@ public class DefaultCollectionAgentService implements CollectionAgentService {
     /**
      * <p>getIsSnmpPrimary</p>
      *
-     * @return a {@link org.opennms.netmgt.model.OnmsIpInterface.PrimaryType} object.
+     * @return a {@link org.opennms.netmgt.model.PrimaryType} object.
      */
     public PrimaryType getIsSnmpPrimary() {
         return getIpInterface().getIsSnmpPrimary();

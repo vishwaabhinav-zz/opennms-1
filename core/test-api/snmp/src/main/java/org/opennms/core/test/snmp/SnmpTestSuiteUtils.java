@@ -33,6 +33,7 @@ import junit.framework.TestSuite;
 
 import org.opennms.netmgt.snmp.SnmpAgentConfig;
 import org.opennms.netmgt.snmp.joesnmp.JoeSnmpStrategy;
+import org.opennms.netmgt.snmp.mock.MockSnmpStrategy;
 import org.opennms.netmgt.snmp.snmp4j.Snmp4JStrategy;
 import org.opennms.test.PropertySettingTestSuite;
 import org.opennms.test.VersionSettingTestSuite;
@@ -42,7 +43,7 @@ import org.opennms.test.VersionSettingTestSuite;
  * 
  * @author <a href="mailto:dj@opennms.org">DJ Gregor</a>
  */
-public class SnmpTestSuiteUtils {
+public abstract class SnmpTestSuiteUtils {
     private static final String STRATEGY_CLASS_PROPERTY_NAME = "org.opennms.snmp.strategyClass";
 
     private SnmpTestSuiteUtils() {
@@ -53,6 +54,7 @@ public class SnmpTestSuiteUtils {
         TestSuite suite = new TestSuite(testClass.getName());
         suite.addTest(new PropertySettingTestSuite(testClass, "JoeSnmp Tests", STRATEGY_CLASS_PROPERTY_NAME, JoeSnmpStrategy.class.getName()));
         suite.addTest(new PropertySettingTestSuite(testClass, "Snmp4J Tests", STRATEGY_CLASS_PROPERTY_NAME, Snmp4JStrategy.class.getName()));
+        suite.addTest(new PropertySettingTestSuite(testClass, "MockStrategy Tests", STRATEGY_CLASS_PROPERTY_NAME, MockSnmpStrategy.class.getName()));
         return suite;
     }
     

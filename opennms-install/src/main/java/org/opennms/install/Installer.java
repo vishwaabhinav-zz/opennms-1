@@ -297,7 +297,6 @@ public class Installer {
 		final IPv6Validator v6Validator = new IPv6Validator();
         if (!v6Validator.isPlatformIPv6Ready()) {
         	System.out.println("Your OS does not support IPv6.");
-        	System.exit(1);
         }
 	}
 
@@ -372,7 +371,7 @@ public class Installer {
      */
     public void loadProperties() throws Exception {
         m_properties = new Properties();
-        m_properties.load(Installer.class.getResourceAsStream("installer.properties"));
+        m_properties.load(Installer.class.getResourceAsStream("/installer.properties"));
 
         /*
          * Do this if we want to merge our properties with the system

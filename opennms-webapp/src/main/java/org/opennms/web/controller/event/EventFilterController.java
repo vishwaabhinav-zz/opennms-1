@@ -34,7 +34,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.opennms.web.WebSecurityUtils;
+import org.opennms.core.utils.WebSecurityUtils;
 import org.opennms.web.event.AcknowledgeType;
 import org.opennms.web.event.Event;
 import org.opennms.web.event.EventQueryParms;
@@ -245,6 +245,7 @@ public class EventFilterController extends AbstractController implements Initial
     /**
      * <p>afterPropertiesSet</p>
      */
+    @Override
     public void afterPropertiesSet() {
         Assert.notNull(m_defaultShortLimit, "property defaultShortLimit must be set to a value greater than 0");
         Assert.isTrue(m_defaultShortLimit > 0, "property defaultShortLimit must be set to a value greater than 0");

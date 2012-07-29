@@ -47,6 +47,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.opennms.core.utils.ThreadCategory;
+import org.opennms.core.utils.WebSecurityUtils;
 import org.opennms.netmgt.dao.ApplicationDao;
 import org.opennms.netmgt.dao.GraphDao;
 import org.opennms.netmgt.dao.LocationMonitorDao;
@@ -61,7 +62,6 @@ import org.opennms.netmgt.model.OnmsResource;
 import org.opennms.netmgt.model.PollStatus;
 import org.opennms.netmgt.model.PrefabGraph;
 import org.opennms.netmgt.model.OnmsLocationMonitor.MonitorStatus;
-import org.opennms.web.WebSecurityUtils;
 import org.opennms.web.api.Util;
 import org.opennms.web.command.DistributedStatusDetailsCommand;
 import org.opennms.web.graph.RelativeTimePeriod;
@@ -853,6 +853,7 @@ public class DefaultDistributedStatusService implements DistributedStatusService
      *
      * @throws java.lang.Exception if any.
      */
+    @Override
     public void afterPropertiesSet() throws Exception {
         Assert.state(m_monitoredServiceDao != null, "property monitoredServiceDao cannot be null");
         Assert.state(m_locationMonitorDao != null, "property locationMonitorDao cannot be null");

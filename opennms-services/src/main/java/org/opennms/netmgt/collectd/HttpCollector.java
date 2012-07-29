@@ -46,9 +46,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.net.ssl.SSLContext;
 
@@ -117,10 +119,6 @@ public class HttpCollector implements ServiceCollector {
     private static final int DEFAULT_RETRY_COUNT = 2;
     private static final String DEFAULT_SO_TIMEOUT = "3000";
 
-    //Don't make this static because each service will have its own
-    //copy and the key won't require the service name as  part of the key.
-    private final HashMap<Integer, String> m_scheduledNodes = new HashMap<Integer, String>();
-
     private static final NumberFormat PARSER;
 
     private static NumberFormat RRD_FORMATTER;
@@ -142,6 +140,7 @@ public class HttpCollector implements ServiceCollector {
     }
 
     /** {@inheritDoc} */
+    @Override
     public CollectionSet collect(CollectionAgent agent, EventProxy eproxy, Map<String, Object> parameters) {
         HttpCollectionSet collectionSet = new HttpCollectionSet(agent, parameters);
         collectionSet.setCollectionTimestamp(new Date());
@@ -171,7 +170,7 @@ public class HttpCollector implements ServiceCollector {
         HttpCollectionSet(CollectionAgent agent, Map<String, Object> parameters) {
             m_agent = agent;
             m_parameters = parameters;
-            m_status=ServiceCollector.COLLECTION_FAILED;
+            m_status=ServiceCollector.COLLECTION_SUCCEEDED;
         }
 
         public void collect() {
@@ -205,7 +204,6 @@ public class HttpCollector implements ServiceCollector {
                     m_status=ServiceCollector.COLLECTION_FAILED;
                 }
             }
-            m_status=ServiceCollector.COLLECTION_SUCCEEDED;
         }
 
         public CollectionAgent getAgent() {
@@ -316,11 +314,15 @@ public class HttpCollector implements ServiceCollector {
             //Not really a persist as such; it just stores data in collectionSet for later retrieval
             persistResponse(collectionSet, collectionResource, client, response);
         } catch (URISyntaxException e) {
-            throw new HttpCollectorException("Error building HttpClient URI");
+            throw new HttpCollectorException("Error building HttpClient URI", e);
         } catch (IOException e) {
-            throw new HttpCollectorException("IO Error retrieving page");
+            throw new HttpCollectorException("IO Error retrieving page", e);
         } catch (NoSuchAlgorithmException e) {
-            throw new HttpCollectorException("Could not find EmptyKeyRelaxedTrustSSLContext to allow connection to untrusted HTTPS hosts");
+            throw new HttpCollectorException("Could not find EmptyKeyRelaxedTrustSSLContext to allow connection to untrusted HTTPS hosts", e);
+        } catch (PatternSyntaxException e) {
+            throw new HttpCollectorException("Invalid regex specified in HTTP collection configuration: " + e.getMessage(), e);
+        } catch (Throwable e) {
+            throw new HttpCollectorException("Unexpected exception caught during HTTP collection: " + e.getMessage(), e);
         } finally {
             // Do we need to do any cleanup?
             // if (method != null) method.releaseConnection();
@@ -430,7 +432,7 @@ public class HttpCollector implements ServiceCollector {
 
     }
 
-    private List<HttpCollectionAttribute> processResponse(final String responseBodyAsString, final HttpCollectionSet collectionSet, HttpCollectionResource collectionResource) {
+    private List<HttpCollectionAttribute> processResponse(final Locale responseLocale, final String responseBodyAsString, final HttpCollectionSet collectionSet, HttpCollectionResource collectionResource) {
         log().debug("processResponse:");
         log().debug("responseBody = " + responseBodyAsString);
         log().debug("getmatches = " + collectionSet.getUriDef().getUrl().getMatches());
@@ -459,36 +461,60 @@ public class HttpCollector implements ServiceCollector {
         final boolean matches = m.matches();
         if (matches) {
             log().debug("processResponse: found matching attributes: "+matches);
-            List<Attrib> attribDefs = collectionSet.getUriDef().getAttributes().getAttribCollection();
-            AttributeGroupType groupType = new AttributeGroupType(collectionSet.getUriDef().getName(),"all");
+            final List<Attrib> attribDefs = collectionSet.getUriDef().getAttributes().getAttribCollection();
+            final AttributeGroupType groupType = new AttributeGroupType(collectionSet.getUriDef().getName(),"all");
 
-            for (Attrib attribDef : attribDefs) {
-                if (! attribDef.getType().matches("^([Oo](ctet|CTET)[Ss](tring|TRING))|([Ss](tring|TRING))$")) {
-                    try {
-                        Number num = NumberFormat.getNumberInstance().parse(m.group(attribDef.getMatchGroup()));
-                        HttpCollectionAttribute bute = 
-                            new HttpCollectionAttribute(
-                                                        collectionResource,
-                                                        new HttpCollectionAttributeType(attribDef, groupType), 
-                                                        attribDef.getAlias(),
-                                                        attribDef.getType(), 
-                                                        num);
-                        log().debug("processResponse: adding found numeric attribute: "+bute);
-                        butes.add(bute);
-                    } catch (IndexOutOfBoundsException e) {
-                        log().error("IndexOutOfBoundsException thrown while trying to find regex group, your regex does not contain the following group index: " + attribDef.getMatchGroup());
-                        log().error("Regex statement: " + collectionSet.getUriDef().getUrl().getMatches());
-                    } catch (ParseException e) {
-                        log().error("attribute "+attribDef.getAlias()+" failed to match a parsable number! Matched \""+m.group(attribDef.getMatchGroup())+"\" instead.");
+            final List<Locale> locales = new ArrayList<Locale>();
+            locales.add(responseLocale);
+            locales.add(Locale.getDefault());
+            if (Locale.getDefault() != Locale.ENGLISH) {
+                locales.add(Locale.ENGLISH);
+            }
+
+            for (final Attrib attribDef : attribDefs) {
+                final String type = attribDef.getType();
+                String value = null;
+                try {
+                    value = m.group(attribDef.getMatchGroup());
+                } catch (final IndexOutOfBoundsException e) {
+                    log().error("IndexOutOfBoundsException thrown while trying to find regex group, your regex does not contain the following group index: " + attribDef.getMatchGroup());
+                    log().error("Regex statement: " + collectionSet.getUriDef().getUrl().getMatches());
+                    continue;
+                }
+
+                if (! type.matches("^([Oo](ctet|CTET)[Ss](tring|TRING))|([Ss](tring|TRING))$")) {
+                    Number num = null;
+                    for (final Locale locale : locales) {
+                        try {
+                            num = NumberFormat.getNumberInstance(locale).parse(value);
+                            break;
+                        } catch (final ParseException e) {
+                            log().error("attribute "+attribDef.getAlias()+" failed to match a parsable number with locale \"" + locale + "\"! Matched \""+value+"\" instead.");
+                        }
                     }
+
+                    if (num == null) {
+                        log().error("processResponse: gave up attempting to parse numeric value, skipping group " + attribDef.getMatchGroup());
+                        continue;
+                    }
+                    
+                    final HttpCollectionAttribute bute = new HttpCollectionAttribute(
+                         collectionResource,
+                         new HttpCollectionAttributeType(attribDef, groupType), 
+                         attribDef.getAlias(),
+                         type, 
+                         num
+                     );
+                     log().debug("processResponse: adding found numeric attribute: "+bute);
+                     butes.add(bute);
                 } else {
                     HttpCollectionAttribute bute =
                         new HttpCollectionAttribute(
                                                     collectionResource,
                                                     new HttpCollectionAttributeType(attribDef, groupType),
                                                     attribDef.getAlias(),
-                                                    attribDef.getType(),
-                                                    m.group(attribDef.getMatchGroup()));
+                                                    type,
+                                                    value);
                     log().debug("processResponse: adding found string attribute: " + bute);
                     butes.add(bute);
                 }
@@ -507,6 +533,10 @@ public class HttpCollector implements ServiceCollector {
             super(message);
         }
 
+        HttpCollectorException(String message, Throwable e) {
+            super(message);
+        }
+
         @Override
         public String toString() {
             StringBuffer buffer = new StringBuffer();
@@ -516,10 +546,10 @@ public class HttpCollector implements ServiceCollector {
         }
     }
 
-    private void persistResponse(final HttpCollectionSet collectionSet, HttpCollectionResource collectionResource, final HttpClient client, final HttpResponse method) throws IOException {
-        String responseString = EntityUtils.toString(method.getEntity());
+    private void persistResponse(final HttpCollectionSet collectionSet, HttpCollectionResource collectionResource, final HttpClient client, final HttpResponse response) throws IOException {
+        String responseString = EntityUtils.toString(response.getEntity());
         if (responseString != null && !"".equals(responseString)) {
-            List<HttpCollectionAttribute> attributes = processResponse(responseString, collectionSet, collectionResource);
+            List<HttpCollectionAttribute> attributes = processResponse(response.getLocale(), responseString, collectionSet, collectionResource);
 
             if (attributes.isEmpty()) {
                 log().warn("doCollection: no attributes defined by the response: " + responseString.trim());
@@ -666,11 +696,11 @@ public class HttpCollector implements ServiceCollector {
 
     /** {@inheritDoc} 
      * @throws CollectionInitializationException */
+    @Override
     public void initialize(Map<String, String> parameters) throws CollectionInitializationException {
 
         log().debug("initialize: Initializing HttpCollector.");
 
-        m_scheduledNodes.clear();
         initHttpCollectionConfig();
         initDatabaseConnectionFactory();
         initializeRrdRepository();
@@ -743,43 +773,23 @@ public class HttpCollector implements ServiceCollector {
     }
 
     /** {@inheritDoc} */
+    @Override
     public void initialize(CollectionAgent agent, Map<String, Object> parameters) {
         log().debug("initialize: Initializing HTTP collection for agent: "+agent);
-        final Integer scheduledNodeKey = agent.getNodeId();
-        final String scheduledAddress = m_scheduledNodes.get(scheduledNodeKey);
 
-        if (scheduledAddress != null) {
-            log().info("initialize: Not scheduling interface for collection: "+scheduledAddress);
-            final StringBuffer sb = new StringBuffer();
-            sb.append("initialize service: ");
-
-            //If they include this parameter, use it for debug logging.
-            sb.append(determineServiceName(parameters));
-
-            sb.append(" for address: ");
-            sb.append(scheduledAddress);
-            sb.append(" already scheduled for collection on node: ");
-            sb.append(agent);
-            log().debug(sb.toString());
-            throw new IllegalStateException(sb.toString());
-        } else {
-            log().info("initialize: Scheduling interface for collection: "+scheduledAddress);
-            m_scheduledNodes.put(scheduledNodeKey, scheduledAddress);
-        }
-    }
-
-    private static String determineServiceName(final Map<String, Object> parameters) {
-        return ParameterMap.getKeyedString(parameters, "service-name", "HTTP");
+        // Add any initialization here
     }
 
     /**
      * <p>release</p>
      */
+    @Override
     public void release() {
         // TODO Auto-generated method stub
     }
 
     /** {@inheritDoc} */
+    @Override
     public void release(CollectionAgent agent) {
         // TODO Auto-generated method stub
     }
@@ -815,7 +825,7 @@ public class HttpCollector implements ServiceCollector {
         }
 
         public File getResourceDir(RrdRepository repository) {
-            return new File(repository.getRrdBaseDir(), Integer.toString(m_agent.getNodeId()));
+            return new File(repository.getRrdBaseDir(), getParent());
         }
 
         public void visit(CollectionSetVisitor visitor) {
@@ -841,7 +851,7 @@ public class HttpCollector implements ServiceCollector {
         }
 
         public String getParent() {
-            return Integer.toString(m_agent.getNodeId());
+            return m_agent.getStorageDir().toString();
         }
 
         public TimeKeeper getTimeKeeper() {

@@ -29,13 +29,18 @@
 package org.opennms.web.rest;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NavigableSet;
+import java.util.TreeSet;
 
 import org.junit.Test;
+import org.opennms.core.test.MockLogAppender;
 import org.opennms.core.utils.InetAddressUtils;
 import org.opennms.netmgt.dao.AlarmDao;
 import org.opennms.netmgt.dao.DatabasePopulator;
@@ -44,13 +49,13 @@ import org.opennms.netmgt.dao.EventDao;
 import org.opennms.netmgt.model.OnmsAlarm;
 import org.opennms.netmgt.model.OnmsEvent;
 import org.opennms.netmgt.model.OnmsSeverity;
-import org.opennms.test.mock.MockLogAppender;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 public class AlarmRestServiceTest extends AbstractSpringJerseyRestTestCase {
 	private DatabasePopulator m_databasePopulator;
 
+	@Override
     protected void afterServletStart() {
         MockLogAppender.setupLogging(true, "DEBUG");
 		final WebApplicationContext context = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
@@ -119,6 +124,56 @@ public class AlarmRestServiceTest extends AbstractSpringJerseyRestTestCase {
         assertTrue(xml.contains("This is a test alarm"));
     }
     
+    @Test
+    public void testAlarmUpdates() throws Exception {
+    	createAlarm(OnmsSeverity.MAJOR);
+
+    	OnmsAlarm alarm = getLastAlarm();
+    	alarm.setAlarmAckTime(null);
+    	alarm.setAlarmAckUser(null);
+    	getAlarmDao().saveOrUpdate(alarm);
+    	final Integer alarmId = alarm.getId();
+
+		sendPut("/alarms", "ack=true&alarmId=" + alarmId, 204);
+    	String xml = sendRequest(GET, "/alarms/" + alarmId, 200);
+    	assertTrue(xml.contains("ackUser>admin<"));
+
+    	sendPut("/alarms/" + alarmId, "clear=true", 204);
+    	xml = sendRequest(GET, "/alarms/" + alarmId, 200);
+    	assertTrue(xml.contains("severity=\"CLEARED\""));
+    	
+    	sendPut("/alarms/" + alarmId, "escalate=true", 204);
+    	xml = sendRequest(GET, "/alarms/" + alarmId, 200);
+    	assertTrue(xml.contains("severity=\"NORMAL\""));
+    	
+    	alarm = getLastAlarm();
+    	alarm.setSeverity(OnmsSeverity.MAJOR);
+    	alarm.setAlarmAckTime(null);
+    	alarm.setAlarmAckUser(null);
+    	getAlarmDao().saveOrUpdate(alarm);
+
+    	MockUserPrincipal.setName("foo");
+    	Exception failure = null;
+    	try {
+    		sendPut("/alarms/" + alarmId, "ack=true&ackUser=bar", 204);
+    	} catch (final IllegalArgumentException e) {
+    		failure = e;
+    	}
+    	// we should get an exception about users
+    	assertNotNull(failure);
+    }
+
+    private OnmsAlarm getLastAlarm() {
+    	final NavigableSet<OnmsAlarm> alarms = new TreeSet<OnmsAlarm>(new Comparator<OnmsAlarm>() {
+			@Override
+			public int compare(final OnmsAlarm a, final OnmsAlarm b) {
+				return a.getId().compareTo(b.getId());
+			}
+    	});
+    	alarms.addAll(getAlarmDao().findAll());
+    	return alarms.last();
+    }
+
     @Test
     public void testComplexQuery() throws Exception {
         String xml = null;

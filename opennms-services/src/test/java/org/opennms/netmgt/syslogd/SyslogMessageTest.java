@@ -30,6 +30,7 @@ package org.opennms.netmgt.syslogd;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -37,15 +38,16 @@ import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Locale;
 import java.util.TimeZone;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
+import org.opennms.core.test.MockLogAppender;
 import org.opennms.core.utils.LogUtils;
 import org.opennms.netmgt.config.SyslogdConfigFactory;
 import org.opennms.test.ConfigurationTestUtils;
-import org.opennms.test.mock.MockLogAppender;
 
 public class SyslogMessageTest {
     public SyslogMessageTest() throws Exception {
@@ -119,6 +121,60 @@ public class SyslogMessageTest {
         assertEquals("mgmtd", message.getProcessName());
         assertEquals(8326, message.getProcessId().intValue());
         assertEquals("[mgmtd.NOTICE]: Configuration saved to database initial", message.getMessage());
+    }
+    
+    @Test
+    public void testCustomParserNms5242() throws Exception {
+        final Locale startLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.FRANCE);
+            final InputStream stream = new ByteArrayInputStream(
+               (
+                   "<?xml version=\"1.0\"?>\n" +
+                   "<syslogd-configuration>\n" +
+                   "    <configuration\n" +
+                   "            syslog-port=\"10514\"\n" +
+                   "            new-suspect-on-message=\"false\"\n" +
+                   "            parser=\"org.opennms.netmgt.syslogd.CustomSyslogParser\"\n" +
+                   "            forwarding-regexp=\"^((.+?) (.*))\\n?$\"\n" +
+                   "            matching-group-host=\"2\"\n" +
+                   "            matching-group-message=\"3\"\n" +
+                   "            discard-uei=\"DISCARD-MATCHING-MESSAGES\"\n" +
+                   "            />\n" +
+                   "\n" +
+                   "    <hideMessage>\n" +
+                   "        <hideMatch>\n" +
+                   "            <match type=\"substr\" expression=\"TEST\"/>\n" +
+                   "        </hideMatch>\n" +
+                   "    </hideMessage>\n" +
+                   "</syslogd-configuration>\n"
+                ).getBytes()
+            );
+            final SyslogdConfigFactory factory = new SyslogdConfigFactory(stream);
+            SyslogdConfigFactory.setInstance(factory);
+            final SyslogParser parser = CustomSyslogParser.getParser("<0>Mar 14 17:10:25 petrus sudo:  cyrille : user NOT in sudoers ; TTY=pts/2 ; PWD=/home/cyrille ; USER=root ; COMMAND=/usr/bin/vi /etc/aliases");
+            assertTrue(parser.find());
+            final SyslogMessage message = parser.parse();
+            LogUtils.debugf(this, "message = %s", message);
+            final Calendar cal = Calendar.getInstance();
+            cal.setTimeZone(TimeZone.getTimeZone("UTC"));
+            cal.set(Calendar.MONTH, Calendar.MARCH);
+            cal.set(Calendar.DAY_OF_MONTH, 14);
+            cal.set(Calendar.HOUR_OF_DAY, 17);
+            cal.set(Calendar.MINUTE, 10);
+            cal.set(Calendar.SECOND, 25);
+            cal.set(Calendar.MILLISECOND, 0);
+            assertEquals(SyslogFacility.KERNEL, message.getFacility());
+            assertEquals(SyslogSeverity.EMERGENCY, message.getSeverity());
+            assertNull(message.getMessageID());
+            assertEquals(cal.getTime(), message.getDate());
+            assertEquals("petrus", message.getHostName());
+            assertEquals("sudo", message.getProcessName());
+            assertEquals(0, message.getProcessId().intValue());
+            assertEquals("cyrille : user NOT in sudoers ; TTY=pts/2 ; PWD=/home/cyrille ; USER=root ; COMMAND=/usr/bin/vi /etc/aliases", message.getMessage());
+        } finally {
+            Locale.setDefault(startLocale);
+        }
     }
     
     @Test
@@ -260,15 +316,15 @@ public class SyslogMessageTest {
 
     @Test
     public void testJuniperCFMFault() throws Exception {
-        final SyslogParser parser = JuniperSyslogParser.getParser("<7>Nov 17 03:38:24 junos-mx480-space cfmd[1461]: CFMD_CCM_DEFECT_RMEP: CFM defect: Remote CCM timeout detected by MEP on Level: 0 MD: customer MA: customer-site1 Interface: ge-5/0/2.0");
+        final SyslogParser parser = Rfc5424SyslogParser.getParser("<27>1 2012-04-20T12:33:13.946Z junos-mx80-2-space cfmd 1317 CFMD_CCM_DEFECT_RMEP - CFM defect: Remote CCM timeout detected by MEP on Level: 6 MD: MD_service_level MA: PW_126 Interface: ge-1/3/2.1");
         assertTrue(parser.find());
         final SyslogMessage message = parser.parse();
         assertNotNull(message);
-        assertEquals(SyslogFacility.KERNEL, message.getFacility());
-        assertEquals(SyslogSeverity.DEBUG, message.getSeverity());
-        assertEquals("junos-mx480-space", message.getHostName());
+        assertEquals(SyslogFacility.SYSTEM, message.getFacility());
+        assertEquals(SyslogSeverity.ERROR, message.getSeverity());
+        assertEquals("junos-mx80-2-space", message.getHostName());
         assertEquals("cfmd", message.getProcessName());
-        assertEquals(Integer.valueOf(1461), message.getProcessId());
-        assertEquals(null, message.getMessageID());
+        assertEquals(Integer.valueOf(1317), message.getProcessId());
+        assertEquals("CFMD_CCM_DEFECT_RMEP", message.getMessageID());
     }
 }

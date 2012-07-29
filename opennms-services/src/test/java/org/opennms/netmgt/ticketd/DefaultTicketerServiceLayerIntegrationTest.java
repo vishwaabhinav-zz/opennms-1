@@ -38,6 +38,7 @@ import org.junit.runner.RunWith;
 import org.opennms.api.integration.ticketing.Plugin;
 import org.opennms.api.integration.ticketing.Ticket;
 import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
+import org.opennms.core.utils.BeanUtils;
 import org.opennms.netmgt.dao.AlarmDao;
 import org.opennms.netmgt.dao.DatabasePopulator;
 import org.opennms.netmgt.dao.db.JUnitConfigurationEnvironment;
@@ -45,6 +46,7 @@ import org.opennms.netmgt.dao.db.JUnitTemporaryDatabase;
 import org.opennms.netmgt.model.OnmsAlarm;
 import org.opennms.netmgt.model.TroubleTicketState;
 import org.opennms.test.DaoTestConfigBean;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,6 +60,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @RunWith(OpenNMSJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
+		"classpath:/META-INF/opennms/applicationContext-soa.xml",
 		"classpath:/META-INF/opennms/applicationContext-dao.xml",
 		"classpath:/META-INF/opennms/applicationContext-daemon.xml",
         "classpath:/META-INF/opennms/applicationContext-databasePopulator.xml",
@@ -72,7 +75,7 @@ import org.springframework.transaction.annotation.Transactional;
         "opennms.ticketer.plugin=org.opennms.netmgt.ticketd.DefaultTicketerServiceLayerIntegrationTest.TestTicketerPlugin"
 })
 @JUnitTemporaryDatabase
-public class DefaultTicketerServiceLayerIntegrationTest {
+public class DefaultTicketerServiceLayerIntegrationTest implements InitializingBean {
 	@Autowired
 	private TicketerServiceLayer m_ticketerServiceLayer;
 
@@ -84,7 +87,12 @@ public class DefaultTicketerServiceLayerIntegrationTest {
 
 	@Autowired
 	private DatabasePopulator m_databasePopulator;
-	
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+	    BeanUtils.assertAutowiring(this);
+	}
+
 	@Before
 	public void setUp() {
 		m_databasePopulator.populateDatabase();

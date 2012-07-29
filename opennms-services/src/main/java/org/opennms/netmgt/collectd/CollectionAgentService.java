@@ -28,10 +28,11 @@
 
 package org.opennms.netmgt.collectd;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.util.Set;
 
-import org.opennms.netmgt.model.OnmsIpInterface.PrimaryType;
+import org.opennms.netmgt.model.PrimaryType;
 import org.opennms.netmgt.snmp.SnmpAgentConfig;
 
 /**
@@ -48,6 +49,35 @@ public interface CollectionAgentService {
      * @return a {@link java.lang.String} object.
      */
     public abstract String getHostAddress();
+    
+    /**
+     * <p>isStoreByForeignSource</p>
+     * 
+     * @return a {@link java.lang.Boolean} object.
+     */
+    public abstract Boolean isStoreByForeignSource();
+    
+    /**
+     * <p>getForeignSource</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public abstract String getForeignSource();
+
+    /**
+     * <p>getForeignId</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public abstract String getForeignId();
+
+    /**
+     * <p>getStorageDir</p>
+     *
+     * @return a {@link java.io.File} object.
+    */
+    public abstract File getStorageDir();
+
 
     /**
      * <p>getNodeId</p>
@@ -73,7 +103,7 @@ public interface CollectionAgentService {
     /**
      * <p>getIsSnmpPrimary</p>
      *
-     * @return a {@link org.opennms.netmgt.model.OnmsIpInterface.PrimaryType} object.
+     * @return a {@link org.opennms.netmgt.model.PrimaryType} object.
      */
     public abstract PrimaryType getIsSnmpPrimary();
     

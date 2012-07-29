@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -367,7 +368,7 @@ public final class JMXDataCollectionConfigFactory {
                 map.put(mbean.getObjectname(), beanInfo);
             }
         }
-        return map;
+        return Collections.unmodifiableMap(map);
     }
 
     /**
@@ -395,7 +396,7 @@ public final class JMXDataCollectionConfigFactory {
             }
             map.put(mbean.getObjectname(), attribs);
         }
-        return map;
+        return Collections.unmodifiableMap(map);
     }
 
     /**

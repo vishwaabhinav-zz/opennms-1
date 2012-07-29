@@ -28,16 +28,16 @@
 
 package org.opennms.netmgt.alarmd;
 
-import static org.junit.Assert.assertNotNull;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
+import org.opennms.core.utils.BeanUtils;
 import org.opennms.netmgt.dao.AlarmDao;
 import org.opennms.netmgt.dao.EventDao;
 import org.opennms.netmgt.dao.db.JUnitConfigurationEnvironment;
 import org.opennms.netmgt.dao.db.JUnitTemporaryDatabase;
-import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
 import org.opennms.netmgt.mock.MockEventIpcManager;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -48,6 +48,7 @@ import org.springframework.test.context.ContextConfiguration;
  */
 @RunWith(OpenNMSJUnit4ClassRunner.class)
 @ContextConfiguration(locations={
+        "classpath:/META-INF/opennms/applicationContext-soa.xml",
         "classpath:/META-INF/opennms/applicationContext-dao.xml",
         "classpath*:/META-INF/opennms/component-dao.xml",
         "classpath:/META-INF/opennms/applicationContext-daemon.xml",
@@ -56,22 +57,28 @@ import org.springframework.test.context.ContextConfiguration;
 })
 @JUnitConfigurationEnvironment
 @JUnitTemporaryDatabase
-public class AlarmPersisterTest {
+public class AlarmPersisterTest implements InitializingBean {
 
     @Autowired
+    @SuppressWarnings("unused")
     private MockEventIpcManager m_mockEventIpcManager;
     
     @Autowired
+    @SuppressWarnings("unused")
     private AlarmDao m_alarmDao;
     
     @Autowired
+    @SuppressWarnings("unused")
     private EventDao m_eventDao;
-    
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        BeanUtils.assertAutowiring(this);
+    }
+
     @Test
     public void testProcess() {
-        assertNotNull(m_alarmDao);
-        assertNotNull(m_eventDao);
-        assertNotNull(m_mockEventIpcManager);
+        // Do something?
     }
 
 }

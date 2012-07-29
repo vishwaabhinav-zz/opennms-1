@@ -46,13 +46,13 @@ import javax.servlet.http.HttpSession;
 import org.opennms.core.resource.Vault;
 import org.opennms.core.utils.DBUtils;
 import org.opennms.core.utils.LogUtils;
+import org.opennms.core.utils.WebSecurityUtils;
 import org.opennms.netmgt.EventConstants;
 import org.opennms.netmgt.config.DataSourceFactory;
 import org.opennms.netmgt.config.NotificationFactory;
-import org.opennms.netmgt.config.modelimport.types.InterfaceSnmpPrimaryType;
+import org.opennms.netmgt.model.PrimaryType;
 import org.opennms.netmgt.model.events.EventBuilder;
 import org.opennms.netmgt.xml.event.Event;
-import org.opennms.web.WebSecurityUtils;
 import org.opennms.web.api.Util;
 import org.opennms.web.element.NetworkElementFactory;
 
@@ -97,8 +97,8 @@ public class SnmpManageNodesServlet extends HttpServlet {
 
         String primeInt = null;
 
-        for (SnmpManagedInterface testInterface : allInterfaces) {
-            if (testInterface.getNodeid() == currNodeId && InterfaceSnmpPrimaryType.P.toString().equals(testInterface.getStatus())) {
+        for (final SnmpManagedInterface testInterface : allInterfaces) {
+            if (testInterface.getNodeid() == currNodeId && PrimaryType.PRIMARY.getCode().equals(testInterface.getStatus())) {
                 // Get the IP address of the primary SNMP interface
                 primeInt = NetworkElementFactory.getInstance(this.getServletContext()).getIpPrimaryAddress(currNodeId);
             }

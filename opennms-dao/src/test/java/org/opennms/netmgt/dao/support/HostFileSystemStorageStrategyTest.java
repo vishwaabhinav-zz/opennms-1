@@ -28,6 +28,8 @@
 
 package org.opennms.netmgt.dao.support;
 
+import java.io.File;
+
 import junit.framework.Assert;
 
 import org.easymock.EasyMock;
@@ -41,7 +43,8 @@ import org.opennms.netmgt.snmp.SnmpAgentConfig;
  */
 public class HostFileSystemStorageStrategyTest {
 
-    @Test
+    @SuppressWarnings("deprecation")
+	@Test
     public void testStrategy() throws Exception {
         // Create Mocks
         StorageStrategyService service = EasyMock.createMock(StorageStrategyService.class);
@@ -68,7 +71,7 @@ public class HostFileSystemStorageStrategyTest {
         Assert.assertEquals("Volumes-iDisk", strategy.getResourceNameFromIndex(resource));
 
         // Test RelativePath
-        Assert.assertEquals("1/hrStorageIndex/_root_fs", strategy.getRelativePathForAttribute(parentResource, resourceName, null));
+        Assert.assertEquals("1" + File.separator + "hrStorageIndex" + File.separator + "_root_fs", strategy.getRelativePathForAttribute(parentResource, resourceName, null));
 
         EasyMock.verify(service);
     }

@@ -39,8 +39,8 @@ import org.opennms.netmgt.dao.MonitoredServiceDao;
 import org.opennms.netmgt.filter.FilterDaoFactory;
 import org.opennms.netmgt.model.OnmsApplication;
 import org.opennms.netmgt.model.OnmsMonitoredService;
+import org.opennms.netmgt.model.PrimaryType;
 import org.opennms.netmgt.model.ServiceSelector;
-import org.opennms.netmgt.model.OnmsIpInterface.PrimaryType;
 /**
  * <p>MonitoredServiceDaoHibernate class.</p>
  *
@@ -67,6 +67,15 @@ public class MonitoredServiceDaoHibernate extends AbstractDaoHibernate<OnmsMonit
         return findUnique("from OnmsMonitoredService as svc " +
                     "where svc.ipInterface.node.id = ? and svc.ipInterface.ipAddress = ? and svc.serviceType.name = ?",
                    nodeId, ipAddress, svcName);
+    }
+
+    
+
+    @Override
+    public OnmsMonitoredService get(Integer nodeId, String ipAddr, Integer serviceId) {
+        return findUnique("from OnmsMonitoredService as svc " +
+			    "where svc.ipInterface.node.id = ? and svc.ipInterface.ipAddress = ? and svc.serviceType.id = ?",
+			   nodeId, ipAddr, serviceId);
     }
     
 	/** {@inheritDoc} */

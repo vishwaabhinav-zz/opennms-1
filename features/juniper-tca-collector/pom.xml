@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.opennms</groupId>
     <artifactId>org.opennms.features</artifactId>
-    <version>1.10.1-SNAPSHOT</version>
+    <version>1.11.2-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.opennms.features</groupId>
@@ -58,11 +58,6 @@
     </plugins>
   </build>
   <dependencies>
-    <dependency>
-      <groupId>org.opennms</groupId>
-      <artifactId>opennms-config-utils</artifactId>
-      <scope>compile</scope>
-    </dependency>
     <dependency>
       <groupId>org.opennms</groupId>
       <artifactId>opennms-model</artifactId>

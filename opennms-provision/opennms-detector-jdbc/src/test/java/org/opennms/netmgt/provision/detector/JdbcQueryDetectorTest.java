@@ -38,35 +38,43 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
+import org.apache.log4j.Level;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.opennms.core.utils.BeanUtils;
+import org.opennms.core.test.MockLogAppender;
+import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
 import org.opennms.core.utils.InetAddressUtils;
 import org.opennms.netmgt.dao.db.JUnitConfigurationEnvironment;
 import org.opennms.netmgt.dao.db.JUnitTemporaryDatabase;
-import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
 import org.opennms.netmgt.provision.detector.jdbc.JdbcQueryDetector;
-import org.opennms.netmgt.provision.support.NullDetectorMonitor;
-import org.opennms.test.mock.MockLogAppender;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 @RunWith(OpenNMSJUnit4ClassRunner.class)
 @ContextConfiguration(locations= {
         "classpath:/META-INF/opennms/detectors.xml",
+        "classpath:/META-INF/opennms/applicationContext-soa.xml",
         "classpath:/META-INF/opennms/applicationContext-dao.xml",
         "classpath*:/META-INF/opennms/component-dao.xml"
 })
 @JUnitConfigurationEnvironment
 @JUnitTemporaryDatabase
-public class JdbcQueryDetectorTest {
+public class JdbcQueryDetectorTest implements InitializingBean {
 
     @Autowired
     public JdbcQueryDetector m_detector;
 
     @Autowired
     public DataSource m_dataSource;
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        BeanUtils.assertAutowiring(this);
+    }
 
     @Before
     public void setUp() throws SQLException{
@@ -96,26 +104,26 @@ public class JdbcQueryDetectorTest {
 
     @After
     public void tearDown(){
-        MockLogAppender.assertNoWarningsOrGreater();
+        MockLogAppender.assertNotGreaterOrEqual(Level.FATAL);
     }
 
     @Test
     public void testDetectorSuccess() throws UnknownHostException{
         m_detector.init();
-        assertTrue("JDBCQueryDetector should work", m_detector.isServiceDetected(InetAddressUtils.addr("127.0.0.1"), new NullDetectorMonitor()));
+        assertTrue("JDBCQueryDetector should work", m_detector.isServiceDetected(InetAddressUtils.addr("127.0.0.1")));
     }
 
     @Test
     public void testStoredProcedureFail() throws UnknownHostException{
         m_detector.setSqlQuery("bogus");
         m_detector.init();
-        assertFalse(m_detector.isServiceDetected(InetAddressUtils.addr("127.0.0.1"), new NullDetectorMonitor()));
+        assertFalse(m_detector.isServiceDetected(InetAddressUtils.addr("127.0.0.1")));
     }
 
     @Test
     public void testWrongUserName() throws UnknownHostException{
         m_detector.setUser("wrongUserName");
         m_detector.init();
-        assertFalse(m_detector.isServiceDetected(InetAddressUtils.addr("127.0.0.1"), new NullDetectorMonitor()) );
+        assertFalse(m_detector.isServiceDetected(InetAddressUtils.addr("127.0.0.1")) );
     }
 }

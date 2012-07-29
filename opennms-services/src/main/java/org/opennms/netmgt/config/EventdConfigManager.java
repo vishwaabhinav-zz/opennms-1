@@ -169,6 +169,20 @@ public class EventdConfigManager {
     }
 
     /**
+     * Return the length of the incoming event queue.
+     *
+     * @return the maximum number of events that can be stored in the incoming event queue
+     */
+    public int getQueueLength() {
+        getReadLock().lock();
+        try {
+            return m_config.hasQueueLength() ? m_config.getQueueLength() : Integer.MAX_VALUE;
+        } finally {
+            getReadLock().unlock();
+        }
+    }
+
+    /**
      * Return string indicating if timeout is to be set on the socket.
      *
      * @return string indicating if timeout is to be set on the socket

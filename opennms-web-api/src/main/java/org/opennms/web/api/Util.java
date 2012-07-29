@@ -37,19 +37,21 @@ import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.TreeMap;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.opennms.core.resource.Vault;
 import org.opennms.core.utils.InetAddressUtils;
+import org.opennms.core.utils.WebSecurityUtils;
 import org.opennms.netmgt.model.events.EventProxy;
 import org.opennms.netmgt.utils.TcpEventProxy;
-import org.opennms.web.WebSecurityUtils;
 
 /**
  * Provides convenience functions for web-based interfaces.
@@ -486,14 +488,14 @@ public abstract class Util extends Object {
      * @param names an array of {@link java.lang.String} objects.
      * @return a {@link java.util.Map} object.
      */
-    public static Map<String, String> getOrderedMap(final String names[][]) {
+    public static SortedMap<String, String> getOrderedMap(final String names[][]) {
     	final TreeMap<String, String> orderedMap = new TreeMap<String, String>();
 
         for (int i = 0; i < names.length; i++) {
             orderedMap.put(names[i][1], names[i][0]);
         }
 
-        return orderedMap;
+        return Collections.unmodifiableSortedMap(orderedMap);
     }
 
     /**

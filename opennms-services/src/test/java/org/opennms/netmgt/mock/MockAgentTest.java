@@ -34,7 +34,7 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.opennms.test.mock.MockLogAppender;
+import org.opennms.core.test.MockLogAppender;
 import org.opennms.test.mock.MockUtil;
 import org.snmp4j.CommunityTarget;
 import org.snmp4j.PDU;
@@ -127,8 +127,8 @@ public class MockAgentTest extends TestCase {
         target.setTimeout(3000);
         target.setRetries(3);
         
-        @SuppressWarnings("unchecked")
-        List results = walker.getTable(target, new OID[] {new OID("1.3.6.1.2.1.1")}, null, null);
+        @SuppressWarnings("rawtypes")
+		List results = walker.getTable(target, new OID[] {new OID("1.3.6.1.2.1.1")}, null, null);
         
         assertNotNull(results);
         assertFalse(results.isEmpty());

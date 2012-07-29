@@ -33,6 +33,8 @@ import java.net.InetAddress;
 import java.util.Map;
 
 import org.apache.regexp.RE;
+import org.apache.regexp.RESyntaxException;
+import org.opennms.core.utils.LogUtils;
 import org.opennms.core.utils.ParameterMap;
 import org.opennms.core.utils.TimeoutTracker;
 import org.opennms.netmgt.model.PollStatus;
@@ -90,19 +92,25 @@ final public class SshMonitor extends AbstractServiceMonitor {
         ssh.setClientBanner(clientBanner);
 
         RE regex = null;
-        if (match == null && (banner == null || banner.equals("*"))) {
-            regex = null;
-        } else if (match != null) {
-            regex = new RE(match);
-        } else if (banner != null) {
-            regex = new RE(banner);
+        try {
+	        if (match == null && (banner == null || banner.equals("*"))) {
+	            regex = null;
+	        } else if (match != null) {
+	            regex = new RE(match);
+	        } else if (banner != null) {
+	            regex = new RE(banner);
+	        }
+        } catch (final RESyntaxException e) {
+        	final String matchString = match == null? banner : match;
+        	LogUtils.infof(this, "Invalid regular expression for SSH banner match /%s/: %s", matchString, e.getMessage());
+        	LogUtils.debugf(this, e, "Invalid Regular expression for SSH banner match /%s/", matchString);
         }
 
         for (tracker.reset(); tracker.shouldRetry() && !ps.isAvailable(); tracker.nextAttempt()) {
             try {
                 ps = ssh.poll(tracker);
-            } catch (InsufficientParametersException e) {
-                log().error(e.getMessage());
+            } catch (final InsufficientParametersException e) {
+                LogUtils.errorf(this, e, "An error occurred polling host '%s'", address);
                 break;
             }
 
@@ -124,16 +132,12 @@ final public class SshMonitor extends AbstractServiceMonitor {
                 }
 
                 if (regex.match(response)) {
-                    if (log().isDebugEnabled()) {
-                        log().debug("isServer: matching response=" + response);
-                    }
+                    LogUtils.debugf(this, "isServer: matching response=%s", response);
                     return ps;
                 } else {
                     // Got a response but it didn't match... no need to attempt
                     // retries
-                    if (log().isDebugEnabled()) {
-                        log().debug("isServer: NON-matching response=" + response);
-                    }
+                    LogUtils.debugf(this, "isServer: NON-matching response=%s", response);
                     return PollStatus.unavailable("server responded, but banner did not match '" + banner + "'");
                 }
             }

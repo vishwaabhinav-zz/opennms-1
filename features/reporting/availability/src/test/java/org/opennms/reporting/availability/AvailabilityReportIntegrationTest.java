@@ -28,28 +28,33 @@
 
 package org.opennms.reporting.availability;
 
-import junit.framework.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
-import org.opennms.netmgt.config.CategoryFactory;
-import org.opennms.netmgt.dao.db.JUnitConfigurationEnvironment;
-import org.opennms.netmgt.dao.db.JUnitTemporaryDatabase;
-import org.opennms.netmgt.mock.MockCategoryFactory;
-import org.opennms.test.mock.MockLogAppender;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-
-import javax.annotation.Resource;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 
+import javax.annotation.Resource;
+
+import junit.framework.Assert;
+
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.opennms.core.test.MockLogAppender;
+import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
+import org.opennms.core.utils.BeanUtils;
+import org.opennms.netmgt.config.CategoryFactory;
+import org.opennms.netmgt.dao.db.JUnitConfigurationEnvironment;
+import org.opennms.netmgt.dao.db.JUnitTemporaryDatabase;
+import org.opennms.netmgt.mock.MockCategoryFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+
 @RunWith(OpenNMSJUnit4ClassRunner.class)
 @ContextConfiguration(locations={
+        "classpath:/META-INF/opennms/applicationContext-soa.xml",
         "classpath:/META-INF/opennms/applicationContext-dao.xml",
         "classpath*:/META-INF/opennms/component-dao.xml",
         "classpath:/META-INF/opennms/applicationContext-reportingAvailability.xml",
@@ -58,7 +63,7 @@ import java.util.Locale;
 })
 @JUnitConfigurationEnvironment
 @JUnitTemporaryDatabase
-public class AvailabilityReportIntegrationTest {
+public class AvailabilityReportIntegrationTest implements InitializingBean {
     
     @Resource
     AvailabilityCalculator calendarAvailabilityCalculator;
@@ -74,6 +79,11 @@ public class AvailabilityReportIntegrationTest {
     protected Calendar m_calendar;
 
     protected MockCategoryFactory m_catFactory;
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        BeanUtils.assertAutowiring(this);
+    }
 
     @Before
     public void setUp() throws Exception {

@@ -34,7 +34,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.opennms.web.WebSecurityUtils;
+import org.opennms.core.utils.WebSecurityUtils;
 import org.opennms.web.filter.Filter;
 import org.opennms.web.outage.Outage;
 import org.opennms.web.outage.SortStyle;
@@ -91,6 +91,7 @@ public class NodeOutagesController extends AbstractController implements Initial
      *
      * @throws java.lang.Exception if any.
      */
+    @Override
     public void afterPropertiesSet() throws Exception {
         Assert.notNull(m_successView, "property successView must be set");
         Assert.notNull(m_webOutageRepository, "webOutageRepository must be set");

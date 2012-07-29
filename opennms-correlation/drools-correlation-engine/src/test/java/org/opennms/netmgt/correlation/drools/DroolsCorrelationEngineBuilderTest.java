@@ -48,6 +48,7 @@ import org.springframework.test.context.ContextConfiguration;
 
 @RunWith(OpenNMSJUnit4ClassRunner.class)
 @ContextConfiguration(locations={
+        "classpath:META-INF/opennms/applicationContext-soa.xml",
         "classpath:META-INF/opennms/applicationContext-dao.xml",
         "classpath*:/META-INF/opennms/component-dao.xml",
         "classpath:META-INF/opennms/applicationContext-daemon.xml",
@@ -73,7 +74,7 @@ public class DroolsCorrelationEngineBuilderTest implements InitializingBean {
     public void testIt() throws Exception {
         List<CorrelationEngine> engines = m_mockCorrelator.getEngines();
         assertNotNull(engines);
-        assertEquals(3, m_mockCorrelator.getEngines().size());
+        assertEquals(4, m_mockCorrelator.getEngines().size());
         assertTrue(engines.get(0) instanceof DroolsCorrelationEngine);
         assertTrue(m_mockCorrelator.findEngineByName("locationMonitorRules") instanceof DroolsCorrelationEngine);
         DroolsCorrelationEngine engine = (DroolsCorrelationEngine) m_mockCorrelator.findEngineByName("locationMonitorRules");

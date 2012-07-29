@@ -47,15 +47,16 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.opennms.core.concurrent.LogPreservingThreadFactory;
 import org.opennms.core.utils.ThreadCategory;
+import org.opennms.core.utils.WebSecurityUtils;
 import org.opennms.netmgt.config.KSC_PerformanceReportFactory;
 import org.opennms.netmgt.config.kscReports.Graph;
 import org.opennms.netmgt.config.kscReports.Report;
 import org.opennms.netmgt.model.OnmsResource;
 import org.opennms.netmgt.model.PrefabGraph;
-import org.opennms.web.MissingParameterException;
-import org.opennms.web.WebSecurityUtils;
 import org.opennms.web.graph.KscResultSet;
+import org.opennms.web.servlet.MissingParameterException;
 import org.opennms.web.springframework.security.Authentication;
 import org.opennms.web.svclayer.KscReportService;
 import org.opennms.web.svclayer.ResourceService;
@@ -76,7 +77,6 @@ public class CustomViewController extends AbstractController implements Initiali
 
     public enum Parameters {
         report,
-        domain,
         type,
         timespan,
         graphtype
@@ -93,21 +93,21 @@ public class CustomViewController extends AbstractController implements Initiali
     /** {@inheritDoc} */
     @Override
     protected ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String[] requiredParameters = new String[] { "report or domain", "type" };
+        String[] requiredParameters = new String[] { "report", "type" };
       
         // Get Form Variable
+        int reportId = -1;
         String reportType = WebSecurityUtils.sanitizeString(request.getParameter(Parameters.type.toString()));
+        String reportIdString = WebSecurityUtils.sanitizeString(request.getParameter(Parameters.report.toString()));
         if (reportType == null) {
             throw new MissingParameterException(Parameters.type.toString(), requiredParameters);
         }
+        if (reportIdString == null) {
+            throw new MissingParameterException(Parameters.report.toString(), requiredParameters);
+        }
       
-        String reportIdString = WebSecurityUtils.sanitizeString(request.getParameter(Parameters.report.toString()));
-        String domain = WebSecurityUtils.sanitizeString(request.getParameter(Parameters.domain.toString()));
-        int reportId = 0;
-        if (reportIdString != null) {
+        if (reportType.equals("node") || reportType.equals("custom")) {
             reportId = WebSecurityUtils.safeParseInt(reportIdString);
-        } else if (domain == null) {
-            throw new MissingParameterException("report or domain", requiredParameters);
         }
       
         String overrideTimespan = WebSecurityUtils.sanitizeString(request.getParameter(Parameters.timespan.toString()));
@@ -123,16 +123,22 @@ public class CustomViewController extends AbstractController implements Initiali
         // Load report to view 
         Report report = null;
         if ("node".equals(reportType)) {
+            log().debug("handleRequestInternal: buildNodeReport(reportId) " + reportId);
             report = getKscReportService().buildNodeReport(reportId);
+        } else if ("nodeSource".equals(reportType)) {
+            log().debug("handleRequestInternal: buildNodeSourceReport(nodeSource) " + reportIdString);
+            report = getKscReportService().buildNodeSourceReport(reportIdString);
         } else if ("domain".equals(reportType)) {
-            report = getKscReportService().buildDomainReport(domain);
+            log().debug("handleRequestInternal: buildDomainReport(reportIdString) " + reportIdString);
+            report = getKscReportService().buildDomainReport(reportIdString);
         } else if ("custom".equals(reportType)) {
+            log().debug("handleRequestInternal: getReportByIndex(reportId) " + reportId);
             report = m_kscReportFactory.getReportByIndex(reportId);
             if (report == null) {
                 throw new ServletException("Report could not be found in config file for index '" + reportId + "'");
             }
         } else {
-            throw new IllegalArgumentException("value to 'type' parameter of '" + reportType + "' is not supported.  Must be one of: node, domain, or custom");
+            throw new IllegalArgumentException("value to 'type' parameter of '" + reportType + "' is not supported.  Must be one of: node, nodeSource, domain, or custom");
         }
       
         // Get the list of available prefabricated graph options 
@@ -163,7 +169,7 @@ public class CustomViewController extends AbstractController implements Initiali
       
             // Get default graph type from first element of graph_options
             // XXX Do we care about the tests on reportType?
-            if (("node".equals(reportType) || "domain".equals(reportType))
+            if (("node".equals(reportType) || "nodeSource".equals(reportType) || "domain".equals(reportType))
                     && overrideGraphType == null
                     && !prefabGraphs.isEmpty()) {
                 // Get the name of the first item.  prefabGraphs is sorted.
@@ -233,9 +239,6 @@ public class CustomViewController extends AbstractController implements Initiali
         modelAndView.addObject("reportType", reportType);
         if (report != null) {
             modelAndView.addObject("report", reportIdString);
-        }
-        if (domain != null) {
-            modelAndView.addObject("domain", domain);
         }
         
         modelAndView.addObject("title", report.getTitle());
@@ -398,13 +401,16 @@ public class CustomViewController extends AbstractController implements Initiali
      *
      * @throws java.lang.Exception if any.
      */
+    @Override
     public void afterPropertiesSet() throws Exception {
         Assert.state(m_kscReportFactory != null, "property kscReportFactory must be set");
         Assert.state(m_kscReportService != null, "property kscReportService must be set");
         Assert.state(m_resourceService != null, "property resourceService must be set");
         Assert.state(m_defaultGraphsPerLine != 0, "property defaultGraphsPerLine must be set");
         
-        m_executor = Executors.newSingleThreadExecutor();
+        m_executor = Executors.newSingleThreadExecutor(
+            new LogPreservingThreadFactory(getClass().getSimpleName(), 1, false)
+        );
     }
 
 }

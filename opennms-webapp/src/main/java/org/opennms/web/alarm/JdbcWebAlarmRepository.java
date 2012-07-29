@@ -35,6 +35,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 
+import org.opennms.core.utils.BeanUtils;
 import org.opennms.core.utils.LogUtils;
 import org.opennms.netmgt.model.OnmsSeverity;
 import org.opennms.netmgt.model.TroubleTicketState;
@@ -50,6 +51,7 @@ import org.opennms.web.filter.AndFilter;
 import org.opennms.web.filter.ConditionalFilter;
 import org.opennms.web.filter.Filter;
 import org.opennms.web.filter.OrFilter;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.DataAccessUtils;
@@ -69,11 +71,17 @@ import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
  * @version $Id: $
  * @since 1.8.1
  */
-public class JdbcWebAlarmRepository implements WebAlarmRepository {
+@Deprecated
+public class JdbcWebAlarmRepository implements WebAlarmRepository, InitializingBean {
     
     @Autowired
     SimpleJdbcTemplate m_simpleJdbcTemplate;
     
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        BeanUtils.assertAutowiring(this);
+    }
+
     private String getSql(final String selectClause, final AlarmCriteria criteria) {
         final StringBuilder buf = new StringBuilder(selectClause);
 
@@ -130,6 +138,26 @@ public class JdbcWebAlarmRepository implements WebAlarmRepository {
                 });
             }
         };
+    }
+
+    @Override
+    public void updateStickyMemo(Integer alarmId, String body, String user) {
+        throw new UnsupportedOperationException("Not supported yet. JdbcWebAlarmRepositony is deprecated.");
+    }
+
+    @Override
+    public void updateReductionKeyMemo(Integer alarmId, String body, String user) {
+        throw new UnsupportedOperationException("Not supported yet. JdbcWebAlarmRepositony is deprecated.");
+    }
+
+    @Override
+    public void removeStickyMemo(Integer alarmId) {
+        throw new UnsupportedOperationException("Not supported yet. JdbcWebAlarmRepositony is deprecated.");
+    }
+
+    @Override
+    public void removeReductionKeyMemo(int alarmId) {
+        throw new UnsupportedOperationException("Not supported yet. JdbcWebAlarmRepositony is deprecated.");
     }
     
     private static class AlarmMapper implements ParameterizedRowMapper<Alarm> {

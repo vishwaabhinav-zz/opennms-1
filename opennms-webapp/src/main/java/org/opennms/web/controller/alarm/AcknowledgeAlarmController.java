@@ -34,10 +34,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.opennms.web.MissingParameterException;
-import org.opennms.web.WebSecurityUtils;
+import org.opennms.core.utils.WebSecurityUtils;
 import org.opennms.web.alarm.AcknowledgeType;
 import org.opennms.web.alarm.WebAlarmRepository;
+import org.opennms.web.servlet.MissingParameterException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.util.Assert;
 import org.springframework.web.servlet.ModelAndView;
@@ -81,6 +81,7 @@ public class AcknowledgeAlarmController extends AbstractController implements In
      *
      * @throws java.lang.Exception if any.
      */
+    @Override
     public void afterPropertiesSet() throws Exception {
         Assert.notNull(m_redirectView, "redirectView must be set");
         Assert.notNull(m_webAlarmRepository, "webAlarmRepository must be set");

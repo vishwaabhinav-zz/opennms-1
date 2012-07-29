@@ -30,6 +30,7 @@ package org.opennms.netmgt.model;
 
 import java.util.Date;
 
+import org.opennms.core.utils.InetAddressUtils;
 import org.opennms.core.utils.LogUtils;
 import org.opennms.netmgt.model.OnmsArpInterface.StatusType;
 import org.springframework.beans.BeanWrapper;
@@ -148,11 +149,11 @@ public class NetworkBuilder {
      * @return a {@link org.opennms.netmgt.model.NetworkBuilder.InterfaceBuilder} object.
      */
     public InterfaceBuilder addInterface(final String ipAddr) {
-		m_currentIf = new OnmsIpInterface(ipAddr, m_currentNode);
+		m_currentIf = new OnmsIpInterface(InetAddressUtils.addr(ipAddr), m_currentNode);
         return new InterfaceBuilder(m_currentIf);
 	}
 
-    public class InterfaceBuilder {
+    public static class InterfaceBuilder {
     	final OnmsIpInterface m_iface;
 
 		InterfaceBuilder(final OnmsIpInterface iface) {
@@ -165,7 +166,7 @@ public class NetworkBuilder {
 		}
 
 		public InterfaceBuilder setIsSnmpPrimary(final String isSnmpPrimary) {
-			m_iface.setIsSnmpPrimary(OnmsIpInterface.PrimaryType.get(isSnmpPrimary));
+			m_iface.setIsSnmpPrimary(PrimaryType.get(isSnmpPrimary));
 			return this;
 		}
 
@@ -173,8 +174,14 @@ public class NetworkBuilder {
 			return m_iface;
 		}
 
+		/**
+		 * @deprecated Create the SNMP Interface first, and then use {@link SnmpInterfaceBuilder#addIpInterface(String)} to add IP Interfaces.
+		 * @param ifIndex the ifIndex
+		 * @return an SnmpInterfaceBuilder
+		 */
+		@Deprecated
 		public SnmpInterfaceBuilder addSnmpInterface(final int ifIndex) {
-		    final OnmsSnmpInterface snmpIf = new OnmsSnmpInterface(m_currentNode, ifIndex);
+		    final OnmsSnmpInterface snmpIf = new OnmsSnmpInterface(m_iface.getNode(), ifIndex);
 		    m_iface.setSnmpInterface(snmpIf);
 		    // TODO: Should this be done in setSnmpInterface?
 		    snmpIf.getIpInterfaces().add(m_iface);
@@ -233,7 +240,7 @@ public class NetworkBuilder {
      * @return a {@link org.opennms.netmgt.model.NetworkBuilder.InterfaceBuilder} object.
      */
     public InterfaceBuilder addInterface(final String ipAddr, final OnmsSnmpInterface snmpInterface) {
-        m_currentIf = new OnmsIpInterface(ipAddr, m_currentNode);
+        m_currentIf = new OnmsIpInterface(InetAddressUtils.addr(ipAddr), m_currentNode);
         m_currentIf.setSnmpInterface(snmpInterface);
         return new InterfaceBuilder(m_currentIf);
     }
@@ -348,7 +355,7 @@ public class NetworkBuilder {
         try {
             m_assetBean.setPropertyValue(name, value);
         } catch (final BeansException e) {
-        	LogUtils.warnf(this, e, "Could not set property '%v' on asset '%v'", value, name);
+        	LogUtils.warnf(this, e, "Could not set property '%s' on asset '%s'", value, name);
         }
     }
 

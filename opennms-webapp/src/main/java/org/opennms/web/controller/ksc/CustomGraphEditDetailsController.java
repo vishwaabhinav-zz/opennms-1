@@ -38,8 +38,8 @@ import org.opennms.netmgt.config.KscReportEditor;
 import org.opennms.netmgt.config.kscReports.Report;
 import org.opennms.netmgt.model.PrefabGraph;
 import org.opennms.netmgt.model.OnmsResource;
-import org.opennms.web.MissingParameterException;
 import org.opennms.web.graph.KscResultSet;
+import org.opennms.web.servlet.MissingParameterException;
 import org.opennms.web.svclayer.KscReportService;
 import org.opennms.web.svclayer.ResourceService;
 import org.springframework.beans.factory.InitializingBean;
@@ -200,6 +200,7 @@ public class CustomGraphEditDetailsController extends AbstractController impleme
      *
      * @throws java.lang.Exception if any.
      */
+    @Override
     public void afterPropertiesSet() throws Exception {
         Assert.state(m_resourceService != null, "property resourceService must be set");
         Assert.state(m_kscReportService != null, "property kscReportService must be set");

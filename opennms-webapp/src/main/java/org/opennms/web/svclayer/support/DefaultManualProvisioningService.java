@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -45,11 +46,14 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.commons.beanutils.MethodUtils;
 import org.opennms.core.utils.PropertyPath;
 import org.opennms.netmgt.EventConstants;
+import org.opennms.netmgt.config.CapsdConfig;
 import org.opennms.netmgt.dao.CategoryDao;
 import org.opennms.netmgt.dao.NodeDao;
 import org.opennms.netmgt.dao.ServiceTypeDao;
 import org.opennms.netmgt.model.OnmsAssetRecord;
 import org.opennms.netmgt.model.OnmsCategory;
+import org.opennms.netmgt.model.OnmsServiceType;
+import org.opennms.netmgt.model.PrimaryType;
 import org.opennms.netmgt.model.events.EventBuilder;
 import org.opennms.netmgt.model.events.EventProxy;
 import org.opennms.netmgt.model.events.EventProxyException;
@@ -61,7 +65,6 @@ import org.opennms.netmgt.provision.persist.requisition.RequisitionCategory;
 import org.opennms.netmgt.provision.persist.requisition.RequisitionInterface;
 import org.opennms.netmgt.provision.persist.requisition.RequisitionMonitoredService;
 import org.opennms.netmgt.provision.persist.requisition.RequisitionNode;
-import org.opennms.web.BeanUtils;
 import org.opennms.web.api.Util;
 import org.opennms.web.svclayer.ManualProvisioningService;
 import org.springframework.dao.DataAccessResourceFailureException;
@@ -79,6 +82,8 @@ public class DefaultManualProvisioningService implements ManualProvisioningServi
     private ForeignSourceRepository m_pendingForeignSourceRepository;
     private NodeDao m_nodeDao;
     private CategoryDao m_categoryDao;
+    private ServiceTypeDao m_serviceTypeDao;
+    private CapsdConfig m_capsdConfig;
     
     private final ReadWriteLock m_globalLock = new ReentrantReadWriteLock();
     private final Lock m_readLock = m_globalLock.readLock();
@@ -153,6 +158,11 @@ public class DefaultManualProvisioningService implements ManualProvisioningServi
      * @param serviceTypeDao a {@link org.opennms.netmgt.dao.ServiceTypeDao} object.
      */
     public void setServiceTypeDao(final ServiceTypeDao serviceTypeDao) {
+        m_serviceTypeDao = serviceTypeDao;
+    }
+    
+    public void setCapsdConfig(final CapsdConfig capsdConfig) {
+        m_capsdConfig = capsdConfig;
     }
 
     /** {@inheritDoc} */
@@ -161,7 +171,7 @@ public class DefaultManualProvisioningService implements ManualProvisioningServi
         try {
             final Requisition group = getProvisioningGroup(groupName);
             
-            final RequisitionNode node = BeanUtils.getPathValue(group, pathToNode, RequisitionNode.class);
+            final RequisitionNode node = PropertyUtils.getPathValue(group, pathToNode, RequisitionNode.class);
             
             // final int catCount = node.getCategoryCount();
             final RequisitionCategory category = new RequisitionCategory();
@@ -182,7 +192,7 @@ public class DefaultManualProvisioningService implements ManualProvisioningServi
         m_writeLock.lock();
         try {
             final Requisition group = getProvisioningGroup(groupName);
-            final RequisitionNode node = BeanUtils.getPathValue(group, pathToNode, RequisitionNode.class);
+            final RequisitionNode node = PropertyUtils.getPathValue(group, pathToNode, RequisitionNode.class);
     
             // final int assetCount = node.getAssetCount();
             final RequisitionAsset asset = new RequisitionAsset();
@@ -204,12 +214,12 @@ public class DefaultManualProvisioningService implements ManualProvisioningServi
         try {
             final Requisition group = getProvisioningGroup(groupName);
             Assert.notNull(group, "Group should not be Null and is null groupName: " + groupName);
-            final RequisitionNode node = BeanUtils.getPathValue(group, pathToNode, RequisitionNode.class);
+            final RequisitionNode node = PropertyUtils.getPathValue(group, pathToNode, RequisitionNode.class);
             Assert.notNull(node, "Node should not be Null and pathToNode: " + pathToNode);
-            
-            String snmpPrimary = "P";
+
+            PrimaryType snmpPrimary = PrimaryType.PRIMARY;
             if (node.getInterfaceCount() > 0) {
-                snmpPrimary = "S";
+                snmpPrimary = PrimaryType.SECONDARY;
             }
     
             // final int ifaceCount = node.getInterfaceCount();
@@ -224,7 +234,7 @@ public class DefaultManualProvisioningService implements ManualProvisioningServi
         }
     }
 
-    private RequisitionInterface createInterface(final String ipAddr, final String snmpPrimary) {
+    private RequisitionInterface createInterface(final String ipAddr, final PrimaryType snmpPrimary) {
         final RequisitionInterface iface = new RequisitionInterface();
         iface.setIpAddr(ipAddr);
         iface.setStatus(1);
@@ -264,7 +274,7 @@ public class DefaultManualProvisioningService implements ManualProvisioningServi
         try {
             final Requisition group = getProvisioningGroup(groupName);
             
-            final RequisitionInterface iface = BeanUtils.getPathValue(group, pathToInterface, RequisitionInterface.class);
+            final RequisitionInterface iface = PropertyUtils.getPathValue(group, pathToInterface, RequisitionInterface.class);
             
             final RequisitionMonitoredService monSvc = createService(serviceName);
             iface.insertMonitoredService(monSvc);
@@ -508,12 +518,20 @@ public class DefaultManualProvisioningService implements ManualProvisioningServi
      * @return a {@link java.util.Collection} object.
      */
     public Collection<String> getServiceTypeNames(String groupName) {
+        final SortedSet<String> serviceNames = new TreeSet<String>();
+
         m_readLock.lock();
         try {
         	final ForeignSource pendingForeignSource = m_pendingForeignSourceRepository.getForeignSource(groupName);
             final ForeignSource deployedForeignSource = m_deployedForeignSourceRepository.getForeignSource(groupName);
-            
-            return (pendingForeignSource.isDefault())? deployedForeignSource.getDetectorNames() : pendingForeignSource.getDetectorNames();
+
+            serviceNames.addAll(deployedForeignSource.getDetectorNames());
+            serviceNames.addAll(pendingForeignSource.getDetectorNames());
+            for (final OnmsServiceType type : m_serviceTypeDao.findAll()) {
+                serviceNames.add(type.getName());
+            }
+            serviceNames.addAll(m_capsdConfig.getConfiguredProtocols());
+            return serviceNames;
         } finally {
             m_readLock.unlock();
         }
@@ -528,7 +546,7 @@ public class DefaultManualProvisioningService implements ManualProvisioningServi
         m_readLock.lock();
         
         try {
-            return BeanUtils.getProperties(new OnmsAssetRecord());
+            return PropertyUtils.getProperties(new OnmsAssetRecord());
         } finally {
             m_readLock.unlock();
         }

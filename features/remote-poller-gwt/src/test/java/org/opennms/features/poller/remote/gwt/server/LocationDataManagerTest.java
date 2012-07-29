@@ -62,13 +62,15 @@ import org.opennms.netmgt.dao.ApplicationDao;
 import org.opennms.netmgt.dao.LocationMonitorDao;
 import org.opennms.netmgt.dao.db.JUnitConfigurationEnvironment;
 import org.opennms.netmgt.dao.db.JUnitTemporaryDatabase;
+import org.opennms.core.test.MockLogAppender;
 import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
+import org.opennms.core.utils.BeanUtils;
 import org.opennms.netmgt.model.OnmsApplication;
 import org.opennms.netmgt.model.OnmsLocationMonitor;
 import org.opennms.netmgt.model.OnmsLocationSpecificStatus;
 import org.opennms.netmgt.model.OnmsMonitoringLocationDefinition;
 import org.opennms.test.mock.EasyMockUtils;
-import org.opennms.test.mock.MockLogAppender;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
@@ -78,6 +80,7 @@ import de.novanic.eventservice.service.EventExecutorService;
 @RunWith(OpenNMSJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
         "classpath:META-INF/opennms/mockEventIpcManager.xml",
+        "classpath:/META-INF/opennms/applicationContext-soa.xml",
         "classpath:/META-INF/opennms/applicationContext-dao.xml",
         "classpath*:/META-INF/opennms/component-dao.xml",
         "classpath:/META-INF/opennms/applicationContext-daemon.xml",
@@ -88,7 +91,7 @@ import de.novanic.eventservice.service.EventExecutorService;
 @JUnitTemporaryDatabase(useExistingDatabase="opennms")
 @Transactional
 @Ignore("requires custom database")
-public class LocationDataManagerTest {
+public class LocationDataManagerTest implements InitializingBean {
     
     private static final DateFormat s_format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
     
@@ -106,6 +109,11 @@ public class LocationDataManagerTest {
 
     private EasyMockUtils m_easyMockUtils = new EasyMockUtils();
     
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        BeanUtils.assertAutowiring(this);
+    }
+
     @Before
     public void setUp() {
         Properties p = new Properties();

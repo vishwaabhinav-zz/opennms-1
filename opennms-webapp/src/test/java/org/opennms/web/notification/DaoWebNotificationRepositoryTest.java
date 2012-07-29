@@ -42,6 +42,7 @@ import org.opennms.netmgt.dao.DatabasePopulator;
 import org.opennms.netmgt.dao.db.JUnitConfigurationEnvironment;
 import org.opennms.netmgt.dao.db.JUnitTemporaryDatabase;
 import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
+import org.opennms.core.utils.BeanUtils;
 import org.opennms.web.filter.Filter;
 import org.opennms.web.notification.filter.AcknowledgedByFilter;
 import org.opennms.web.notification.filter.NotificationCriteria;
@@ -52,6 +53,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @RunWith(OpenNMSJUnit4ClassRunner.class)
 @ContextConfiguration(locations={
+        "classpath:/META-INF/opennms/applicationContext-soa.xml",
         "classpath:/META-INF/opennms/applicationContext-dao.xml",
         "classpath*:/META-INF/opennms/component-dao.xml",
         "classpath*:/META-INF/opennms/component-service.xml",
@@ -72,9 +74,9 @@ public class DaoWebNotificationRepositoryTest implements InitializingBean {
         m_dbPopulator.populateDatabase();
     }
     
-    public void afterPropertiesSet() {
-        assertNotNull(m_dbPopulator);
-        assertNotNull(m_daoNotificationRepo);
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        BeanUtils.assertAutowiring(this);
     }
     
     @Test

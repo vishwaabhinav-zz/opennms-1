@@ -35,6 +35,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -58,6 +59,7 @@ import org.springframework.test.context.ContextConfiguration;
 
 @RunWith(OpenNMSJUnit4ClassRunner.class)
 @ContextConfiguration(locations={
+        "classpath:/META-INF/opennms/applicationContext-soa.xml",
         "classpath:/META-INF/opennms/applicationContext-dao.xml",
         "classpath*:/META-INF/opennms/component-dao.xml"
 })
@@ -175,7 +177,8 @@ public class ChartUtilsTest {
 
     @Test
     public void testGetChartAsFileOutputStream() throws FileNotFoundException, IOException, SQLException, ValidationException, MarshalException {
-        OutputStream stream = new FileOutputStream("//tmp//sample-bar-chart.png");
+    	final File tempFile = File.createTempFile("sample-bar-chart", "png");
+        OutputStream stream = new FileOutputStream(tempFile);
         ChartUtils.getBarChart("sample-bar-chart", stream);
         stream.close();
     }
