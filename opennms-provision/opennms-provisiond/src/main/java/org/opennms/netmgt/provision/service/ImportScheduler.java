@@ -96,7 +96,6 @@ public class ImportScheduler implements InitializingBean {
             log().fatal("afterPropertiesSet: couldn't set proper JobFactory for scheduler: "+e, e);
         }
 
-
         GenericURLFactory.initialize();
 
         buildImportSchedule();

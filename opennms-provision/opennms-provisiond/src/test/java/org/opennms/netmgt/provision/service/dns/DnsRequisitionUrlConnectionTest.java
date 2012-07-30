@@ -40,6 +40,7 @@ import org.opennms.core.test.dns.JUnitDNSServerExecutionListener;
 import org.opennms.core.test.dns.annotations.DNSEntry;
 import org.opennms.core.test.dns.annotations.DNSZone;
 import org.opennms.core.test.dns.annotations.JUnitDNSServer;
+import org.opennms.core.utils.url.GenericURLFactory;
 import org.opennms.netmgt.provision.persist.requisition.Requisition;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;

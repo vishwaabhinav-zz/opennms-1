@@ -47,7 +47,9 @@ public class FactoryTest {
 
     @Test
     public void dwCreateURLStreamHandler() {
-        
+
+        GenericURLFactory.initialize();
+
         GenericURLFactory genericURLFactory = GenericURLFactory.getInstance();
 
         URLStreamHandler handler = genericURLFactory.createURLStreamHandler("abc");

@@ -8,10 +8,22 @@ import java.net.URLConnection;
 import java.net.URLStreamHandler;
 
 public class GenericURLStreamHandler extends URLStreamHandler {
-    Class<URLConnection> urlConnectionClass;
+    private Class<URLConnection> urlConnectionClass;
+    private int defaultPort = -1;
+
+
+    public GenericURLStreamHandler(Class<URLConnection> urlConnectionClass, int defaultPort) {
+        this.urlConnectionClass = urlConnectionClass;
+        this.defaultPort = defaultPort;
+    }
 
     public GenericURLStreamHandler(Class<URLConnection> urlConnectionClass) {
-        this.urlConnectionClass = urlConnectionClass;
+        this(urlConnectionClass, -1);
+    }
+
+    @Override
+    protected int getDefaultPort() {
+        return defaultPort;
     }
 
     @Override
