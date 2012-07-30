@@ -28,7 +28,7 @@
 
 package org.opennms.core.utils.url;
 
-import junit.framework.TestCase;
+import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -39,7 +39,7 @@ import org.junit.Test;
  * @version $Id: $
  * @since 1.8.1
  */
-public class GenericURLFactoryTest extends TestCase {
+public class GenericURLFactoryTest {
 
     /**
      * URL factory to test
@@ -63,39 +63,42 @@ public class GenericURLFactoryTest extends TestCase {
      */
     @Test
     public void testGetInstance() {
-        assertNotNull("Test generic ", m_genericURLFactory);
+        Assert.assertNotNull("Test generic ", m_genericURLFactory);
     }
 
     /**
      * <p>testAddURLConnection</p>
-     * 
+     * <p/>
      * Try to add a new protocol with class mapping
      */
     @Test
     public void testAddURLConnection() {
         m_genericURLFactory.addURLConnection("myProtocol", "org.opennms.test.MyProtocolImplementation");
-        assertEquals("Test add URL connection", m_genericURLFactory.getURLConnections().get("myProtocol"), "org.opennms.test.MyProtocolImplementation");
+        Assert.assertEquals("Test add URL connection", m_genericURLFactory.getURLConnections().get("myProtocol"), "org.opennms.test.MyProtocolImplementation");
     }
 
     /**
      * <p>testRemoveURLConnection</p>
-     * 
+     * <p/>
      * Try to remove a previously added protocol
      */
     @Test
     public void testRemoveURLConnection() {
         m_genericURLFactory.removeURLConnection("myProtocol");
-        assertNull("Test add URL connection", m_genericURLFactory.getURLConnections().get("myProtocol"));
+        Assert.assertNull("Test add URL connection", m_genericURLFactory.getURLConnections().get("myProtocol"));
     }
 
     /**
      * <p>testCreateURLStreamHandler</p>
-     * 
+     * <p/>
      * Try to create a URL stream handler.
      */
     @Test
     public void testCreateURLStreamHandler() {
-        m_genericURLFactory.addURLConnection("testProtocol", "org.opennms.core.utils.url.StubGenericURLConnection");
-        assertEquals("Test get test protocol class", m_genericURLFactory.createURLStreamHandler("testProtocol").getClass().getName(), "org.opennms.core.utils.url.GenericURLStreamHandler");
+        m_genericURLFactory.addURLConnection("testprotocol", "org.opennms.core.utils.url.StubGenericURLConnection");
+        m_genericURLFactory.addURLConnection("noclass", "org.opennms.bkd.class.not.found");
+        Assert.assertEquals("Test get test protocol class", m_genericURLFactory.createURLStreamHandler("testprotocol").getClass().getName(), "org.opennms.core.utils.url.GenericURLStreamHandler");
+        Assert.assertNull(m_genericURLFactory.createURLStreamHandler("undefined_protocol"));
+        Assert.assertNull(m_genericURLFactory.createURLStreamHandler("noclass"));
     }
 }

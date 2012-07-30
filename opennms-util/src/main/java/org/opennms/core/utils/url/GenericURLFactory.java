@@ -66,8 +66,6 @@ public class GenericURLFactory implements URLStreamHandlerFactory {
 
     /**
      * Default constructor to initialize URL connections
-     * <p/>
-     * TODO indigo: maybe a way we can configure it with spring?
      */
     private GenericURLFactory() {
         // Map the protocol dns against the DNS implementation
@@ -92,7 +90,7 @@ public class GenericURLFactory implements URLStreamHandlerFactory {
      * <p/>
      * Implement the GenericURLFactory as singleton
      *
-     * @return a {org.opennms.core.utils.url.GenericURLFactory} object
+     * @return a {org.opennms.core.utils.url.GenericURLFactory} object.
      */
     public static GenericURLFactory getInstance() {
         return genericUrlFactory;
@@ -103,9 +101,9 @@ public class GenericURLFactory implements URLStreamHandlerFactory {
      * <p/>
      * Add protocol URL connection handler with specific class name
      *
-     * @param protocol    a {@link java.lang.String} protocol string
-     * @param classname   a {@link java.lang.String} implementation class name
-     * @param defaultPort the default port for given protocol
+     * @param protocol    name as {@link java.lang.String} object.
+     * @param classname   full qualified classname as {@link java.lang.String} object.
+     * @param defaultPort the default port for given protocol as {@java.lang.int} object.
      */
     public void addURLConnection(String protocol, String classname, int defaultPort) {
         urlConnections.put(protocol, classname);
@@ -117,8 +115,8 @@ public class GenericURLFactory implements URLStreamHandlerFactory {
      * <p/>
      * Add protocol URL connection handler with specific class name
      *
-     * @param protocol  a {@link java.lang.String} protocol string
-     * @param classname a {@link java.lang.String} implementation class name
+     * @param protocol  name as {@link java.lang.String} object.
+     * @param classname full qualified classname as {@link java.lang.String} object.
      */
     public void addURLConnection(String protocol, String classname) {
         addURLConnection(protocol, classname, -1);
@@ -129,7 +127,7 @@ public class GenericURLFactory implements URLStreamHandlerFactory {
      * <p/>
      * Remove a protocol URL connection handler
      *
-     * @param protocol a {@link java.lang.String} protocol string
+     * @param protocol name as {@link java.lang.String} object.
      */
     public void removeURLConnection(String protocol) {
         if (urlConnections.containsKey(protocol)) {
@@ -155,8 +153,8 @@ public class GenericURLFactory implements URLStreamHandlerFactory {
      * <p/>
      * Create stream handler
      *
-     * @param protocol
-     * @return
+     * @param protocol name as {@link java.lang.String} object.
+     * @return a {@java.net.URLStreamHandler} object.
      */
     public URLStreamHandler createURLStreamHandler(String protocol) {
         Class c = null;

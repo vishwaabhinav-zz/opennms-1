@@ -32,18 +32,19 @@ import java.io.IOException;
 import java.net.URL;
 
 /**
- * <p>StubGenericURLConnection class.</p>
- *
- * Stub implementation for GenericURLConnection
+ * <p>ProtectedStubGenericURLConnection class.</p>
+ * <p/>
+ * Protected stub implementation for GenericURLConnection. It is used to provocate no such method exceptions for the
+ * GenericURLFactory feature.
  *
  * @author Ronny Trommer <ronny@opennms.org>
  * @version $Id: $
  * @since 1.8.1
  */
-public class StubGenericURLConnection extends GenericURLConnection{
+public class ProtectedStubGenericURLConnection extends GenericURLConnection {
 
-    public StubGenericURLConnection(URL url) {
-        super (url);
+    protected ProtectedStubGenericURLConnection(URL url) {
+        super(url);
     }
 
     @Override

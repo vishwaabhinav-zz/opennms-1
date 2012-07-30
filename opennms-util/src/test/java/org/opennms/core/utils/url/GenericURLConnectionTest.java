@@ -79,7 +79,7 @@ public class GenericURLConnectionTest extends TestCase {
     @Test
     public void testBaseUrlPassword() {
         m_genericURLConnection = new StubGenericURLConnection(m_baseUrl);
-        assertNull("Test base URL", m_genericURLConnection.getUsername());
+        assertNull("Test base URL", m_genericURLConnection.getPassword());
     }
 
     @Test

@@ -64,7 +64,7 @@ public abstract class GenericURLConnection extends URLConnection {
     /**
      * Default encoding for URL
      */
-    private static final String URL_DECODE = "UTF-8";
+    private static final String UTF8_ENCODING = "UTF-8";
 
     /**
      * Delimiter for URL arguments
@@ -146,9 +146,10 @@ public abstract class GenericURLConnection extends URLConnection {
         if (queryString != null) {
 
             try {
-                queryString = URLDecoder.decode(queryString, URL_DECODE);
+                queryString = URLDecoder.decode(queryString, UTF8_ENCODING);
             } catch (UnsupportedEncodingException e) {
-                logger.error("Unsupported encoding during decoding URL query string: '{}'. Error message: '{}'", queryString, e.getMessage());
+                // Your system does not support UTF-8 encoding
+                logger.error("Unsupported " + UTF8_ENCODING + " encoding for URL query string: '{}'. Error message: '{}'", queryString, e.getMessage());
             }
 
             // queryString is everthing behind "?"
