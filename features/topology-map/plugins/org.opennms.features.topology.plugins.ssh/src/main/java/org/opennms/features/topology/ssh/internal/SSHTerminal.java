@@ -39,6 +39,7 @@ import com.vaadin.ui.ClientWidget;
 @ClientWidget(VTerminal.class)
 public class SSHTerminal extends AbstractComponent {
 
+
 	private static final long serialVersionUID = -8914800725736485264L; // serialization ID
 	private int TERM_WIDTH;  // The width of the terminal
 	private int TERM_HEIGHT;  // The height of the terminal
@@ -77,9 +78,10 @@ public class SSHTerminal extends AbstractComponent {
 	/**
 	 * Closes the client window
 	 */
-	public void close() {
+	public boolean close() {
 		closeClient = true;
 		requestRepaint();
+		return closeClient;
 	}
 
 	/** Paint (serialize) the component for the client. */
@@ -109,14 +111,12 @@ public class SSHTerminal extends AbstractComponent {
 		if (variables.containsKey("toSSH") && !isReadOnly()) {
 			final String bytesToSSH = (String) variables.get("toSSH");
 			try {
-				if (st == null) {
-					st = new SessionTerminal();
-				}
 				dumpContents = st.handle(bytesToSSH, true);
 				requestRepaint();
 			} catch (IOException e) { e.printStackTrace(); }
 		}
 	}
+	
 
 	/**
 	 * Nested class used to create the client side terminal
@@ -152,7 +152,8 @@ public class SSHTerminal extends AbstractComponent {
 				e.printStackTrace();
 			}
 		}
-		
+
+
 		/**
 		 * Handles the content recieved from the server
 		 * 
@@ -211,6 +212,7 @@ public class SSHTerminal extends AbstractComponent {
 				e.printStackTrace();
 			}
 		}
+		
 	}
 
 }

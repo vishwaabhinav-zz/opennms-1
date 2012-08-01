@@ -7,29 +7,61 @@ import org.opennms.features.topology.api.OperationContext;
 import org.opennms.features.topology.netutils.internal.EventsAlarmsWindow;
 import org.opennms.features.topology.netutils.internal.Node;
 
+import com.vaadin.data.Item;
+
 public class EventsAlarmsOperation implements Operation {
 
-	/*Test Data*/
-	private Node testNode1 = new Node(9,"172.20.1.10","Cartman");
-	private Node testNode2 = new Node(43, "172.20.1.14", "Butters");
-	
 	private String eventsURL;
+	private String eventsFilter;
 	private String alarmsURL;
-	
+	private String alarmsFilter;
+
 	public boolean display(List<Object> targets, OperationContext operationContext) {
-		// TODO Auto-generated method stub
+		int nodeID = 0;
+
+		if (targets != null) {
+			for(Object target : targets) {
+				nodeID = (Integer) operationContext.getGraphContainer().getVertexItem(target).getItemProperty("nodeID").getValue();
+			}
+		}
+		if (nodeID < 0) return false;
 		return true;
 	}
 
 	public boolean enabled(List<Object> targets, OperationContext operationContext) {
-		// TODO Auto-generated method stub
+		int nodeID = 0;
+
+		if (targets != null) {
+			for(Object target : targets) {
+			    Item item = operationContext.getGraphContainer().getVertexItem(target);
+				nodeID = item.getItemProperty("nodeID").getValue() != null ? (Integer)item.getItemProperty("nodeID").getValue() : -1;
+			}
+		}
+		if (nodeID < 0) return false;
 		return true;
 	}
 
 	public Undoer execute(List<Object> targets, OperationContext operationContext) {
+		//Default server info
+		String ipAddr = "";
+		String label = "";
+		int nodeID = -1;
+
 		try {
-			operationContext.getMainWindow().addWindow(new EventsAlarmsWindow(testNode1, getEventsURL(), getAlarmsURL()));
-		} catch (Exception e) { e.printStackTrace(); }
+			if (targets != null) {
+				for(Object target : targets) {
+					ipAddr = (String) operationContext.getGraphContainer().getVertexItem(target).getItemProperty("ipAddr").getValue();
+					label = (String) operationContext.getGraphContainer().getVertexItem(target).getItemProperty("label").getValue();
+					nodeID = (Integer) operationContext.getGraphContainer().getVertexItem(target).getItemProperty("nodeID").getValue();
+				}
+			}
+			if (nodeID < 0) {
+				operationContext.getMainWindow().addWindow(new EventsAlarmsWindow(null, getEventsURL(), getAlarmsURL()));
+			} else {
+				Node node = new Node(nodeID, ipAddr, label);
+				operationContext.getMainWindow().addWindow(new EventsAlarmsWindow(node, getEventsFilter(), getAlarmsFilter()));
+			}
+		} catch (Exception e) {e.printStackTrace();}
 		return null;
 	}
 
@@ -52,6 +84,22 @@ public class EventsAlarmsOperation implements Operation {
 
 	public void setEventsURL(String eventsURL) {
 		this.eventsURL = eventsURL;
+	}
+
+	public String getEventsFilter() {
+		return eventsFilter;
+	}
+
+	public void setEventsFilter(String eventsFilter) {
+		this.eventsFilter = eventsFilter;
+	}
+
+	public String getAlarmsFilter() {
+		return alarmsFilter;
+	}
+
+	public void setAlarmsFilter(String alarmsFilter) {
+		this.alarmsFilter = alarmsFilter;
 	}
 
 }

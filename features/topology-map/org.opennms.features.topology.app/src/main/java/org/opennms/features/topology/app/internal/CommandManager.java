@@ -2,11 +2,13 @@ package org.opennms.features.topology.app.internal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.opennms.features.topology.api.CheckedOperation;
 import org.opennms.features.topology.api.Operation;
 import org.opennms.features.topology.api.OperationContext;
 
@@ -23,6 +25,7 @@ public class CommandManager  {
         
         private Window m_mainWindow;
         private SimpleGraphContainer m_graphContainer;
+        private boolean m_checked = false;
 
         public DefaultOperationContext(Window mainWindow, SimpleGraphContainer graphContainer) {
             m_mainWindow = mainWindow;
@@ -38,6 +41,15 @@ public class CommandManager  {
         public SimpleGraphContainer getGraphContainer() {
             return m_graphContainer;
         }
+        
+        public void setChecked(boolean checked) {
+            m_checked = checked;
+        }
+        
+        @Override
+        public boolean isChecked() {
+            return m_checked;
+        }
 
     }
     
@@ -46,6 +58,7 @@ public class CommandManager  {
     private List<CommandUpdateListener> m_updateListeners = new ArrayList<CommandUpdateListener>();
     private List<String> m_topLevelMenuOrder = new ArrayList<String>();
     private Map<String, List<String>> m_subMenuGroupOrder = new HashMap<String, List<String>>();
+    private Map<MenuBar.Command, Operation> m_commandToOperationMap = new HashMap<MenuBar.Command, Operation>();
     
     public CommandManager() {}
     
@@ -81,10 +94,16 @@ public class CommandManager  {
         
         for(Command command : getCommandList()) {
             String menuPosition = command.getMenuPosition();
-            menuBarBuilder.addMenuCommand(menuCommand(command, graphContainer, mainWindow, opContext), menuPosition);
+            MenuBar.Command menuCommand = menuCommand(command, graphContainer, mainWindow, opContext);
+            updateCommandToOperationMap(command, menuCommand);
+            menuBarBuilder.addMenuCommand(menuCommand, menuPosition);
         }
         MenuBar menuBar = menuBarBuilder.get();
         return menuBar;
+    }
+
+    private void updateCommandToOperationMap(Command command, MenuBar.Command menuCommand) {
+        m_commandToOperationMap.put(menuCommand, command.getOperation());
     }
     
     public MenuBar.Command menuCommand(final Command command, final SimpleGraphContainer graphContainer, final Window mainWindow, final OperationContext operationContext){
@@ -92,23 +111,17 @@ public class CommandManager  {
         return new MenuBar.Command() {
             
             public void menuSelected(MenuItem selectedItem) {
-                List<Object> targets = new ArrayList<Object>();
-                //Adding a check for selected vertices.
-                for(Object vId : operationContext.getGraphContainer().getVertexIds()) {
-                    Item vItem = operationContext.getGraphContainer().getVertexItem(vId);
-                    boolean selected = (Boolean) vItem.getItemProperty("selected").getValue();
-                    if(selected) {
-                        targets.add(vItem.getItemProperty("key").getValue());
-                    }
-                }
+                List<Object> targets = getSelectedVertices(operationContext);
                 
+                DefaultOperationContext context = (DefaultOperationContext) operationContext;
+                context.setChecked(selectedItem.isChecked());
                 
                 command.doCommand(targets, operationContext);
                 m_commandHistoryList.add(command);
             }
         };
     }
-
+    
     void addActionHandlers(TopologyComponent topologyComponent, SimpleGraphContainer graphContainer, Window mainWindow) {
         topologyComponent.addActionHandler(new ActionHandler(new DefaultOperationContext(mainWindow,graphContainer)));
     }
@@ -117,6 +130,10 @@ public class CommandManager  {
     
     public List<Command> getHistoryList(){
         return m_commandHistoryList;
+    }
+    
+    public Operation getOperationByCommand(MenuBar.Command command) {
+        return m_commandToOperationMap.get(command);
     }
 
     public void updateMenuBar(SimpleGraphContainer graphContainer) {
@@ -191,8 +208,7 @@ public class CommandManager  {
         
     }
     
-    public void updateMenuConfig(Map props) { 
-        System.out.println("Getting config with these parameters: " + props);
+    public void updateMenuConfig(Dictionary props) { 
         List<String> topLevelOrder = Arrays.asList(props.get("toplevelMenuOrder").toString().split(","));
         setTopLevelMenuOrder(topLevelOrder);
         
@@ -203,6 +219,9 @@ public class CommandManager  {
             }
         }
         addOrUpdateGroupOrder("Default", Arrays.asList(props.get("submenu.Default.groups").toString().split(",")));
+        
+        updateCommandListeners();
+        
     }
 
     public void addOrUpdateGroupOrder(String key, List<String> orderSet) {
@@ -217,6 +236,33 @@ public class CommandManager  {
     
     public Map<String, List<String>> getMenuOrderConfig(){
         return m_subMenuGroupOrder;
+    }
+
+    private List<Object> getSelectedVertices(final OperationContext operationContext) {
+        List<Object> targets = new ArrayList<Object>();
+        for(Object vId : operationContext.getGraphContainer().getVertexIds()) {
+            Item vItem = operationContext.getGraphContainer().getVertexItem(vId);
+            boolean selected = (Boolean) vItem.getItemProperty("selected").getValue();
+            if(selected) {
+                targets.add(vItem.getItemProperty("key").getValue());
+            }
+        }
+        return targets;
+    }
+
+    public void updateMenuItem(MenuItem menuItem, SimpleGraphContainer graphContainer, Window mainWindow) {
+        DefaultOperationContext operationContext = new DefaultOperationContext(mainWindow, graphContainer);
+        Operation operation = getOperationByCommand(menuItem.getCommand());
+        
+        
+        boolean visibility = operation.display(getSelectedVertices(operationContext), operationContext);
+        menuItem.setVisible(visibility);
+        boolean enabled = operation.enabled(getSelectedVertices(operationContext), operationContext);
+        menuItem.setEnabled(enabled);
+        
+        if(operation instanceof CheckedOperation) {
+            menuItem.setChecked(((CheckedOperation) operation).isChecked(getSelectedVertices(operationContext), operationContext));
+        }
     }
     
 }
