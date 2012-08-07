@@ -29,6 +29,7 @@
 package org.opennms.rest.client;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 import java.util.List;
 
@@ -55,8 +56,7 @@ import org.springframework.test.context.ContextConfiguration;
         "classpath:/META-INF/opennms/applicationContext-dao.xml",
         "classpath:/META-INF/opennms/applicationContext-soa.xml",
         "classpath:/META-INF/opennms/applicationContext-daemon.xml",
-        "classpath:/META-INF/opennms/applicationContext-databasePopulator.xml",
-        "classpath:/META-INF/opennms/applicationContext-minimal-conf.xml"
+        "classpath:/META-INF/opennms/applicationContext-databasePopulator.xml"
 })
 @JUnitConfigurationEnvironment
 @JUnitTemporaryDatabase
@@ -111,12 +111,9 @@ public class ClientDataLinkInterfaceServiceTest {
         datalinkinterface = m_datalinkinterfaceservice.get(66);
         checkId66(datalinkinterface);
 
-        String xml = m_datalinkinterfaceservice.getXml("");
-        assertTrue(xml.contains("count=\"3\""));
- 
-        xml = m_datalinkinterfaceservice.getXml("64");
-        assertTrue(xml.contains("id=\"64\""));
- 
+        int count = m_datalinkinterfaceservice.countAll();
+        assertEquals(3,count);
+  
     }
 
 /*

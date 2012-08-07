@@ -1,69 +1,92 @@
 package org.opennms.rest.client.internal;
 
+import javax.ws.rs.core.MultivaluedMap;
+
+import com.sun.jersey.core.util.MultivaluedMapImpl;
+
 public class JerseyAbstractService {
 
-	public String setLimit(Integer limit) {
-		return "limit="+Integer.toString(limit);
+	public MultivaluedMap<String, String> setLimit(Integer limit) {
+		MultivaluedMap< String, String> queryParams = new MultivaluedMapImpl();
+		queryParams.add("limit", Integer.toString(limit));
+		return queryParams;
 	}
 	
-	public String setOffset(Integer offset){
-		return "offset="+Integer.toString(offset);
+	public MultivaluedMap<String, String> setOffset(Integer offset){
+		MultivaluedMap< String, String> queryParams = new MultivaluedMapImpl();
+		queryParams.add("offset", Integer.toString(offset));
+		return queryParams;
 	}
 	
-	public String setOrderBy(String field) {
-		return "orderBy="+field;
+	public MultivaluedMap<String, String> setOrderBy(String field) {
+		MultivaluedMap< String, String> queryParams = new MultivaluedMapImpl();
+		queryParams.add("orderBy", field);
+		return queryParams;
 	}
 	
-	public String setOrderDesc(String queryString) {
-		return queryString+"&"+"order=desc";
+	public MultivaluedMap<String, String> setOrderDesc(MultivaluedMap<String, String> queryParams) {
+		queryParams.add("order", "desc");
+		return queryParams;
 	}
 
-	public String setLimit(String queryString, Integer limit) {
-		return queryString+"&"+setLimit(limit);
+	public MultivaluedMap<String, String> setLimit(MultivaluedMap<String, String> queryParams, Integer limit) {
+		queryParams.add("limit", Integer.toString(limit));
+		return queryParams;
 	}
 	
-	public String setOffset(String queryString, Integer offset) {
-		return queryString+"&"+setOffset(offset);
+	public MultivaluedMap<String, String> setOffset(MultivaluedMap<String, String> queryParams, Integer offset) {
+		queryParams.add("offset", Integer.toString(offset));
+		return queryParams;
 	}
 	
-	public String setOrderBy(String queryString, String field) {
-		return queryString+"&"+setOrderBy(field);
+	public MultivaluedMap<String, String> setOrderBy(MultivaluedMap<String, String> queryParams, String field) {
+		queryParams.add("orderBy", field);
+		return queryParams;
 	}
 	
-	public String setEqualComparator(String queryString) {
-		return queryString+"&comparator=eq";
+	public MultivaluedMap<String, String> setEqualComparator(MultivaluedMap<String, String> queryParams) {
+		queryParams.add("comparator", "eq");
+		return queryParams;
 	}
 
-	public String setNotEqualComparator(String queryString) {
-		return queryString+"&comparator=ne";
+	public MultivaluedMap<String, String> setNotEqualComparator(MultivaluedMap<String, String> queryParams) {
+		queryParams.add("comparator", "ne");
+		return queryParams;
 	}
 	
-	public String setIlikeComparator(String queryString) {
-		return queryString+"&comparator=ilike";
+	public MultivaluedMap<String, String> setIlikeComparator(MultivaluedMap<String, String> queryParams) {
+		queryParams.add("comparator", "ilike");
+		return queryParams;
 	}
 	
-	public String setLikeComparator(String queryString) {
-		return queryString+"&comparator=like";
+	public MultivaluedMap<String, String> setLikeComparator(MultivaluedMap<String, String> queryParams) {
+		queryParams.add("comparator", "like");
+		return queryParams;
 	}
 	
-	public String setGreaterThanComparator(String queryString) {
-		return queryString+"&comparator=gt";
+	public MultivaluedMap<String, String> setGreaterThanComparator(MultivaluedMap<String, String> queryParams) {
+		queryParams.add("comparator", "gt");
+		return queryParams;
 	}
 	
-	public String setGreaterEqualsComparator(String queryString) {
-		return queryString+"&comparator=ge";
+	public MultivaluedMap<String, String> setGreaterEqualsComparator(MultivaluedMap<String, String> queryParams) {
+		queryParams.add("comparator", "ge");
+		return queryParams;
 	}
 	
-	public String setLessThanComparator(String queryString) {
-		return queryString+"&comparator=lt";
+	public MultivaluedMap<String, String> setLessThanComparator(MultivaluedMap<String, String> queryParams) {
+		queryParams.add("comparator", "lt");
+		return queryParams;
 	}
 	
-	public String setLessEqualsComparator(String queryString) {
-		return queryString+"&comparator=le";
+	public MultivaluedMap<String, String> setLessEqualsComparator(MultivaluedMap<String, String> queryParams) {
+		queryParams.add("comparator", "le");
+		return queryParams;
 	}
 	
-	public String setQuery(String queryString, String sqlStatement) {
-		return queryString+"&query="+sqlStatement;
+	public MultivaluedMap<String, String> setQuery(MultivaluedMap<String, String> queryParams, String sqlStatement) {
+		queryParams.add("query", sqlStatement);
+		return queryParams;
 	}
 	
 }

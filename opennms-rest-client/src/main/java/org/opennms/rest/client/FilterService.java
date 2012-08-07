@@ -1,37 +1,39 @@
 package org.opennms.rest.client;
 
+import javax.ws.rs.core.MultivaluedMap;
+
 public interface FilterService {
 
-	public String setLimit(Integer limit);
+	public MultivaluedMap<String, String> setLimit(Integer limit);
 	
-	public String setOffset(Integer offset);
+	public MultivaluedMap<String, String> setOffset(Integer offset);
 	
-	public String setOrderBy(String field);
+	public MultivaluedMap<String, String> setOrderBy(String field);
 
-	public String setOrderDesc(String queryString);
+	public MultivaluedMap<String, String> setOrderDesc(MultivaluedMap<String,String> queryParams);
 
-	public String setLimit(String queryString, Integer limit);
+	public MultivaluedMap<String, String> setLimit(MultivaluedMap<String,String> queryParams, Integer limit);
 	
-	public String setOffset(String queryString, Integer offset);
+	public MultivaluedMap<String, String> setOffset(MultivaluedMap<String,String> queryParams, Integer offset);
 	
-	public String setOrderBy(String queryString, String field);
+	public MultivaluedMap<String, String> setOrderBy(MultivaluedMap<String,String> queryParams, String field);
 	
-	public String setEqualComparator(String queryString);
+	public MultivaluedMap<String, String> setEqualComparator(MultivaluedMap<String,String> queryParams);
 
-	public String setNotEqualComparator(String queryString);
+	public MultivaluedMap<String, String> setNotEqualComparator(MultivaluedMap<String,String> queryParams);
 	
-	public String setIlikeComparator(String queryString);
+	public MultivaluedMap<String, String> setIlikeComparator(MultivaluedMap<String,String> queryParams);
 	
-	public String setLikeComparator(String queryString);
+	public MultivaluedMap<String, String> setLikeComparator(MultivaluedMap<String,String> queryParams);
 	
-	public String setGreaterThanComparator(String queryString);
+	public MultivaluedMap<String, String> setGreaterThanComparator(MultivaluedMap<String,String> queryParams);
 	
-	public String setGreaterEqualsComparator(String queryString);
+	public MultivaluedMap<String, String> setGreaterEqualsComparator(MultivaluedMap<String,String> queryParams);
 	
-	public String setLessThanComparator(String queryString);
+	public MultivaluedMap<String, String> setLessThanComparator(MultivaluedMap<String,String> queryParams);
 	
-	public String setLessEqualsComparator(String queryString);
+	public MultivaluedMap<String, String> setLessEqualsComparator(MultivaluedMap<String,String> queryParams);
 	
-	public String setQuery(String queryString, String sqlStatement);
+	public MultivaluedMap<String, String> setQuery(MultivaluedMap<String,String> queryParams, String sqlStatement);
 	
 }

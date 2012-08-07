@@ -2,6 +2,7 @@ package org.opennms.rest.client.internal;
 
 
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
@@ -24,11 +25,29 @@ public class JerseyClientImpl {
         m_webResource = m_client.resource(url);
         
     }
+    
+    public <T> T get(Class<T> clazz,String relativePath, MultivaluedMap<String, String> queryParams) {
+        return m_webResource.path(relativePath).queryParams(queryParams).accept(MediaType.APPLICATION_XML_TYPE).get(clazz);
+    }
+
     public <T> T get(Class<T> clazz,String relativePath) {
         return m_webResource.path(relativePath).accept(MediaType.APPLICATION_XML_TYPE).get(clazz);
     }
-    
+
     public String getXml(String relativePath) {
         return m_webResource.path(relativePath).accept(MediaType.APPLICATION_XML_TYPE).get(String.class);
     }
+    
+    public String getXml(String relativePath,MultivaluedMap<String, String> queryParams) {
+        return m_webResource.path(relativePath).queryParams(queryParams).accept(MediaType.APPLICATION_XML_TYPE).get(String.class);
+    }
+
+    public String get(String relativePath) {
+    	return m_webResource.path(relativePath).accept(MediaType.TEXT_PLAIN).get(String.class);
+    }
+    
+    public String get(String relativePath,MultivaluedMap<String, String> queryParams) {
+    	return m_webResource.path(relativePath).queryParams(queryParams).accept(MediaType.TEXT_PLAIN).get(String.class);
+    }
+
 }
