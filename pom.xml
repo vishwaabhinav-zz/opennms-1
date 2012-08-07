@@ -116,6 +116,7 @@
     <module>opennms-jetty</module>
     <module>opennms-correlation</module>
     <module>opennms-reporting</module>
+    <module>opennms-rest-client</module>
     <module>opennms-qosdaemon</module>
     <module>opennms-web-api</module>
     <module>opennms-web-dependencies</module>
