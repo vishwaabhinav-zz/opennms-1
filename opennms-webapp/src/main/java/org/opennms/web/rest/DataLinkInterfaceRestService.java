@@ -107,5 +107,25 @@ public class DataLinkInterfaceRestService extends OnmsRestService {
             readUnlock();
         }
     }
+    
+    /**
+     * <p>getCount</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("count")
+    @Transactional
+    public String getCount() {
+        readLock();
+        try {
+            return Integer.toString(m_dataLinkInterfaceDao.countAll());
+        } finally {
+            readUnlock();
+        }
+    }
+
+
 
 }

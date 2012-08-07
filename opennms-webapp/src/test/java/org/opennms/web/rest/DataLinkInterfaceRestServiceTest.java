@@ -46,6 +46,7 @@ public class DataLinkInterfaceRestServiceTest extends AbstractSpringJerseyRestTe
 		m_databasePopulator = context.getBean("databasePopulator", DatabasePopulator.class);
         m_databasePopulator.populateDatabase();
 	}
+	
 
 	@Test
 	public void testLinks() throws Exception {
@@ -53,6 +54,11 @@ public class DataLinkInterfaceRestServiceTest extends AbstractSpringJerseyRestTe
 		assertTrue(xml.contains("<links count=\"3\""));
 	}
 
+	@Test 
+	public void testLinksCount() throws Exception {
+		String countsString = sendRequest(GET, "/links/count", 200);
+		assertTrue(3==Integer.parseInt(countsString));
+	}
 	@Test
 	public void testLink() throws Exception {
             String xml = sendRequest(GET, "/links/64",200);
