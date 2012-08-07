@@ -4,7 +4,7 @@ import org.opennms.rest.client.DataLinkInterfaceService;
 import org.opennms.rest.model.ClientDataLinkInterface;
 import org.opennms.rest.model.ClientDataLinkInterfaceList;
 
-public class JerseyDataLinkInterfaceService implements DataLinkInterfaceService  {
+public class JerseyDataLinkInterfaceService extends JerseyAbstractService implements DataLinkInterfaceService {
 
     private static String REST_PATH = "links/";
     
@@ -19,7 +19,8 @@ public class JerseyDataLinkInterfaceService implements DataLinkInterfaceService 
     }
 
     public ClientDataLinkInterfaceList getAll() {
-        return getJerseyClient().get(ClientDataLinkInterfaceList.class, REST_PATH);                
+    	String queryString = setLimit(0);
+        return getJerseyClient().get(ClientDataLinkInterfaceList.class, REST_PATH+"?"+queryString);                
     }
  
     public ClientDataLinkInterface get(Integer id) {
@@ -29,4 +30,8 @@ public class JerseyDataLinkInterfaceService implements DataLinkInterfaceService 
     public String getXml(String relativePath) {
         return getJerseyClient().getXml(REST_PATH+relativePath);
     }
+
+	public int countAll() {
+		return Integer.parseInt(getJerseyClient().getXml(REST_PATH+"count"));
+	}
 }

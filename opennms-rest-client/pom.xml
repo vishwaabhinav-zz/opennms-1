@@ -81,6 +81,7 @@
       <artifactId>opennms-services</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
+      <version>1.11.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.opennms</groupId>
@@ -101,13 +102,8 @@
       <artifactId>org.opennms.tests.mock-elements</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.opennms</groupId>
-      <artifactId>opennms-dao</artifactId>
-      <type>test-jar</type>
-    </dependency>
-    <dependency>
       <groupId>org.opennms.core.test-api</groupId>
-      <artifactId>org.opennms.core.test-api.dns</artifactId>
+      <artifactId>org.opennms.core.test-api.db</artifactId>
     </dependency>
     <dependency>
       <groupId>org.opennms.core.test-api</groupId>
