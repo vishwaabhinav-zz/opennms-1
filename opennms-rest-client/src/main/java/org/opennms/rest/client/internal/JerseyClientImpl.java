@@ -7,20 +7,20 @@ import javax.ws.rs.core.MultivaluedMap;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.client.apache.ApacheHttpClient;
-import com.sun.jersey.client.apache.config.ApacheHttpClientConfig;
 import com.sun.jersey.client.apache.config.DefaultApacheHttpClientConfig;
 
 public class JerseyClientImpl {
 
     Client m_client;
+
     DefaultApacheHttpClientConfig m_config;
+    
     WebResource m_webResource;
+    
     public JerseyClientImpl(String url, String username, String password) {
         
         m_config = new DefaultApacheHttpClientConfig();
         m_config.getState().setCredentials(null, null,-1, username, password);
-        m_config.getProperties().put(
-                              ApacheHttpClientConfig.PROPERTY_FOLLOW_REDIRECTS, true);
         m_client = ApacheHttpClient.create(m_config);
         m_webResource = m_client.resource(url);
         

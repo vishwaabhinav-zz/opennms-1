@@ -23,7 +23,12 @@ public class JerseyAbstractService {
 		queryParams.add("orderBy", field);
 		return queryParams;
 	}
-	
+
+	public MultivaluedMap<String, String> set(MultivaluedMap<String, String> queryParams, String field,String value) {
+		queryParams.add(field, value);
+		return queryParams;
+	}
+
 	public MultivaluedMap<String, String> setOrderDesc(MultivaluedMap<String, String> queryParams) {
 		queryParams.add("order", "desc");
 		return queryParams;

@@ -10,6 +10,8 @@ public interface FilterService {
 	
 	public MultivaluedMap<String, String> setOrderBy(String field);
 
+	public MultivaluedMap<String, String> set(MultivaluedMap<String,String> queryParams, String field, String value);
+
 	public MultivaluedMap<String, String> setOrderDesc(MultivaluedMap<String,String> queryParams);
 
 	public MultivaluedMap<String, String> setLimit(MultivaluedMap<String,String> queryParams, Integer limit);
