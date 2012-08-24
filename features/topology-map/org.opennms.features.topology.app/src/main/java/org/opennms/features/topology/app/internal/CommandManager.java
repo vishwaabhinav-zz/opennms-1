@@ -69,7 +69,10 @@ public class CommandManager {
 		public void contextItemClick(ClickEvent event) {
 			Operation operation = m_contextMenuItemsToOperationMap.get(event.getClickedItem());
 			//TODO: Do some implementation here for execute
-			operation.execute(getSelectedVertices(m_opContext), m_opContext);
+			if (operation != null) {
+				TopoContextMenu source = (TopoContextMenu)event.getSource();
+				operation.execute(Arrays.asList(source.getTarget()), m_opContext);
+			}
 		}
 		
 	}
@@ -180,7 +183,7 @@ public class CommandManager {
 		return new MenuBar.Command() {
 
 			public void menuSelected(MenuItem selectedItem) {
-				List<Object> targets = getSelectedVertices(operationContext);
+				List<Object> targets = graphContainer.getSelectedVertices();
 
 				DefaultOperationContext context = (DefaultOperationContext) operationContext;
 				context.setChecked(selectedItem.isChecked());
@@ -333,9 +336,9 @@ public class CommandManager {
 		DefaultOperationContext operationContext = new DefaultOperationContext(mainWindow, graphContainer);
 		Operation operation = getOperationByMenuItemCommand(menuItem.getCommand());
 
-		boolean visibility = operation.display(getSelectedVertices(operationContext), operationContext);
+		boolean visibility = operation.display(graphContainer.getSelectedVertices(), operationContext);
 		menuItem.setVisible(visibility);
-		boolean enabled = operation.enabled(getSelectedVertices(operationContext), operationContext);
+		boolean enabled = operation.enabled(graphContainer.getSelectedVertices(), operationContext);
 		menuItem.setEnabled(enabled);
 
 		if (operation instanceof CheckedOperation) {
@@ -343,7 +346,7 @@ public class CommandManager {
 				menuItem.setCheckable(true);
 			}
 
-			menuItem.setChecked(((CheckedOperation) operation).isChecked(getSelectedVertices(operationContext), operationContext));
+			menuItem.setChecked(((CheckedOperation) operation).isChecked(graphContainer.getSelectedVertices(), operationContext));
 		}
 	}
 
@@ -352,11 +355,10 @@ public class CommandManager {
         
         ContextMenuItem ctxMenuItem = contextItem.getItem();
         Operation operation = m_contextMenuItemsToOperationMap.get(ctxMenuItem);
-        
+     
         List<Object> targets = Arrays.asList(target);
         ctxMenuItem.setVisible(operation.display(targets, operationContext));
-        ctxMenuItem.setEnabled(operation.enabled(targets, operationContext));
-        
+        ctxMenuItem.setEnabled(operation.enabled(targets, operationContext));   
     }
 
 }

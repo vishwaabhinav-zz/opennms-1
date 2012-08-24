@@ -1,6 +1,7 @@
 package org.opennms.features.topology.app.internal;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -11,6 +12,7 @@ import java.util.Set;
 import org.opennms.features.topology.api.DisplayState;
 import org.opennms.features.topology.api.GraphContainer;
 import org.opennms.features.topology.app.internal.gwt.client.VTopologyComponent;
+import org.opennms.features.topology.app.internal.support.IconRepositoryManager;
 
 import com.vaadin.data.Container.ItemSetChangeEvent;
 import com.vaadin.data.Container.ItemSetChangeListener;
@@ -63,6 +65,7 @@ public class TopologyComponent extends AbstractComponent implements Action.Conta
 	private MapManager m_mapManager = new MapManager();
     private List<MenuItemUpdateListener> m_menuItemStateListener = new ArrayList<MenuItemUpdateListener>();
     private ContextMenuHandler m_contextMenuHandler;
+    private IconRepositoryManager m_iconRepoManager;
 
 	public TopologyComponent(GraphContainer dataSource) {
 		setGraph(new Graph(dataSource));
@@ -130,7 +133,7 @@ public class TopologyComponent extends AbstractComponent implements Action.Conta
         		target.addAttribute("x", group.getX());
         		target.addAttribute("y", group.getY());
         		target.addAttribute("selected", group.isSelected());
-        		target.addAttribute("iconUrl", group.getIconUrl());
+        		target.addAttribute("iconUrl", m_iconRepoManager.lookupIconUrlByType(group.getIconKey()));
         		target.addAttribute("semanticZoomLevel", group.getSemanticZoomLevel());
         		target.addAttribute("label", group.getLabel());
 
@@ -156,7 +159,7 @@ public class TopologyComponent extends AbstractComponent implements Action.Conta
         		target.addAttribute("x", vert.getX());
         		target.addAttribute("y", vert.getY());
         		target.addAttribute("selected", vert.isSelected());
-        		target.addAttribute("iconUrl", vert.getIconUrl());
+        		target.addAttribute("iconUrl", m_iconRepoManager.lookupIconUrlByType(vert.getIconKey()));
         		target.addAttribute("semanticZoomLevel", vert.getSemanticZoomLevel());
         		if (vert.getGroupId() != null) {
         			target.addAttribute("groupKey", vert.getGroupKey());
@@ -254,6 +257,7 @@ public class TopologyComponent extends AbstractComponent implements Action.Conta
         });
     }
     
+	@SuppressWarnings("unchecked")
 	@Override
     public void changeVariables(Object source, Map<String, Object> variables) {
         if(variables.containsKey("graph")) {
@@ -270,6 +274,15 @@ public class TopologyComponent extends AbstractComponent implements Action.Conta
         	    singleSelectVertex(vertexId);
         	}
         	
+        }
+        
+        if(variables.containsKey("marqueeSelection")) {
+            String[] vertexIds = (String[]) variables.get("marqueeSelection");
+            if(variables.containsKey("shiftKeyPressed") && (Boolean) variables.get("shiftKeyPressed") == false) {
+                clearAllVertexSelections();
+            }
+            
+            bulkMultiSelectVertex(vertexIds);
         }
         
         if(variables.containsKey("action")) {
@@ -289,19 +302,21 @@ public class TopologyComponent extends AbstractComponent implements Action.Conta
         
         if(variables.containsKey("updatedVertex")) {
             String vertexUpdate = (String) variables.get("updatedVertex");
-            String[] vertexProps = vertexUpdate.split("\\|");
-            
-            String id = vertexProps[0].split(",")[1];
-            int x = (int) Double.parseDouble(vertexProps[1].split(",")[1]);
-            int y = (int) Double.parseDouble(vertexProps[2].split(",")[1]);
-            boolean selected = vertexProps[3].split(",")[1] == "true" ;
-            
-            Vertex vertex = getGraph().getVertexByKey(id);
-            vertex.setX(x);
-            vertex.setY(y);
-            vertex.setSelected(selected);
+            updateVertex(vertexUpdate);
             
             requestRepaint();
+        }
+        
+        if(variables.containsKey("updateVertices")) {
+            String[] vertices = (String[]) variables.get("updateVertices");
+            for(String vUpdate : vertices) {
+                updateVertex(vUpdate);
+            }
+            
+            if(vertices.length > 0) {
+                requestRepaint();
+            }
+            
         }
         
         if(variables.containsKey("mapScale")) {
@@ -322,14 +337,43 @@ public class TopologyComponent extends AbstractComponent implements Action.Conta
         if(variables.containsKey("contextMenu")) {
             Map<String, Object> props = (Map<String, Object>) variables.get("contextMenu");
             
+            String type = (String) props.get("type");
+            
             int x = (Integer) props.get("x");
             int y = (Integer) props.get("y");
-            getContextMenuHandler().show(props.get("target"), x, y);
+            Object itemId = (Object)props.get("target");
+
+            if (type.toLowerCase().equals("vertex")) {
+	                Vertex vertex = getGraph().getVertexByKey((String)itemId);
+	                itemId = vertex.getItemId();
+            }
+
+            getContextMenuHandler().show(itemId, x, y);
         }
         
         updateMenuItems();
     }
+
+    private void updateVertex(String vertexUpdate) {
+        String[] vertexProps = vertexUpdate.split("\\|");
+        
+        String id = vertexProps[0].split(",")[1];
+        int x = (int) Double.parseDouble(vertexProps[1].split(",")[1]);
+        int y = (int) Double.parseDouble(vertexProps[2].split(",")[1]);
+        boolean selected = vertexProps[3].split(",")[1] == "true" ;
+        
+        Vertex vertex = getGraph().getVertexByKey(id);
+        vertex.setX(x);
+        vertex.setY(y);
+        vertex.setSelected(selected);
+    }
     
+	private void clearAllVertexSelections() {
+	    for(Vertex vertex : getGraph().getVertices()) {
+	        vertex.setSelected(false);
+	    }
+	}
+	
     private void singleSelectVertex(String vertexId) {
         for(Vertex vertex : getGraph().getVertices()) {
             vertex.setSelected(false);
@@ -337,7 +381,29 @@ public class TopologyComponent extends AbstractComponent implements Action.Conta
         
         toggleSelectedVertex(vertexId);
     }
-
+    
+    public void selectVerticesByItemId(Collection<Object> itemIds) {
+        for(Vertex vertex : getGraph().getVertices()) {
+            vertex.setSelected(false);
+        }
+        
+        for(Object itemId : itemIds) {
+            toggleSelectVertexByItemId(itemId);
+        }
+        
+        if(itemIds.size() == 0) {
+            requestRepaint();
+        }
+    }
+    
+    private void bulkMultiSelectVertex(String[] vertexIds) {
+        for(String vertexId : vertexIds) {
+            Vertex vertex = getGraph().getVertexByKey((String)vertexId);
+            vertex.setSelected(true);
+        }
+        
+        requestRepaint();
+    }
     private void multiSelectVertex(String vertexId) {
         toggleSelectedVertex(vertexId);
     }
@@ -348,6 +414,13 @@ public class TopologyComponent extends AbstractComponent implements Action.Conta
 		
 		requestRepaint();
 	}
+    
+    private void toggleSelectVertexByItemId(Object itemId) {
+        Vertex vertex = getGraph().getVertexByItemId(itemId);
+        vertex.setSelected(!vertex.isSelected());
+        
+        requestRepaint();
+    }
 
 	public void setScale(double scale){
 	    m_scale.setValue(scale);
@@ -416,6 +489,14 @@ public class TopologyComponent extends AbstractComponent implements Action.Conta
 
     public void setContextMenuHandler(ContextMenuHandler contextMenuHandler) {
         m_contextMenuHandler = contextMenuHandler;
+    }
+
+    public IconRepositoryManager getIconRepoManager() {
+        return m_iconRepoManager;
+    }
+
+    public void setIconRepoManager(IconRepositoryManager iconRepoManager) {
+        m_iconRepoManager = iconRepoManager;
     }
    
 
