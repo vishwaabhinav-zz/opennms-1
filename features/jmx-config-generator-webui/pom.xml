@@ -34,6 +34,7 @@
 						<Bundle-RequiredExecutionEnvironment>JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
 						<Vaadin-Application>org.opennms.features.jmxconfiggenerator.webui.JmxConfigGeneratorApplication</Vaadin-Application>
 						<Vaadin-Alias>/${project.artifactId}</Vaadin-Alias>
+						<Include-Resource>src/main/webapp,{maven-resources}</Include-Resource>
 					</instructions>
 				</configuration>
 			</plugin>
@@ -227,7 +228,7 @@
 		<dependency>
 			<artifactId>service</artifactId>
 			<groupId>org.ops4j.pax.vaadin</groupId>
-            <version>0.1.0-ONMS-20120621</version>
+			<version>0.1.0-ONMS-20120906</version>
 		</dependency>
 		<dependency>
 			<groupId>javax.servlet</groupId>
