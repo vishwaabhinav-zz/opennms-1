@@ -1,31 +1,47 @@
+/*******************************************************************************
+ * This file is part of OpenNMS(R).
+ *
+ * Copyright (C) 2012 The OpenNMS Group, Inc.
+ * OpenNMS(R) is Copyright (C) 1999-2012 The OpenNMS Group, Inc.
+ *
+ * OpenNMS(R) is a registered trademark of The OpenNMS Group, Inc.
+ *
+ * OpenNMS(R) is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published
+ * by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * OpenNMS(R) is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with OpenNMS(R).  If not, see:
+ *      http://www.gnu.org/licenses/
+ *
+ * For more information contact:
+ *     OpenNMS(R) Licensing <license@opennms.org>
+ *     http://www.opennms.org/
+ *     http://www.opennms.com/
+ *******************************************************************************/
+
 package org.opennms.features.topology.netutils.internal.operations;
 
 import java.net.URL;
 import java.util.List;
 
+import org.opennms.features.topology.api.AbstractOperation;
 import org.opennms.features.topology.api.Operation;
 import org.opennms.features.topology.api.OperationContext;
 import org.opennms.features.topology.netutils.internal.EventsAlarmsWindow;
 import org.opennms.features.topology.netutils.internal.Node;
 
-import com.vaadin.data.Item;
-import com.vaadin.data.Property;
-
-public class EventsAlarmsOperation implements Operation {
+public class EventsAlarmsOperation extends AbstractOperation implements Operation {
 
     private String m_eventsURL;
 
     private String m_alarmsURL;
-
-    public boolean display(final List<Object> targets, final OperationContext operationContext) {
-        return true;
-    }
-
-    public boolean enabled(final List<Object> targets, final OperationContext operationContext) {
-        if (targets == null || targets.size() < 2)
-            return true;
-        return false;
-    }
 
     public Undoer execute(final List<Object> targets, final OperationContext operationContext) {
         String label = "";
@@ -34,15 +50,16 @@ public class EventsAlarmsOperation implements Operation {
         try {
             if (targets != null) {
                 for (final Object target : targets) {
-                    final Item vertexItem = operationContext.getGraphContainer().getVertexItem(target);
-                    if (vertexItem != null) {
-                        final Property labelProperty = vertexItem.getItemProperty("label");
-                        label = labelProperty == null ? "" : (String) labelProperty.getValue();
-                        final Property nodeIDProperty = vertexItem.getItemProperty("nodeID");
-                        nodeID = nodeIDProperty == null ? -1 : (Integer) nodeIDProperty.getValue();
+                    final String labelValue = getLabelValue(operationContext, target);
+                    final Integer nodeValue = getNodeIdValue(operationContext, target);
+
+                    if (nodeValue != null && nodeValue > 0) {
+                        label = labelValue == null ? "" : labelValue;
+                        nodeID = nodeValue;
                     }
                 }
             }
+
             final Node node = new Node(nodeID, null, label);
 
             final URL baseURL = operationContext.getMainWindow().getURL();
@@ -51,7 +68,7 @@ public class EventsAlarmsOperation implements Operation {
             final URL alarmsURL;
             if (node.getNodeID() >= 0) {
                 eventsURL = new URL(baseURL, getEventsURL() + "?filter=node%3D" + node.getNodeID());
-                alarmsURL = new URL(baseURL, getAlarmsURL() + "?sortby=id&amp;acktype=unacklimit=20&amp;filter=node%3D" + node.getNodeID());
+                alarmsURL = new URL(baseURL, getAlarmsURL() + "?sortby=id&acktype=unacklimit=20&filter=node%3D" + node.getNodeID());
             } else {
                 eventsURL = new URL(baseURL, getEventsURL());
                 alarmsURL = new URL(baseURL, getAlarmsURL());

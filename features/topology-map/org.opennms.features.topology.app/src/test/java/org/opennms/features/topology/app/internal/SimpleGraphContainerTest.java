@@ -1,3 +1,31 @@
+/*******************************************************************************
+ * This file is part of OpenNMS(R).
+ *
+ * Copyright (C) 2012 The OpenNMS Group, Inc.
+ * OpenNMS(R) is Copyright (C) 1999-2012 The OpenNMS Group, Inc.
+ *
+ * OpenNMS(R) is a registered trademark of The OpenNMS Group, Inc.
+ *
+ * OpenNMS(R) is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published
+ * by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * OpenNMS(R) is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with OpenNMS(R).  If not, see:
+ *      http://www.gnu.org/licenses/
+ *
+ * For more information contact:
+ *     OpenNMS(R) Licensing <license@opennms.org>
+ *     http://www.opennms.org/
+ *     http://www.opennms.com/
+ *******************************************************************************/
+
 package org.opennms.features.topology.app.internal;
 
 import static org.junit.Assert.assertEquals;
@@ -8,15 +36,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
-import org.opennms.features.topology.api.TopologyProvider;
-import org.opennms.features.topology.api.VertexContainer;
 import org.opennms.features.topology.app.internal.SimpleGraphContainer.GEdge;
 import org.opennms.features.topology.app.internal.SimpleGraphContainer.GVertex;
 
 import com.vaadin.data.Container.ItemSetChangeEvent;
 import com.vaadin.data.Container.ItemSetChangeListener;
 import com.vaadin.data.Item;
-import com.vaadin.data.util.BeanContainer;
 import com.vaadin.data.util.BeanItem;
 
 public class SimpleGraphContainerTest {
@@ -426,6 +451,37 @@ public class SimpleGraphContainerTest {
         assertEquals(targetVertex.getItemId(), edge.getTarget().getItemId());
         assertEquals(sourceVertex.getKey(), edge.getSource().getKey());
         assertEquals(targetVertex.getKey(), edge.getTarget().getKey());
+        
+    }
+    
+    @Test
+    public void testRemoveAllItemsUpdateCorrectly() {
+        TestTopologyProvider topologyProvider = new TestTopologyProvider();
+     
+        //Setup the graphcontainer
+        SimpleGraphContainer graphContainer = new SimpleGraphContainer();
+        graphContainer.setDataSource(topologyProvider);
+        graphContainer.setLayoutAlgorithm(new SimpleLayoutAlgorithm());
+        graphContainer.setSemanticZoomLevel(0);
+        
+        Graph graph = new Graph(graphContainer);
+        List<Vertex> vertices = graph.getVertices();
+        
+        assertEquals(2, vertices.size());
+        assertEquals(2, topologyProvider.getVertexIds().size());
+        assertEquals(1, topologyProvider.getEdgeIds().size());
+        assertEquals(2, graphContainer.getVertexIds().size());
+        assertEquals(1, graphContainer.getEdgeIds().size());
+        assertEquals(2, graph.getVertices().size());
+        
+        topologyProvider.load(null);
+        
+        assertEquals(2, topologyProvider.getVertexIds().size());
+        assertEquals(1, topologyProvider.getEdgeIds().size());
+        assertEquals(2, graphContainer.getVertexIds().size());
+        assertEquals(1, graphContainer.getEdgeIds().size());
+        assertEquals(2, graph.getVertices().size());
+        
         
     }
 

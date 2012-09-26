@@ -1,8 +1,37 @@
+/*******************************************************************************
+ * This file is part of OpenNMS(R).
+ *
+ * Copyright (C) 2012 The OpenNMS Group, Inc.
+ * OpenNMS(R) is Copyright (C) 1999-2012 The OpenNMS Group, Inc.
+ *
+ * OpenNMS(R) is a registered trademark of The OpenNMS Group, Inc.
+ *
+ * OpenNMS(R) is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published
+ * by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * OpenNMS(R) is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with OpenNMS(R).  If not, see:
+ *      http://www.gnu.org/licenses/
+ *
+ * For more information contact:
+ *     OpenNMS(R) Licensing <license@opennms.org>
+ *     http://www.opennms.org/
+ *     http://www.opennms.com/
+ *******************************************************************************/
+
 package org.opennms.features.topology.app.internal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -166,6 +195,14 @@ public class SimpleGraphContainer implements GraphContainer {
             GVertex parent = getParent();
             return parent == null ? 0 : parent.getSemanticZoomLevel() + 1;
         }
+        
+        public String getTooltipText() {
+            if(m_item.getItemProperty("tooltipText") != null && m_item.getItemProperty("tooltipText").getValue() != null) {
+                return (String) m_item.getItemProperty("tooltipText").getValue();
+            }else {
+                return null;
+            }
+        }
 
     }
     
@@ -176,6 +213,7 @@ public class SimpleGraphContainer implements GraphContainer {
         private Item m_item;
         private GVertex m_source;
         private GVertex m_target;
+        private boolean m_selected = false;
 
         public GEdge(String key, Object itemId, Item item, GVertex source, GVertex target) {
             m_key = key;
@@ -225,6 +263,21 @@ public class SimpleGraphContainer implements GraphContainer {
             m_target = target;
         }
         
+        public boolean isSelected() {
+            return m_selected;
+        }
+
+        public void setSelected(boolean selected) {
+            m_selected  = selected;
+        }
+        
+        public String getTooltipText() {
+            if(m_item.getItemProperty("tooltipText") != null && m_item.getItemProperty("tooltipText").getValue() != null) {
+                return (String) m_item.getItemProperty("tooltipText").getValue();
+            }else {
+                return null;
+            }
+        }
     }
     
     private class GEdgeContainer extends BeanContainer<String, GEdge> implements ItemSetChangeListener, PropertySetChangeListener{
@@ -239,15 +292,15 @@ public class SimpleGraphContainer implements GraphContainer {
         
 		public void setTopologyProvider(TopologyProvider provider) {
 			if (topologyProvider != null) {
-				topologyProvider.getVertexContainer().removeListener((ItemSetChangeListener)this);
-	            topologyProvider.getVertexContainer().removeListener((PropertySetChangeListener)this);
+				topologyProvider.getEdgeContainer().removeListener((ItemSetChangeListener)this);
+	            topologyProvider.getEdgeContainer().removeListener((PropertySetChangeListener)this);
 			}
 			
 			topologyProvider = provider;
 			
 			if (topologyProvider != null) {
-				topologyProvider.getVertexContainer().addListener((ItemSetChangeListener)this);
-				topologyProvider.getVertexContainer().addListener((PropertySetChangeListener)this);
+				topologyProvider.getEdgeContainer().addListener((ItemSetChangeListener)this);
+				topologyProvider.getEdgeContainer().addListener((PropertySetChangeListener)this);
 			}
 			
 			removeAllItems();
@@ -269,6 +322,7 @@ public class SimpleGraphContainer implements GraphContainer {
 
         @Override
         public void containerItemSetChange(ItemSetChangeEvent event) {
+            System.err.println("containerItemSetChange called in GEdgeContainer");
             m_edgeHolder.update();
             removeAllItems();
             addAll(m_edgeHolder.getElements());
@@ -392,7 +446,7 @@ public class SimpleGraphContainer implements GraphContainer {
             removedContainerVertices.removeAll(newVertices);
             
             for(GVertex v : removedContainerVertices) {
-                removeItem(v.getItemId());
+                removeItem(v.getKey());
             }
             updateAll(newVertices);
             addAll(newContainerVertices);
@@ -550,7 +604,9 @@ public class SimpleGraphContainer implements GraphContainer {
 	}
 	
 	public Collection<String> getEndPointIdsForEdge(Object key) {
+	        if (key == null) return Collections.emptyList();
 		GEdge edge = m_edgeHolder.getElementByKey(key.toString());
+		if (edge == null) return Collections.emptyList();
 		return Arrays.asList(edge.getSource().getKey(), edge.getTarget().getKey());
 	}
 
@@ -606,6 +662,7 @@ public class SimpleGraphContainer implements GraphContainer {
     }
     @Override
     public void redoLayout() {
+        System.err.println("redoLayout for simpleGraphContainer");
         if(m_layoutAlgorithm != null) {
             m_layoutAlgorithm.updateLayout(this);
             getVertexContainer().fireItemSetChange();
