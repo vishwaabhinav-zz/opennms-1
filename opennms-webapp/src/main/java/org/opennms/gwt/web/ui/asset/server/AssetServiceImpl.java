@@ -29,7 +29,7 @@
 package org.opennms.gwt.web.ui.asset.server;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
-import org.opennms.core.utils.WebSecurityUtils;
+import org.opennms.web.WebSecurityUtils;
 import org.opennms.gwt.web.ui.asset.client.AssetService;
 import org.opennms.gwt.web.ui.asset.shared.AssetCommand;
 import org.opennms.gwt.web.ui.asset.shared.AssetSuggCommand;
@@ -37,9 +37,9 @@ import org.opennms.netmgt.dao.AssetRecordDao;
 import org.opennms.netmgt.dao.NodeDao;
 import org.opennms.netmgt.model.OnmsAssetRecord;
 import org.opennms.netmgt.model.OnmsNode;
-import org.opennms.web.api.SecurityContextService;
+import org.opennms.web.svclayer.SecurityContextService;
 import org.opennms.web.springframework.security.Authentication;
-import org.opennms.web.springframework.security.SpringSecurityContextService;
+import org.opennms.web.svclayer.support.SpringSecurityContextService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
