@@ -28,26 +28,20 @@
 
 package org.opennms.netmgt.provision.service;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.text.ParseException;
-import java.util.Arrays;
-import java.util.Iterator;
-
 import org.opennms.core.utils.ThreadCategory;
+import org.opennms.core.utils.url.GenericURLFactory;
 import org.opennms.netmgt.config.provisiond.RequisitionDef;
 import org.opennms.netmgt.dao.ProvisiondConfigurationDao;
-import org.opennms.netmgt.provision.service.dns.DnsUrlFactory;
-import org.quartz.CronTrigger;
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.Trigger;
+import org.quartz.*;
 import org.quartz.spi.JobFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.util.StringUtils;
+
+import java.text.ParseException;
+import java.util.Arrays;
+import java.util.Iterator;
 
 /**
  * Maintains the Provisioner's import schedule defined in provisiond-configuration.xml
@@ -95,12 +89,8 @@ public class ImportScheduler implements InitializingBean {
 
         
         //TODO: this needs to be done in application context
-        try {
-            new URL("dns://host/zone");
-        } catch (MalformedURLException e) {
-            URL.setURLStreamHandlerFactory(new DnsUrlFactory());
-        }
-        
+        GenericURLFactory.initialize();
+
         buildImportSchedule();
     }
     

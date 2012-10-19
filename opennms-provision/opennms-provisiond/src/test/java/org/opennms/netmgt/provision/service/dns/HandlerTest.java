@@ -28,25 +28,24 @@
 
 package org.opennms.netmgt.provision.service.dns;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.opennms.core.utils.url.GenericURLFactory;
 import org.opennms.netmgt.provision.persist.MockForeignSourceRepository;
 import org.opennms.netmgt.provision.persist.requisition.Requisition;
 import org.opennms.test.mock.MockLogAppender;
 import org.springframework.core.io.UrlResource;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+
+import static org.junit.Assert.*;
+
 public class HandlerTest {
-    
+
     private static final String DNS_URL = "dns://127.0.0.1:53/localhost";
 
     @Before
@@ -56,26 +55,20 @@ public class HandlerTest {
 
     @Before
     public void registerFactory() {
-        
-        try {
-            new URL(DNS_URL);
-        } catch (MalformedURLException e) {
-            URL.setURLStreamHandlerFactory(new DnsUrlFactory());
-        }
-        
+        GenericURLFactory.initialize();
     }
-    
+
     @Test
     @Ignore
     public void dwOpenConnectionURL() throws IOException {
-        
+
         URL url = new URL(DNS_URL);
-        
+
         UrlResource resource = new UrlResource(url);
 
         MockForeignSourceRepository fsr = new MockForeignSourceRepository();
         Requisition r = fsr.importResourceRequisition(resource);
-        
+
         Assert.assertTrue("Number of nodes in Model Import > 1", 1 == r.getNodeCount());
         Assert.assertTrue("NodeLabel isn't localhost", "localhost".equals(r.getNodes().get(0).getNodeLabel()));
         Assert.assertTrue("127.0.0.1".equals(r.getNodes().get(0).getInterfaces().get(0).getIpAddr()));
@@ -83,26 +76,26 @@ public class HandlerTest {
 
     @Test
     public void dwParseURL() throws MalformedURLException {
-        
+
         String urlString = "dns://localhost:53/opennms";
 
         URL dnsUrl = null;
-        
+
         dnsUrl = new URL(urlString);
 
         try {
-            
+
             dnsUrl = new URL(urlString);
             assertNotNull(dnsUrl);
             assertEquals(urlString, dnsUrl.toString());
             assertEquals("localhost", dnsUrl.getHost());
             assertEquals(53, dnsUrl.getPort());
             assertEquals(DnsRequisitionUrlConnection.PROTOCOL, dnsUrl.getProtocol());
-            
+
         } catch (MalformedURLException e) {
             fail(e.getLocalizedMessage());
         }
-        
+
     }
 
 }
