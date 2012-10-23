@@ -34,10 +34,9 @@ import java.util.Date;
 /**
  * Result of a single metric on a given node/interface to a given time.
  * <p/>
- * User: chris
- * Date: 19.06.12
- * Time: 14:43
- * To change this template use File | Settings | File Templates.
+ * @author Christian Pape
+ * @author Markus Neumann
+ * 
  */
 public interface Measurement extends Serializable {
 
@@ -54,6 +53,10 @@ public interface Measurement extends Serializable {
     public void setValue(String value);
 
     public void setTimestamp(Date timestamp);
+
+    public void setOnmsLogicMetricId(String onmsLogicMetricId);
+
+    public String getOnmsLogicMetricId();
 
     public int getNodeId();
 
