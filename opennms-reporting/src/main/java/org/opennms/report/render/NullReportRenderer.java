@@ -62,12 +62,15 @@ public class NullReportRenderer implements ReportRenderer {
      */
     public void render() throws ReportRenderException {
         String oldPrefix = ThreadCategory.getPrefix();
+        try {
         ThreadCategory.setPrefix(LOG4J_CATEGORY);
         ThreadCategory log = ThreadCategory.getInstance(NullReportRenderer.class);
         log.debug("Do nothing");
         m_outputFileName = m_inputFileName;
+        } finally {
         ThreadCategory.setPrefix(oldPrefix);
-    }
+        }
+h    }
 
     /** {@inheritDoc} */
     public void setXsltResource(Resource xsltResource) {

@@ -230,10 +230,15 @@ public class ManagerDefaultImpl implements Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     public ManagerDefaultImpl() throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
         ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         log = ThreadCategory.getInstance(this.getClass());
         if (log.isDebugEnabled()) {
             log.debug("Instantiating ManagerDefaultImpl");
+        }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
         }
     }
 
@@ -418,12 +423,18 @@ public class ManagerDefaultImpl implements Manager {
      */
     public VMapInfo getMapMenu(int mapId) throws MapNotFoundException,
             MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         VMapInfo m = null;
         m = dbManager.getMapMenu(mapId);
         if (m == null) {
             throw new MapNotFoundException("No Maps found.");
         }
         return m;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -439,6 +450,9 @@ public class ManagerDefaultImpl implements Manager {
      */
     public VMap[] getMapsLike(String likeLabel, boolean refreshElems)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         VMap[] retVMap = null;
         DbMap[] m = dbManager.getMapsLike(likeLabel);
         if (m == null) {
@@ -450,6 +464,9 @@ public class ManagerDefaultImpl implements Manager {
             retVMap[i] = openMap(m[i].getId(), refreshElems);
         }
         return retVMap;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -463,6 +480,9 @@ public class ManagerDefaultImpl implements Manager {
      */
     public VMap[] getMapsByName(String mapName, boolean refreshElems)
             throws MapNotFoundException, MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         VMap[] retVMap = null;
         DbMap[] m = dbManager.getMapsByName(mapName);
         if (m == null) {
@@ -474,6 +494,9 @@ public class ManagerDefaultImpl implements Manager {
             retVMap[i] = openMap(m[i].getId(), refreshElems);
         }
         return retVMap;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -487,6 +510,9 @@ public class ManagerDefaultImpl implements Manager {
      */
     public VMap[] getAllMaps(boolean refreshElems)
             throws MapNotFoundException, MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         VMap[] retVMap = null;
         DbMap[] m = dbManager.getAllMaps();
         if (m == null) {
@@ -497,6 +523,9 @@ public class ManagerDefaultImpl implements Manager {
             retVMap[i] = openMap(m[i].getId(), refreshElems);
         }
         return retVMap;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -506,10 +535,15 @@ public class ManagerDefaultImpl implements Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     public VMapInfo[] getAllMapMenus() throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         VMapInfo[] m = null;
         m = dbManager.getAllMapMenus();
         return m;
-
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -522,6 +556,9 @@ public class ManagerDefaultImpl implements Manager {
      */
     public VMapInfo[] getMapsMenuByName(String mapName)
             throws MapNotFoundException, MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         VMapInfo[] retVMap = null;
         retVMap = dbManager.getMapsMenuByName(mapName);
         if (retVMap == null) {
@@ -529,10 +566,16 @@ public class ManagerDefaultImpl implements Manager {
                     + " don't exist.");
         }
         return retVMap;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public VMapInfo getDefaultMapsMenu(String user) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 
         Iterator<Group> ite = getGroupDao().findGroupsForUser(user).iterator();
 
@@ -589,6 +632,9 @@ public class ManagerDefaultImpl implements Manager {
         }
         return new VMapInfo(MapsConstants.NEW_MAP, "no default map found",
                             user);
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -598,7 +644,13 @@ public class ManagerDefaultImpl implements Manager {
      */
     public List<VMapInfo> getVisibleMapsMenu(String user)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         return getMapsMenuByuser(user);
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     private List<VMapInfo> getMapsMenuByuser(String user)
@@ -654,6 +706,9 @@ public class ManagerDefaultImpl implements Manager {
      */
     public List<VMapInfo> getMapsMenuTreeByName(String mapName)
             throws MapNotFoundException, MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         List<VMapInfo> mapsInTreesList = new ArrayList<VMapInfo>();
         //
         VMapInfo[] mapsMenu = null;
@@ -685,6 +740,9 @@ public class ManagerDefaultImpl implements Manager {
             }
         }
         return mapsInTreesList;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     private void preorderVisit(Integer rootElem, List<Integer> treeElems,
@@ -720,11 +778,17 @@ public class ManagerDefaultImpl implements Manager {
      */
     public VElement newElement(int mapId, int elementId, String type, int x,
             int y) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 
         VElement velem = newElement(mapId, elementId, type);
         velem.setX(x);
         velem.setY(y);
         return velem;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -739,10 +803,16 @@ public class ManagerDefaultImpl implements Manager {
      */
     public VElement newElement(int elementId, String type, int x, int y)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         if (sessionMap == null) {
             throw new MapNotFoundException("session map in null");
         }
         return newElement(sessionMap.getId(), elementId, type, x, y);
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -753,6 +823,9 @@ public class ManagerDefaultImpl implements Manager {
      */
     public VElement newElement(int mapId, int elementId, String type)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         VElement velem = new VElement(dbManager.newElement(elementId, mapId, type));
         
         if (velem.isNode())
@@ -766,7 +839,9 @@ public class ManagerDefaultImpl implements Manager {
         log.debug("Adding velement to map " + velem.toString());
 
         return velem;
-
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     private String getIconBySysoid(String sysoid) throws MapsException {
@@ -798,6 +873,9 @@ public class ManagerDefaultImpl implements Manager {
      */
     public VElement newElement(int mapId, int elementId, String type,
             String iconname, int x, int y) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         VElement velem = newElement(mapId, elementId, type);
         if (iconname == null ) {
             if (type == MapsConstants.MAP_TYPE)
@@ -809,7 +887,9 @@ public class ManagerDefaultImpl implements Manager {
         velem.setX(x);
         velem.setY(y);
         return velem;
-
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -825,9 +905,15 @@ public class ManagerDefaultImpl implements Manager {
      */
     public VElement newElement(int mapId, int elementId, String type,
             String iconname) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         VElement elem = newElement(mapId, elementId, type);
         elem.setIcon(iconname);
         return elem;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -842,8 +928,14 @@ public class ManagerDefaultImpl implements Manager {
      */
     synchronized public void deleteMap(VMap map) throws MapsException,
             MapNotFoundException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         deleteMap(map.getId());
         deleteFromMapInfo(map.getId());
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
     
     private void deleteFromMapInfo(int mapId) {
@@ -863,6 +955,9 @@ public class ManagerDefaultImpl implements Manager {
      * @param mapId a int.
      */
     synchronized public void deleteMap(int mapId) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         if (sessionMap == null) {
             throw new MapNotFoundException("session map in null");
         }
@@ -876,6 +971,9 @@ public class ManagerDefaultImpl implements Manager {
                     + " doesn't exist or is automatic map");
         }
         sessionMap = null;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -886,8 +984,14 @@ public class ManagerDefaultImpl implements Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     synchronized public void deleteMaps(VMap[] maps) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         for (VMap map : maps) {
             deleteMap(map);
+        }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
         }
     }
 
@@ -898,8 +1002,14 @@ public class ManagerDefaultImpl implements Manager {
      * @param maps an array of int.
      */
     synchronized public void deleteMaps(int[] maps) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         for (int map : maps) {
             deleteMap(map);
+        }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
         }
     }
 
@@ -909,12 +1019,17 @@ public class ManagerDefaultImpl implements Manager {
      * save the map in input
      */
     synchronized public int save(VMap map) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Collection<DbElement> dbe = new ArrayList<DbElement>();
         for (VElement velem : map.getElements().values()) {
             dbe.add(new DbElement(velem));
         }
         return dbManager.saveMap(map, dbe);
-
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -923,7 +1038,13 @@ public class ManagerDefaultImpl implements Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     synchronized public void deleteAllNodeElements() throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         dbManager.deleteNodeTypeElementsFromAllMaps();
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -932,7 +1053,13 @@ public class ManagerDefaultImpl implements Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     synchronized public void deleteAllMapElements() throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         dbManager.deleteMapTypeElementsFromAllMaps();
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -941,6 +1068,9 @@ public class ManagerDefaultImpl implements Manager {
      * Reloads elements of map and theirs avail,severity and status
      */
     public VMap reloadMap(VMap map) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 
         DbElement[] elems = dbManager.getElementsOfMap(map.getId());
         List<VElement> velems = new ArrayList<VElement>(elems.length);
@@ -953,10 +1083,16 @@ public class ManagerDefaultImpl implements Manager {
         map.addElements(velems);
         map.addLinks(getLinks(map.getElements().values()));
         return map;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public VMap refreshMap(VMap map) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         
         if (map == null) {
             throw new MapNotFoundException("map is null");
@@ -972,11 +1108,17 @@ public class ManagerDefaultImpl implements Manager {
         map.addLinks(getLinks(map.getElements().values()));
 
         return map;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public boolean foundLoopOnMaps(VMap parentMap, int mapId)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 
         java.util.Map<Integer, Set<Integer>> maps = dbManager.getMapsStructure();
         Set<Integer> childSet = new TreeSet<Integer>();
@@ -1001,7 +1143,9 @@ public class ManagerDefaultImpl implements Manager {
             }
         }
         return false;
-
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     private Set<Integer> preorderVisit(Set<Integer> treeElems,
@@ -1027,8 +1171,14 @@ public class ManagerDefaultImpl implements Manager {
      */
     public Set<Integer> getNodeidsOnElement(VElement velem)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         DbElement elem = new DbElement(velem);
         return dbManager.getNodeidsOnElement(elem);
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -1038,8 +1188,14 @@ public class ManagerDefaultImpl implements Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     public List<VElementInfo> getElementInfo() throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         elemInfo=  dbManager.getAllElementInfo();
         return elemInfo;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -1537,6 +1693,9 @@ public class ManagerDefaultImpl implements Manager {
 
     /** {@inheritDoc} */
     public VMap searchMap(String owner,String userModifies, int width, int height, List<VElement> elems) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         VMap m = new VMap(MapsConstants.SEARCH_MAP_NAME);
         m.setOwner(owner);
         m.setUserLastModifies(userModifies);
@@ -1553,11 +1712,17 @@ public class ManagerDefaultImpl implements Manager {
         sessionMap = m;
         searchMap = m;
         return m;    
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public java.util.Map<String, Set<Integer>> getNodeLabelToMaps(String user)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Map<Integer,String> maps = new HashMap<Integer,String>();
         for (VMapInfo mapinfo :mapInfo) {
             maps.put(new Integer(mapinfo.getId()),mapinfo.getName());
@@ -1612,11 +1777,17 @@ public class ManagerDefaultImpl implements Manager {
             nodelabelMap.put(label, mapids);
         }
         return nodelabelMap;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public VProperties getProperties(boolean isUserAdmin)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         VProperties inObj = new VProperties();
         inObj.setAvailEnabled(mapsPropertiesFactory.isAvailEnabled());
         inObj.setDoubleClickEnabled(mapsPropertiesFactory.isDoubleClickEnabled());
@@ -1645,10 +1816,16 @@ public class ManagerDefaultImpl implements Manager {
         inObj.setMultilinkStatus(mapsPropertiesFactory.getMultilinkStatus());
         inObj.setMultilinkIgnoreColor(mapsPropertiesFactory.getMultilinkIgnoreColor());
         return inObj;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public VMap addElements(VMap map, List<VElement> velems) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         map.removeAllLinks();
         for (VElement ve: velems) {
             log.debug("adding map element to map with id: " +ve.getId()+ve.getType());
@@ -1667,6 +1844,9 @@ public class ManagerDefaultImpl implements Manager {
         }            
         map.addLinks(getLinks(map.getElements().values()));
         return map;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -1675,6 +1855,9 @@ public class ManagerDefaultImpl implements Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     public void reloadConfig() throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         try {
             mapsPropertiesFactory.reload(true);
         } catch (FileNotFoundException e) {
@@ -1682,12 +1865,21 @@ public class ManagerDefaultImpl implements Manager {
         } catch (IOException e) {
             throw new MapsException(e);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     public String execCommand(final Command command) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         String key= UUID.randomUUID().toString();
         commandmap.put(key, command);
         return key;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     public Command getCommand(String id) {
@@ -1699,6 +1891,9 @@ public class ManagerDefaultImpl implements Manager {
     }
 
     public boolean checkCommandExecution() {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         List<String> keytoremove = new ArrayList<String>();
         for (String key: commandmap.keySet()) {
             Command c = commandmap.get(key);
@@ -1714,7 +1909,9 @@ public class ManagerDefaultImpl implements Manager {
         if ( commandmap.size() > 5 )
             return false;
         return true;
-        
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
     
     

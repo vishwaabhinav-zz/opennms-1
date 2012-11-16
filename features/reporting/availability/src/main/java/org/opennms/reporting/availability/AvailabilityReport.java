@@ -98,6 +98,8 @@ public class AvailabilityReport extends Object {
     public AvailabilityReport(String author, String startMonth,
             String startDate, String startYear) {
         String oldPrefix = ThreadCategory.getPrefix();
+        
+        try {
         ThreadCategory.setPrefix(LOG4J_CATEGORY);
         if (log().isDebugEnabled()) {
             log().debug("Inside AvailabilityReport");
@@ -133,7 +135,9 @@ public class AvailabilityReport extends Object {
         if (log().isDebugEnabled()) {
             log().debug("Leaving AvailabilityReport");
         }
-        ThreadCategory.setPrefix(oldPrefix);
+        } finally {
+            ThreadCategory.setPrefix(oldPrefix);
+        }
     }
 
     /**
@@ -246,6 +250,7 @@ public class AvailabilityReport extends Object {
     public void generatePDF(String xsltFileName, OutputStream out,
             String format) throws Exception {
         String oldPrefix = ThreadCategory.getPrefix();
+        try {
         ThreadCategory.setPrefix(LOG4J_CATEGORY);
         if (log().isDebugEnabled()) {
             log().debug("inside generatePDF");
@@ -271,7 +276,9 @@ public class AvailabilityReport extends Object {
         if (log().isInfoEnabled()) {
             log().info("leaving generatePDF");
         }
-        ThreadCategory.setPrefix(oldPrefix);
+        } finally {
+            ThreadCategory.setPrefix(oldPrefix);
+        }
     }
 
     /**

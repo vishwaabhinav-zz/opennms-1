@@ -91,6 +91,9 @@ public class LegacyAvailabilityDataService implements
 
     /** {@inheritDoc} */
     public List<Node> getNodes(org.opennms.netmgt.config.categories.Category category, long startTime, long endTime) throws AvailabilityDataServiceException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         
         m_nodes = new ArrayList<Node>();
         
@@ -233,6 +236,10 @@ public class LegacyAvailabilityDataService implements
         }
         
         return m_nodes;
+        
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
     
     /**
@@ -245,6 +252,9 @@ public class LegacyAvailabilityDataService implements
             PreparedStatement outagesGetStmt, 
             long startTime,long endTime) throws SQLException {
         
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
 
         // Get outages for this node/ip/svc pair
         try {
@@ -316,6 +326,10 @@ public class LegacyAvailabilityDataService implements
             log.fatal("SQL Error occured while getting the outages ", e);
             throw e;
         }
+        
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -330,6 +344,9 @@ public class LegacyAvailabilityDataService implements
      */
     public void addNode(String nodeName, int nodeid, String ipaddr,
             String serviceid, long losttime, long regainedtime) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         if (m_nodes == null) {
             log.debug("adding new arraylis");
             m_nodes = new ArrayList<Node>();
@@ -391,12 +408,18 @@ public class LegacyAvailabilityDataService implements
                 }
             }
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
     /**
      * Initializes the database connection.
      */
     private void initialiseConnection() throws AvailabilityDataServiceException {
-        
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
+
         //
         // Initialize the DataCollectionConfigFactory
         //
@@ -432,12 +455,19 @@ public class LegacyAvailabilityDataService implements
                       e);
             throw new AvailabilityDataServiceException("initialize: Failed getting connection to the database");
         }
+        
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
      * Closes the database connection.
      */
     private void closeConnection() {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         ThreadCategory log = ThreadCategory.getInstance(this.getClass());
         if (m_availConn != null) {
             try {
@@ -448,6 +478,9 @@ public class LegacyAvailabilityDataService implements
                          "initialize: an exception occured while closing the "
                                  + "JDBC connection", t);
             }
+        }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
         }
     }
     

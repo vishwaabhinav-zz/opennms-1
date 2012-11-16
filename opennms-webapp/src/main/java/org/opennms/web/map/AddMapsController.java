@@ -89,8 +89,9 @@ public class AddMapsController implements Controller {
 
 	/** {@inheritDoc} */
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		
-		ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
+	        final String prefix = ThreadCategory.getPrefix();
+	        try {
+	            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 		log = ThreadCategory.getInstance(this.getClass());
 		String elems = request.getParameter("elems");
 		log.debug("Adding Maps: elems="+elems );
@@ -133,6 +134,9 @@ public class AddMapsController implements Controller {
 		}
 
 		return null;
+	} finally {
+	    ThreadCategory.setPrefix(prefix);
 	}
-
+        }
 }
+

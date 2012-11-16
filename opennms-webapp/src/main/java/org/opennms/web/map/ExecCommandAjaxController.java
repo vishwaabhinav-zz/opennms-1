@@ -71,7 +71,9 @@ public class ExecCommandAjaxController extends AbstractController {
     /** {@inheritDoc} */
     public ModelAndView handleRequest(HttpServletRequest request,
             HttpServletResponse response) throws IOException {
-        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         log = ThreadCategory.getInstance(this.getClass());
 
 
@@ -136,6 +138,9 @@ public class ExecCommandAjaxController extends AbstractController {
         }
 
         return null;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     private String getCommandToExec(HttpServletRequest request, String command, String address) {

@@ -173,11 +173,12 @@ public class AvailCalculations extends Object {
 
         org.opennms.reporting.availability.Categories categories = report.getCategories();
         String oldPrefix = ThreadCategory.getPrefix();
+
+        try {
         ThreadCategory.setPrefix(LOG4J_CATEGORY);
         log = ThreadCategory.getInstance(this.getClass());
         if (log.isDebugEnabled())
             log.debug("Inside AvailCalculations using endTime " + endTime);
-        ThreadCategory.setPrefix(oldPrefix);
 
         m_monitoredServices = monitoredServices;
         m_endLastMonthTime = lastMonthEndTime;
@@ -425,6 +426,10 @@ public class AvailCalculations extends Object {
 
         if (log.isDebugEnabled())
             log.debug("Leaving AvailCalculations");
+        
+        } finally {
+            ThreadCategory.setPrefix(oldPrefix);
+        }
     }
 
     /**
@@ -447,6 +452,10 @@ public class AvailCalculations extends Object {
      *            Section descr.
      */
     private void lastMonTopNServiceOutages(CatSections catSections, String label, String descr) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
+            
         // Result is a map of outage / lost time
         //
 
@@ -536,6 +545,9 @@ public class AvailCalculations extends Object {
             m_sectionIndex++;
             catSections.addSection(section);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -614,6 +626,9 @@ public class AvailCalculations extends Object {
      * 
      */
     private void lastMoTopNOffenders(TreeMap<Double, List<String>> offenders, CatSections catSections, String label, String descr) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         // copy this method from the outage data code.
         //
         if (log.isDebugEnabled()) {
@@ -671,6 +686,9 @@ public class AvailCalculations extends Object {
         catSections.addSection(section);
         if (log.isDebugEnabled())
             log.debug("Leaving lastMoTopNOffenders");
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -732,6 +750,9 @@ public class AvailCalculations extends Object {
      *            Section name
      */
     private void lastNDaysCalDailyAvailability(int days, long endTime, CatSections catSections, String label, String descr, String sectionName) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         if (log.isDebugEnabled())
             log.debug("Inside lastNDaysDailyAvailability");
         int numdays = 0;
@@ -793,8 +814,10 @@ public class AvailCalculations extends Object {
         m_sectionIndex++;
         catSections.addSection(section);
         log.debug("Leaving lastNDaysCalDailyAvailability");
-		
-		}
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
+        }
 
 	
     /**
@@ -815,6 +838,9 @@ public class AvailCalculations extends Object {
      *            Section name
      */
     private void lastNDaysDailyAvailability(int days, long endTime, CatSections catSections, String label, String descr, String sectionName) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         if (log.isDebugEnabled())
             log.debug("Inside lastNDaysDailyAvailability");
         int numdays = 0;
@@ -884,6 +910,9 @@ public class AvailCalculations extends Object {
         m_sectionIndex++;
         catSections.addSection(section);
         log.debug("Leaving lastNDaysDailyAvailability");
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -902,6 +931,9 @@ public class AvailCalculations extends Object {
      *            Section descr.
      */
     private void lastNDaysTotalAvailability(int days, long endTime, CatSections catSections, String label, String descr) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         log.debug("Inside lastNDaysTotalAvailability");
         Rows rows = new Rows();
         int serviceCount = 0;
@@ -954,6 +986,9 @@ public class AvailCalculations extends Object {
         m_sectionIndex++;
         catSections.addSection(section);
         log.debug("Leaving lastNDaysTotalAvailability");
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -972,6 +1007,9 @@ public class AvailCalculations extends Object {
      *            Section descr.
      */
     private void lastNMonthsAvailability(int nMonths, long endTime, CatSections catSections, String label, String descr) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         log.debug("Inside lastNMonthsAvailability");
         Rows rows = new Rows();
         int numMonths = 0;
@@ -1063,6 +1101,9 @@ public class AvailCalculations extends Object {
         m_sectionIndex++;
         catSections.addSection(section);
         log.debug("Leaving lastNMonthsAvailability");
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -1128,6 +1169,9 @@ public class AvailCalculations extends Object {
      *            Section descr.
      */
     private void lastNDaysDailyServiceAvailability(int days, long endTime, CatSections catSections, String label, String descr) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         log.debug("Inside lastNDaysDailyServiceAvailability " + days);
 
 
@@ -1268,6 +1312,9 @@ public class AvailCalculations extends Object {
             }
         }
         log.debug("Leaving lastNDaysDailyServiceAvailability");
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**

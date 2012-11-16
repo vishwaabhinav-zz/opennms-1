@@ -94,6 +94,9 @@ public class PDFReportRenderer implements ReportRenderer {
 
     /** {@inheritDoc} */
     public byte[] render(String inputFileName, Resource xsltResource) throws ReportRenderException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
 
         if (log.isDebugEnabled())
             log.debug("Rendering " + inputFileName + " with XSL File " + xsltResource.getDescription() + " to byte array");
@@ -102,10 +105,16 @@ public class PDFReportRenderer implements ReportRenderer {
         this.render(inputFileName, outputStream, xsltResource);
 
         return outputStream.toByteArray();
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public void render(String inputFileName, OutputStream outputStream, Resource xsltResource) throws ReportRenderException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         if (log.isDebugEnabled())
             log.debug("Rendering " + inputFileName + " with XSL File " + xsltResource.getDescription() + " to OutputStream");
 
@@ -136,10 +145,16 @@ public class PDFReportRenderer implements ReportRenderer {
                 }
             }
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public void render(InputStream inputStream, OutputStream outputStream, Resource xsltResource) throws ReportRenderException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         if (log.isDebugEnabled())
             log.debug("Rendering InputStream with XSL File " + xsltResource.getDescription() + " to OutputStream");
 
@@ -162,10 +177,16 @@ public class PDFReportRenderer implements ReportRenderer {
                 }
             }
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public void render(String inputFileName, String outputFileName, Resource xsltResource) throws ReportRenderException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         if (log.isDebugEnabled())
             log.debug("Rendering " + inputFileName + " with XSL File " + xsltResource.getDescription() + " to " + outputFileName + " with base directory of " + m_baseDir);
 
@@ -208,6 +229,9 @@ public class PDFReportRenderer implements ReportRenderer {
                 }
             }
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -219,6 +243,9 @@ public class PDFReportRenderer implements ReportRenderer {
      * @throws org.opennms.reporting.availability.render.ReportRenderException if any.
      */
     public void render(Reader in, OutputStream out, Reader xslt) throws ReportRenderException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         try {
 
             FopFactory fopFactory = FopFactory.newInstance();
@@ -239,6 +266,9 @@ public class PDFReportRenderer implements ReportRenderer {
         } catch (FOPException e) {
             log.fatal("FOPException", e);
             throw new ReportRenderException(e);
+        }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
         }
     }
 

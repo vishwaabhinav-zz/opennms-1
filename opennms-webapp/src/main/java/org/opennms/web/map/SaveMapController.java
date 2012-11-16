@@ -86,8 +86,9 @@ public class SaveMapController implements Controller {
 	/** {@inheritDoc} */
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response)
 			throws IOException {
-
-		ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
+            final String prefix = ThreadCategory.getPrefix();
+            try {
+                ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 		log = ThreadCategory.getInstance(this.getClass());
 		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(response
 				.getOutputStream(), "UTF-8"));
@@ -199,6 +200,9 @@ public class SaveMapController implements Controller {
 			log.info("Sending response to the client");
 		}
 		return null;
+            } finally {
+                ThreadCategory.setPrefix(prefix);
+            }
 	}
 
 }

@@ -89,6 +89,9 @@ public class DefaultReportStoreService implements ReportStoreService {
      * @param id a {@link java.lang.Integer} object.
      */
     public void delete(Integer id) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         String deleteFile = new String(m_reportCatalogDao.get(id).getLocation());
         boolean success = (new File(deleteFile).delete());
         if (success) {
@@ -97,6 +100,9 @@ public class DefaultReportStoreService implements ReportStoreService {
             log().warn("unable to delete report XML file: " + deleteFile + " will delete reportCatalogEntry anyway");
         }
         m_reportCatalogDao.delete(id);
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -116,6 +122,9 @@ public class DefaultReportStoreService implements ReportStoreService {
      * @return a {@link java.util.Map} object.
      */
     public Map<String, Object> getFormatMap() {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         HashMap <String, Object> formatMap = new HashMap<String, Object>();
         //TODO Tak: This call will be heavy if many RemoteRepositories are involved. Is this method necessary?
         //TODO Tak: Not working Repository By Repository
@@ -129,10 +138,16 @@ public class DefaultReportStoreService implements ReportStoreService {
             formatMap.put(id, formats);
         }
         return formatMap;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
     
     /** {@inheritDoc} */
     public void render(Integer id, ReportFormat format, OutputStream outputStream) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         ReportCatalogEntry catalogEntry = m_reportCatalogDao.get(id);
         String reportServiceName = m_globalReportRepository.getReportService(catalogEntry.getReportId());
         ReportService reportService = m_reportServiceLocator.getReportService(reportServiceName);
@@ -141,6 +156,9 @@ public class DefaultReportStoreService implements ReportStoreService {
             reportService.render(catalogEntry.getReportId(), catalogEntry.getLocation(), format, outputStream);
         } catch (ReportException e) {
             log.error("unable to render report", e);
+        }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
         }
     }
     

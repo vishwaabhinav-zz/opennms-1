@@ -238,7 +238,9 @@ public class MapPropertiesFactory extends Object {
 	 * @param mapPropertiesFileString a {@link java.lang.String} object.
 	 */
 	public MapPropertiesFactory(String mapPropertiesFileString) {
-		ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
+            final String prefix = ThreadCategory.getPrefix();
+            try {
+                ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 		log = ThreadCategory.getInstance(this.getClass());
 
 		this.mapPropertiesFileString = mapPropertiesFileString;
@@ -255,13 +257,18 @@ public class MapPropertiesFactory extends Object {
 		}
 		if(log.isDebugEnabled())
 			log.debug("Instantiating MapPropertiesFactory with properties file: "+mapPropertiesFileString);
+            } finally {
+                ThreadCategory.setPrefix(prefix);
+            }
 	}
 
 	/**
 	 * Create a new instance.
 	 */
 	public MapPropertiesFactory() {
-		ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
+            final String prefix = ThreadCategory.getPrefix();
+            try {
+                ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 		log = ThreadCategory.getInstance(this.getClass());
 		
 		try {
@@ -273,6 +280,9 @@ public class MapPropertiesFactory extends Object {
 		}
 		if(log.isDebugEnabled())
 			log.debug("Instantiating MapPropertiesFactory");
+            } finally {
+                ThreadCategory.setPrefix(prefix);
+            }
 	}
 	
 
@@ -285,6 +295,9 @@ public class MapPropertiesFactory extends Object {
 	 */
 	public synchronized void init() throws FileNotFoundException,
 			IOException {
+            final String prefix = ThreadCategory.getPrefix();
+            try {
+                ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 		
 		log.info("Init");
 		if (mapPropertiesFileString == null) {
@@ -303,6 +316,9 @@ public class MapPropertiesFactory extends Object {
 
 		parseMapProperties();
 		m_loaded = true;
+            } finally {
+                ThreadCategory.setPrefix(prefix);
+            }
 	}
 
 	/**
@@ -487,6 +503,9 @@ public class MapPropertiesFactory extends Object {
 	 */
 	protected void parseMapProperties() throws FileNotFoundException,
 			IOException {
+            final String prefix = ThreadCategory.getPrefix();
+            try {
+                ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 		log.debug("Parsing map.properties...");
 		severitiesMap = new HashMap<String,Severity>();
 		statusesMap = new HashMap<String,Status>();
@@ -895,6 +914,9 @@ public class MapPropertiesFactory extends Object {
 					+ ". Adding it.");
 			bgImagesMap.put(bg[i], filename);
 		}
+            } finally {
+                ThreadCategory.setPrefix(prefix);
+            }
 	}
 
 	/**

@@ -51,10 +51,6 @@ import org.opennms.web.map.MapsConstants;
  *
  * @author <a href="mailto:antonio@opennms.it">Antonio Russo</a>
  * @author <a href="mailto:dj@opennms.org">DJ Gregor</a>
- * @author <a href="mailto:antonio@opennms.it">Antonio Russo</a>
- * @author <a href="mailto:dj@opennms.org">DJ Gregor</a>
- * @version $Id: $
- * @since 1.8.1
  */
 public class ServerDataSource implements DataSourceInterface {
 
@@ -85,7 +81,6 @@ public class ServerDataSource implements DataSourceInterface {
 	 * @param params a {@link java.util.Map} object.
 	 */
 	public ServerDataSource(Map<?,?> params){
-		ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 		log = ThreadCategory.getInstance(this.getClass());
 		this.params = params;
 		init();
@@ -95,6 +90,9 @@ public class ServerDataSource implements DataSourceInterface {
 	 * Before invoking get() method, this method must be invoked.
 	 */
 	public void init(){
+	    final String prefix = ThreadCategory.getPrefix();
+	    try {
+	        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 		log.debug("Init...getting db connection");
 	
 			try{
@@ -124,7 +122,9 @@ public class ServerDataSource implements DataSourceInterface {
 			severityMapping.put("2","Cleared");
 			severityMapping.put("1","Normal");
 			severityMapping.put("0","Indeterminate");
-
+	    } finally {
+	        ThreadCategory.setPrefix(prefix);
+	    }
 	}
 	
 	private boolean isInitialized() throws SQLException {
@@ -139,6 +139,9 @@ public class ServerDataSource implements DataSourceInterface {
 	 * @throws java.lang.Throwable if any.
 	 */
 	protected void finalize() throws Throwable {
+            final String prefix = ThreadCategory.getPrefix();
+            try {
+                ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 		log.debug("Finalizing...closing db connections");
 		super.finalize();
 		if(opennmsConn!=null){
@@ -147,11 +150,17 @@ public class ServerDataSource implements DataSourceInterface {
 		if(externalConn!=null && !externalConn.isClosed()){
 			externalConn.close();
 		}
+            } finally {
+                ThreadCategory.setPrefix(prefix);
+            }
 	}
 	
 
 	/** {@inheritDoc} */
 	public String getSeverity(Object id){
+            final String prefix = ThreadCategory.getPrefix();
+            try {
+                ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 
 		String result = "-1";
 
@@ -176,9 +185,15 @@ public class ServerDataSource implements DataSourceInterface {
 			log.warn("No severity found for element with id "+(Integer)id);
 		}
 		return result;
+            } finally {
+                ThreadCategory.setPrefix(prefix);
+            }
 	}
 
 	private Set<String> getIpAddrById(Object id){
+            final String prefix = ThreadCategory.getPrefix();
+            try {
+                ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 		//get ipaddresses of the node
 		String sqlQueryIFaces= "select distinct ipaddr from ipinterface where ipaddr!='0.0.0.0' and nodeid=?";
 		Set<String> ipAddrs = new HashSet<String>();
@@ -200,9 +215,15 @@ public class ServerDataSource implements DataSourceInterface {
 				log.error("Error while getting ipaddress by id "+e);
 			}
 		return ipAddrs;
+            } finally {
+                ThreadCategory.setPrefix(prefix);
+            }
 	}
 
 	private String getSev(Set<String> ipAddrs){
+            final String prefix = ThreadCategory.getPrefix();
+            try {
+                ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 
 		String getDataQuery="select max("+SEVERITY_FIELD+") from "+TABLE_NAME+" where ip_address in (";
 		Iterator<String> it = ipAddrs.iterator();
@@ -236,11 +257,17 @@ public class ServerDataSource implements DataSourceInterface {
 		log.debug("Getting severity mapping for key="+value+": sevLabel="+sevLabel);
 		
 		return sevLabel;
+            } finally {
+                ThreadCategory.setPrefix(prefix);
+            }
 	}
 
 	
 	/** {@inheritDoc} */
 	public String getStatus(Object id){
+            final String prefix = ThreadCategory.getPrefix();
+            try {
+                ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 
 		String result = "-1";
 
@@ -265,10 +292,15 @@ public class ServerDataSource implements DataSourceInterface {
 			log.warn("No severity found for element with id "+(Integer)id);
 		}
 		return result;
-
+            } finally {
+                ThreadCategory.setPrefix(prefix);
+            }
 	}
 	
 	private String getSt(Set<String> ipAddrs){
+            final String prefix = ThreadCategory.getPrefix();
+            try {
+                ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 		
 		String getDataQuery="select "+STATUS_FIELD+" from "+TABLE_NAME+" where ip_address in (";
 		Iterator<String> it = ipAddrs.iterator();
@@ -312,6 +344,9 @@ public class ServerDataSource implements DataSourceInterface {
 		}
 		
 		return value;
+            } finally {
+                ThreadCategory.setPrefix(prefix);
+            }
 	}
 	
 	/** {@inheritDoc} */

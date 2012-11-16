@@ -135,6 +135,7 @@ public class Outage extends Object {
      */
     public long getDownTime(long curTime, long rollingWindow) {
         String oldPrefix = ThreadCategory.getPrefix();
+        try {
         ThreadCategory.setPrefix(LOG4J_CATEGORY);
         // Category log = ThreadCategory.getInstance(this.getClass());
         long downTime = 0;
@@ -180,11 +181,13 @@ public class Outage extends Object {
                 }
             }
         }
-        ThreadCategory.setPrefix(oldPrefix);
         
         // if(log.isDebugEnabled())
         // log.debug("Downtime " + downTime);
         return downTime;
+        } finally {
+            ThreadCategory.setPrefix(oldPrefix);
+        }
     }
 
     /**

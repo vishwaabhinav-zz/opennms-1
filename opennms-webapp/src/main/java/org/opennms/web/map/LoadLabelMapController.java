@@ -87,7 +87,9 @@ public class LoadLabelMapController extends SimpleFormController {
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(response.getOutputStream(), "UTF-8"));
-		ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 		log = ThreadCategory.getInstance(this.getClass());
 		
 		try{
@@ -104,6 +106,9 @@ public class LoadLabelMapController extends SimpleFormController {
 		}
 
 		return null;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
 	}
 	
 

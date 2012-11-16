@@ -84,10 +84,12 @@ public class MapStartUpController extends SimpleFormController {
 	/** {@inheritDoc} */
 	@Override
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
+            final String prefix = ThreadCategory.getPrefix();
+            try {
+                ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 		
 		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(response
 				.getOutputStream(), "UTF-8"));
-		ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 		log = ThreadCategory.getInstance(this.getClass());
 		
 		try{
@@ -106,6 +108,9 @@ public class MapStartUpController extends SimpleFormController {
 		}
 
 		return null;
+            } finally {
+                ThreadCategory.setPrefix(prefix);
+            }
 	}
 	
 

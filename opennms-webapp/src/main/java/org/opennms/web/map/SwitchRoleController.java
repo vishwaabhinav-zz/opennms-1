@@ -85,8 +85,9 @@ public class SwitchRoleController implements Controller {
 
 	/** {@inheritDoc} */
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		
-		ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
+            final String prefix = ThreadCategory.getPrefix();
+            try {
+                ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 		log = ThreadCategory.getInstance(this.getClass());
 		String adminModeStr = request.getParameter("adminMode");
 		boolean adminMode = false;
@@ -110,6 +111,9 @@ public class SwitchRoleController implements Controller {
 		
 
 		return null;
+            } finally {
+                ThreadCategory.setPrefix(prefix);
+            }
 	}
 
 }

@@ -94,7 +94,9 @@ public class JasperReportService implements ReportService {
      */
     public ReportParameters getParameters(String reportId)
             throws ReportException {
-
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         ReportParameters reportParameters = new ReportParameters();
         ArrayList<ReportIntParm> intParms;
         ArrayList<ReportFloatParm> floatParms;
@@ -303,6 +305,9 @@ public class JasperReportService implements ReportService {
         }
 
         return reportParameters;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -310,6 +315,9 @@ public class JasperReportService implements ReportService {
      */
     public void render(String ReportId, String location, ReportFormat format,
                        OutputStream outputStream) throws ReportException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         try {
 
             JasperPrint jasperPrint = getJasperPrint(location);
@@ -333,6 +341,9 @@ public class JasperReportService implements ReportService {
             log.error("unable to render report", e);
             throw new ReportException("unable to render report", e);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     private JasperPrint getJasperPrint(String location) throws JRException {
@@ -348,6 +359,9 @@ public class JasperReportService implements ReportService {
      */
     public String run(HashMap<String, Object> reportParms, String reportId)
             throws ReportException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         String baseDir = System.getProperty("opennms.report.dir");
         JasperReport jasperReport = null;
         String outputFileName = null;
@@ -415,6 +429,9 @@ public class JasperReportService implements ReportService {
         }
 
         return outputFileName;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
 
@@ -428,6 +445,9 @@ public class JasperReportService implements ReportService {
      */
     @SuppressWarnings("unchecked")
     private HashMap<String, Object> buildSubreport(String mainReportId, JasperReport mainReport) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         String repositoryId = mainReportId.substring(0, mainReportId.indexOf("_"));
         HashMap<String, Object> subreportMap = new HashMap<String, Object>();
 
@@ -440,17 +460,21 @@ public class JasperReportService implements ReportService {
         }
 
         for (@SuppressWarnings("rawtypes") Map.Entry entry : subreportMap.entrySet()) {
+            final String reportId = repositoryId + "_" + entry.getKey();
             try {
-                entry.setValue(JasperCompileManager.compileReport(m_globalReportRepository.getTemplateStream(repositoryId + "_" + entry.getKey())));
+                entry.setValue(JasperCompileManager.compileReport(m_globalReportRepository.getTemplateStream(reportId)));
             } catch (JRException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                log.error("failed to compile report " + reportId, e);
             }
         }
 
         for (@SuppressWarnings("rawtypes") Map.Entry entry : subreportMap.entrySet()) {
-            System.out.println("Key: " + entry.getKey() + " - " + "Value: " + entry.getValue());
+            log.debug("Key: " + entry.getKey() + " - " + "Value: " + entry.getValue());
         }
         return subreportMap;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -459,6 +483,9 @@ public class JasperReportService implements ReportService {
     public void runAndRender(HashMap<String, Object> reportParms,
                              String reportId, ReportFormat format, OutputStream outputStream)
             throws ReportException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
 
         JasperReport jasperReport = null;
         JasperPrint jasperPrint = null;
@@ -509,7 +536,9 @@ public class JasperReportService implements ReportService {
             }
 
         }
-
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     private void exportReport(ReportFormat format, JasperPrint jasperPrint,
@@ -546,6 +575,9 @@ public class JasperReportService implements ReportService {
     private HashMap<String, Object> buildJRparameters(
             HashMap<String, Object> onmsReportParms, JRParameter[] reportParms)
             throws ReportException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
 
         HashMap<String, Object> jrReportParms = new HashMap<String, Object>();
 
@@ -623,7 +655,9 @@ public class JasperReportService implements ReportService {
         }
 
         return jrReportParms;
-
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**

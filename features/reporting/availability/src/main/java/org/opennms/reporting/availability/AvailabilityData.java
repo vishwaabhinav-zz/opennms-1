@@ -164,6 +164,7 @@ public class AvailabilityData {
             throws IOException, MarshalException, ValidationException,
             Exception {
         String oldPrefix = ThreadCategory.getPrefix();
+        try {
         ThreadCategory.setPrefix(LOG4J_CATEGORY);
         ThreadCategory log = ThreadCategory.getInstance(this.getClass());
         log.debug("Inside AvailabilityData");
@@ -240,7 +241,10 @@ public class AvailabilityData {
         if (log.isDebugEnabled()) {
             log.debug("After availCalculations");
         }
-        ThreadCategory.setPrefix(oldPrefix);
+        
+        } finally {
+            ThreadCategory.setPrefix(oldPrefix);
+        }
     }
 
     /**

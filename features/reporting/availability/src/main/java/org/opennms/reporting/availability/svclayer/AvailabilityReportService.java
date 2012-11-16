@@ -91,6 +91,9 @@ public class AvailabilityReportService implements ReportService {
     /** {@inheritDoc} */
     public boolean validate(HashMap<String, Object> reportParms,
             String reportID) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
 
         if (!reportParms.containsKey("endDate")) {
             log.fatal("report parameters should contain parameter endDate");
@@ -113,6 +116,9 @@ public class AvailabilityReportService implements ReportService {
         }
 
         return true;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
 
     }
 
@@ -120,6 +126,9 @@ public class AvailabilityReportService implements ReportService {
     /** {@inheritDoc} */
     public void render(String id, String location, ReportFormat format,
             OutputStream outputStream) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         
         FileInputStream inputStream = null;
         
@@ -129,10 +138,16 @@ public class AvailabilityReportService implements ReportService {
             } catch (FileNotFoundException e) {
                 log.error("could not open input file", e);
             }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
     
     private void render(String id, InputStream inputStream, ReportFormat format,
             OutputStream outputStream) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
 
         Resource xsltResource;
         ReportRenderer renderer;
@@ -179,6 +194,9 @@ public class AvailabilityReportService implements ReportService {
             log.fatal("IO exception flushing output stream ", e);
         }
 
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
@@ -201,6 +219,9 @@ public class AvailabilityReportService implements ReportService {
     /** {@inheritDoc} */
     public String run(HashMap<String, Object> reportParms,
             String reportId) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         
         AvailabilityCalculator calculator;
         String reportFileName = null;
@@ -243,11 +264,17 @@ public class AvailabilityReportService implements ReportService {
 
         return reportFileName;
 
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
     
     /** {@inheritDoc} */
     public void runAndRender(HashMap<String, Object> reportParms,
             String reportId, ReportFormat format, OutputStream outputStream) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         BufferedOutputStream bout = new BufferedOutputStream(out);
@@ -298,6 +325,9 @@ public class AvailabilityReportService implements ReportService {
             log.fatal("IO exception flushing output stream ", e);
         } 
         
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     

@@ -49,10 +49,6 @@ import org.opennms.netmgt.config.DataSourceFactory;
  * servlets and JSPs.
  *
  * @author <A HREF="mailto:larry@opennms.org">Lawrence Karnowski </A>
- * @author <A HREF="http://www.opennms.org/">OpenNMS </A>
- * @author <A HREF="mailto:larry@opennms.org">Lawrence Karnowski </A>
- * @author <A HREF="http://www.opennms.org/">OpenNMS </A>
- * @version $Id: $
  */
 public class ServletInitializer extends Object {
     /**

@@ -83,6 +83,9 @@ public class DefaultReportWrapperService implements ReportWrapperService {
 
     /** {@inheritDoc} */
     public DeliveryOptions getDeliveryOptions(String reportId, String userId) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         DeliveryOptions options = new DeliveryOptions();
 
         options.setFormat(ReportFormat.HTML);
@@ -114,6 +117,9 @@ public class DefaultReportWrapperService implements ReportWrapperService {
         options.setInstanceId(reportId + " " + userId);
 
         return options;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
@@ -123,6 +129,9 @@ public class DefaultReportWrapperService implements ReportWrapperService {
 
     /** {@inheritDoc} */
     public ReportParameters getParameters(String reportId) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         try {
             return getReportService(reportId).getParameters(reportId);
         } catch (ReportException e) {
@@ -130,6 +139,9 @@ public class DefaultReportWrapperService implements ReportWrapperService {
                       e);
         }
         return null;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
     
     /** {@inheritDoc} */
@@ -146,13 +158,18 @@ public class DefaultReportWrapperService implements ReportWrapperService {
     /** {@inheritDoc} */
     public void render(String reportId, String location, ReportFormat format,
             OutputStream outputStream) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         try {
             getReportService(reportId).render(reportId, location, format,
                                               outputStream);
         } catch (ReportException e) {
             log.error("failed to render report", e);
         }
-
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
     
     /** {@inheritDoc} */
@@ -160,6 +177,9 @@ public class DefaultReportWrapperService implements ReportWrapperService {
             ReportMode mode,
             DeliveryOptions deliveryOptions,
             String reportId) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
         
         if (!deliveryOptions.getPersist()) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -200,12 +220,17 @@ public class DefaultReportWrapperService implements ReportWrapperService {
                 log.error("failed to run or render report: " + reportId, reportException);
             }
         }
-
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     private void mailReport(DeliveryOptions deliveryOptions,
             ByteArrayOutputStream outputStream) {
+        final String prefix = ThreadCategory.getPrefix();
         try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
+       try {
             JavaMailer jm = new JavaMailer();
             jm.setTo(deliveryOptions.getMailTo());
             jm.setSubject(deliveryOptions.getInstanceId());
@@ -234,6 +259,9 @@ public class DefaultReportWrapperService implements ReportWrapperService {
             jm.mailSend();
         } catch (JavaMailerException e) {
             log.error("Caught JavaMailer exception sending report", e);
+        }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
         }
     }
 
@@ -271,6 +299,9 @@ public class DefaultReportWrapperService implements ReportWrapperService {
    
     public void runAndRender(ReportParameters parameters, ReportMode mode,
             OutputStream outputStream) {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(LOG4J_CATEGORY);
 
         // TODO remove this debug code
         Map<String, Object> reportParms = parameters.getReportParms(mode);
@@ -294,7 +325,9 @@ public class DefaultReportWrapperService implements ReportWrapperService {
             log.error("failed to run or render report: "
                     + parameters.getReportId(), reportException);
         }
-
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
 }

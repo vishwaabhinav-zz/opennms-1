@@ -71,13 +71,6 @@ import org.opennms.web.map.view.VMapInfo;
  *         maps stored on DB. It uses the constructor parameters for the
  *         connection. If default constructor is called, it uses default
  *         OpenNMS db connector (Vault)
- * @author <a href="mailto:antonio@opennms.it">Antonio Russo</a>
- * @author <a href="mailto:dj@opennms.org">DJ Gregor</a> The class manages
- *         maps stored on DB. It uses the constructor parameters for the
- *         connection. If default constructor is called, it uses default
- *         OpenNMS db connector (Vault)
- * @version $Id: $
- * @since 1.8.1
  */
 public class DBManager extends Manager {
 
@@ -101,10 +94,15 @@ public class DBManager extends Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     public DBManager() throws MapsException {
-        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         log = ThreadCategory.getInstance(this.getClass());
         if (log.isDebugEnabled())
             log.debug("Instantiating DBManager (using Vault)");
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -115,7 +113,9 @@ public class DBManager extends Manager {
      */
     public DBManager(java.util.Map<String, String> params)
             throws MapsException {
-        ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         log = ThreadCategory.getInstance(this.getClass());
         if (log.isDebugEnabled())
             log.debug("Instantiating DBManager with params: " + params);
@@ -131,6 +131,9 @@ public class DBManager extends Manager {
                                     "Error while initializing dbconnection factory",
                                     e);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
 
     }
 
@@ -140,6 +143,9 @@ public class DBManager extends Manager {
      */
 
     Connection createConnection() throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
 
         if (m_factory != null) {
             try {
@@ -156,9 +162,15 @@ public class DBManager extends Manager {
                 throw new MapsException(e);
             }
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     void releaseConnection(Connection conn) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         try {
             if (conn != null && !conn.isClosed()) {
                 if (m_factory != null) {
@@ -171,6 +183,9 @@ public class DBManager extends Manager {
             log.error("Exception while releasing connection");
             throw new MapsException(e);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -180,12 +195,18 @@ public class DBManager extends Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     public void finalize(Connection conn) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         log.debug("finalizing...");
         try {
             releaseConnection(conn);
         } catch (Throwable e) {
             log.error("Exception while finalizing", e);
             throw new MapsException(e);
+        }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
         }
     }
 
@@ -226,6 +247,9 @@ public class DBManager extends Manager {
 
     /** {@inheritDoc} */
     public synchronized int saveMap(DbMap m, Collection<DbElement> e) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         log.debug("saving map...");
         Connection conn = startSession();
         final String sqlGetCurrentTimestamp = "SELECT CURRENT_TIMESTAMP";
@@ -318,6 +342,9 @@ public class DBManager extends Manager {
         if (m.isNew())
                 return nxtid;
         else return m.getId();
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     private synchronized void saveElementInSession(DbElement e, Connection conn)
@@ -381,6 +408,9 @@ public class DBManager extends Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     public synchronized void saveElement(DbElement e) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         log.debug("saving element");
         Connection conn = startSession();
 
@@ -436,6 +466,9 @@ public class DBManager extends Manager {
         } finally {
             endSession(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -446,6 +479,9 @@ public class DBManager extends Manager {
      */
     public synchronized void deleteElements(DbElement[] elems)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         log.debug("deleting elements...");
         Connection conn = startSession();
         try {
@@ -463,6 +499,9 @@ public class DBManager extends Manager {
         } finally {
             endSession(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -472,9 +511,15 @@ public class DBManager extends Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     public synchronized void deleteElement(DbElement e) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         log.debug("deleting element...");
         if (e != null) {
             deleteElement(e.getId(), e.getMapId(), e.getType());
+        }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
         }
     }
 
@@ -512,6 +557,9 @@ public class DBManager extends Manager {
      */
     public synchronized void deleteElement(int id, int mapid, String type)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         log.debug("deleting element...");
         Connection conn = startSession();
         final String sqlDelete = "DELETE FROM " + elementTable
@@ -531,6 +579,9 @@ public class DBManager extends Manager {
 
         } finally {
             endSession(conn);
+        }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
         }
     }
 
@@ -553,6 +604,9 @@ public class DBManager extends Manager {
 
     /** {@inheritDoc} */
     public synchronized int deleteMap(int id) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         log.debug("deleting map...");
         Connection conn = startSession();
         final String sqlDeleteMap = "DELETE FROM " + mapTable
@@ -572,6 +626,9 @@ public class DBManager extends Manager {
         } finally {
             endSession(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -581,6 +638,9 @@ public class DBManager extends Manager {
      */
     public synchronized void deleteNodeTypeElementsFromAllMaps()
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         log.debug("deleting all node elements...");
         Connection conn = startSession();
         final String sqlDelete = "DELETE FROM " + elementTable
@@ -599,6 +659,9 @@ public class DBManager extends Manager {
         } finally {
             endSession(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -608,6 +671,9 @@ public class DBManager extends Manager {
      */
     public synchronized void deleteMapTypeElementsFromAllMaps()
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         log.debug("deleting all map elements...");
         Connection conn = startSession();
         final String sqlDelete = "DELETE FROM " + elementTable
@@ -625,11 +691,17 @@ public class DBManager extends Manager {
         } finally {
             endSession(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public DbElement getElement(int id, int mapId, String type)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
 
         try {
@@ -654,17 +726,26 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public DbElement newElement(int id, int mapId, String type)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         DbElement e = new DbElement(mapId, id, type, null, null, null, 0, 0);
         e = completeElement(e);
         log.debug("Creating new VElement mapId:" + mapId + " id:" + id
                 + " type:" + type + " label:" + e.getLabel() + " iconname:"
                 + e.getIcon() + " x:" + 0 + " y:" + 0);
         return e;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -718,6 +799,9 @@ public class DBManager extends Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     public DbElement[] getAllElements() throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT * FROM " + elementTable;
@@ -739,10 +823,16 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public DbElement[] getElementsOfMap(int mapid) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT * FROM " + elementTable
@@ -767,10 +857,16 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public DbElement[] getNodeElementsOfMap(int mapid) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT * FROM " + elementTable
@@ -794,10 +890,16 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public DbElement[] getMapElementsOfMap(int mapid) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT * FROM " + elementTable
@@ -822,11 +924,17 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public DbElement[] getElementsLike(String elementLabel)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT * FROM " + elementTable
@@ -849,6 +957,9 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -859,6 +970,9 @@ public class DBManager extends Manager {
      */
     public java.util.Map<Integer, Set<Integer>> getMapsStructure()
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             java.util.Map<Integer, Set<Integer>> maps = new HashMap<Integer, Set<Integer>>();
@@ -889,10 +1003,16 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public int countMaps(int mapId) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT COUNT(*) FROM " + mapTable
@@ -914,10 +1034,16 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public DbMap getMap(int id) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT * FROM " + mapTable
@@ -936,10 +1062,16 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public DbMap[] getMaps(String mapname, String maptype) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT * FROM " + mapTable
@@ -964,6 +1096,9 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -973,6 +1108,9 @@ public class DBManager extends Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     public DbMap[] getAllMaps() throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT * FROM " + mapTable;
@@ -994,10 +1132,16 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public DbMap[] getMapsLike(String mapLabel) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT * FROM " + mapTable
@@ -1024,10 +1168,16 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public DbMap[] getMapsByName(String mapLabel) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT * FROM " + mapTable
@@ -1053,10 +1203,16 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public DbMap[] getContainerMaps(int id, String type) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT " + mapTable + ".* FROM "
@@ -1082,6 +1238,9 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -1091,6 +1250,9 @@ public class DBManager extends Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     public VMapInfo[] getAllMapMenus() throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT mapid,mapname,mapowner FROM "
@@ -1115,10 +1277,16 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public VMapInfo getMapMenu(int mapId) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT mapid,mapname,mapowner FROM "
@@ -1140,10 +1308,16 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public VMapInfo[] getMapsMenuByName(String mapLabel) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT mapid,mapname,mapowner FROM "
@@ -1169,10 +1343,16 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public VMapInfo[] getMapsMenuByOwner(String owner) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT mapid,mapname,mapowner FROM "
@@ -1199,10 +1379,16 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public VMapInfo[] getMapsMenuByGroup(String group) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT mapid,mapname,mapowner FROM "
@@ -1229,6 +1415,9 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -1238,6 +1427,9 @@ public class DBManager extends Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     public VMapInfo[] getMapsMenuByOther() throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT mapid,mapname,mapowner FROM "
@@ -1263,17 +1455,26 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public boolean isElementInMap(int elementId, int mapId, String type)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         try {
             DbElement element = null;
             element = getElement(elementId, mapId, type);
             return (element != null);
         } catch (Throwable e) {
             throw new MapsException(e);
+        }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
         }
     }
 
@@ -1284,6 +1485,9 @@ public class DBManager extends Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     public Vector<VElementInfo> getAllElementInfo() throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT  n.nodeid,n.nodelabel,i.ipaddr FROM node n left join ipinterface i on n.nodeid=i.nodeid" +
@@ -1309,6 +1513,9 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -1318,6 +1525,9 @@ public class DBManager extends Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     public List<VElementInfo> getAlarmedElements() throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             // final String sqlQuery =
@@ -1342,7 +1552,9 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
-
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -1354,6 +1566,9 @@ public class DBManager extends Manager {
      */
     public java.util.Map<Integer, Double> getAvails(DbElement[] mapElements)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         // get avails for all nodes in map and its submaps
         java.util.Map<Integer, Double> availsMap = null;
         log.debug("avail Enabled");
@@ -1375,6 +1590,9 @@ public class DBManager extends Manager {
         availsMap = getNodeAvailability(nodeIds);
         log.debug("Avails obtained");
         return availsMap;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -1447,7 +1665,10 @@ public class DBManager extends Manager {
         return retMap;
     }
 
-    String getMapName(int id) throws MapsException {
+    public String getMapName(int id) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT mapname FROM " + mapTable
@@ -1469,6 +1690,9 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -1478,6 +1702,9 @@ public class DBManager extends Manager {
      * @throws org.opennms.web.map.MapsException if any.
      */
     public Vector<Integer> getDeletedNodes() throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Connection conn = createConnection();
         try {
             final String sqlQuery = "SELECT nodeid  FROM node where nodetype='D'";
@@ -1499,6 +1726,9 @@ public class DBManager extends Manager {
         } finally {
             releaseConnection(conn);
         }
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /**
@@ -1509,6 +1739,9 @@ public class DBManager extends Manager {
      */
     public Set<Integer> getNodeidsOnElement(DbElement elem)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         Set<Integer> elementNodeIds = new HashSet<Integer>();
         if (elem.isNode()) {
             elementNodeIds.add(new Integer(elem.getId()));
@@ -1531,7 +1764,9 @@ public class DBManager extends Manager {
             }
         }
         return elementNodeIds;
-
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     private Vector<DbMap> rs2MapVector(ResultSet rs) throws SQLException {
@@ -1655,6 +1890,9 @@ public class DBManager extends Manager {
     /** {@inheritDoc} */
     public Set<LinkInfo> getLinksOnElements(Set<Integer> allnodes)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         log.debug("getLinksOnElements " + allnodes);
         Set<LinkInfo> nodes = null;
         Connection conn = createConnection();
@@ -1946,11 +2184,16 @@ public class DBManager extends Manager {
             releaseConnection(conn);
         }
         return nodes;
-
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     /** {@inheritDoc} */
     public Set<Integer> getNodeIdsBySource(String query) throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         if (query == null) {
             return getAllNodes();
         }
@@ -1976,6 +2219,9 @@ public class DBManager extends Manager {
             releaseConnection(conn);
         }
         return nodes;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     private Set<Integer> getAllNodes() throws MapsException {
@@ -2003,6 +2249,9 @@ public class DBManager extends Manager {
     @Override
     public boolean isElementDeleted(int elementId, String type)
             throws MapsException {
+        final String prefix = ThreadCategory.getPrefix();
+        try {
+            ThreadCategory.setPrefix(MapsConstants.LOG4J_CATEGORY);
         log.debug("isElementNotDeleted: elementId=" + elementId + " type= "
                 + type);
         if (type.equals(MapsConstants.MAP_TYPE)) {
@@ -2011,6 +2260,9 @@ public class DBManager extends Manager {
             return isNodeInRow(elementId);
         }
         return false;
+        } finally {
+            ThreadCategory.setPrefix(prefix);
+        }
     }
 
     private boolean isMapInRow(int mapId) throws MapsException {
