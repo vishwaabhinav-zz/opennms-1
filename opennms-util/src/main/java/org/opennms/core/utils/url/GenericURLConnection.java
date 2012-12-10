@@ -47,16 +47,6 @@ import java.util.Map;
 public abstract class GenericURLConnection extends URLConnection {
 
     /**
-     * Logging to output.log
-     */
-    private final Logger logger = LoggerFactory.getLogger("OpenNMS.Output." + GenericURLConnection.class.getName());
-
-    /**
-     * URL for connection
-     */
-    private URL m_url;
-
-    /**
      * User and password delimiter for URL user:pass@host
      */
     private static final String USERINFO_DELIMITER = ":";
@@ -80,6 +70,16 @@ public abstract class GenericURLConnection extends URLConnection {
      * Empty String
      */
     private static final String EMPTY_STRING = "";
+
+    /**
+     * Logging to output.log
+     */
+    private final Logger logger = LoggerFactory.getLogger("OpenNMS.Output." + GenericURLConnection.class.getName());
+
+    /**
+     * URL for connection
+     */
+    private URL m_url;
 
     /**
      * Default constructor
@@ -152,7 +152,7 @@ public abstract class GenericURLConnection extends URLConnection {
                 logger.error("Unsupported " + UTF8_ENCODING + " encoding for URL query string: '{}'. Error message: '{}'", queryString, e.getMessage());
             }
 
-            // queryString is everthing behind "?"
+            // queryString is everything behind "?"
             String[] queryArgs = queryString.split(URL_QUERY_ARGS_DELIMITERS);
 
             for (String queryArg : queryArgs) {

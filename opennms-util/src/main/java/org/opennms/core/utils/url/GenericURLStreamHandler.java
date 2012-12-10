@@ -47,6 +47,7 @@ import java.net.URLStreamHandler;
  */
 public class GenericURLStreamHandler extends URLStreamHandler {
     private Class<? extends URLConnection> urlConnectionClass;
+
     private int defaultPort = -1;
 
     /**
@@ -54,8 +55,8 @@ public class GenericURLStreamHandler extends URLStreamHandler {
      * <p/>
      * Create URL stream handler with given class and customized default port.
      *
-     * @param urlConnectionClass full qualified classname as {@java.lang.String} object.
-     * @param defaultPort        default port as {@java.lang.int} object.
+     * @param urlConnectionClass full qualified classname as {@link java.lang.String} object.
+     * @param defaultPort        default port as {@link int} object.
      */
     public GenericURLStreamHandler(Class<? extends URLConnection> urlConnectionClass, int defaultPort) {
         this.urlConnectionClass = urlConnectionClass;
@@ -67,7 +68,7 @@ public class GenericURLStreamHandler extends URLStreamHandler {
      * <p/>
      * Create URL stream handler with given class and default port -1.
      *
-     * @param urlConnectionClass full qualified classname as {@java.lang.String} object.
+     * @param urlConnectionClass full qualified classname as {@link java.lang.String} object.
      */
     public GenericURLStreamHandler(Class<? extends URLConnection> urlConnectionClass) {
         this(urlConnectionClass, -1);

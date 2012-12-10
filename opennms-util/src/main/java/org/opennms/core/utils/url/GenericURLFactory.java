@@ -46,6 +46,11 @@ import java.util.HashMap;
 public class GenericURLFactory implements URLStreamHandlerFactory {
 
     /**
+     * URL factory
+     */
+    private static GenericURLFactory genericUrlFactory = new GenericURLFactory();
+
+    /**
      * Logging to output.log
      */
     private final Logger logger = LoggerFactory.getLogger("OpenNMS.Output." + GenericURLFactory.class.getName());
@@ -59,11 +64,6 @@ public class GenericURLFactory implements URLStreamHandlerFactory {
      * Map with protocol and URL default ports
      */
     private HashMap<String, Integer> urlDefaultPorts = new HashMap<String, Integer>();
-
-    /**
-     * URL factory
-     */
-    private static GenericURLFactory genericUrlFactory = new GenericURLFactory();
 
     /**
      * Default constructor to initialize URL connections
@@ -156,7 +156,7 @@ public class GenericURLFactory implements URLStreamHandlerFactory {
      * Create stream handler
      *
      * @param protocol name as {@link java.lang.String} object.
-     * @return a {@java.net.URLStreamHandler} object.
+     * @return a {@link java.net.URLStreamHandler} object.
      */
     @SuppressWarnings("unchecked")
     public URLStreamHandler createURLStreamHandler(String protocol) {
