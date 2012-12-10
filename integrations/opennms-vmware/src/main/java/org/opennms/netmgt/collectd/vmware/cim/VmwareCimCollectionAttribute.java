@@ -55,6 +55,10 @@ public class VmwareCimCollectionAttribute extends AbstractCollectionAttribute im
         return m_alias;
     }
 
+    public String getMetricIdentifier() {
+        return "VmwareCim_" + m_attribType.getName();
+    }
+
     public String getNumericValue() {
         return m_value;
     }

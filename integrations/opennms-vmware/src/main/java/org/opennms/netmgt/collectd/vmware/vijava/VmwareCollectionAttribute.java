@@ -55,6 +55,10 @@ public class VmwareCollectionAttribute extends AbstractCollectionAttribute imple
         return m_alias;
     }
 
+    public String getMetricIdentifier() {
+        return "Vmware_" + m_attribType.getName();
+    }
+
     public String getNumericValue() {
         return m_value;
     }

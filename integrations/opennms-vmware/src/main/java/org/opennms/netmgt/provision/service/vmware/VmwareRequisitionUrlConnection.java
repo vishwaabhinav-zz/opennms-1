@@ -35,9 +35,9 @@ import org.exolab.castor.xml.MarshalException;
 import org.exolab.castor.xml.ValidationException;
 import org.opennms.core.utils.url.GenericURLConnection;
 import org.opennms.core.xml.JaxbUtils;
-import org.opennms.protocols.vmware.VmwareViJavaAccess;
 import org.opennms.netmgt.model.PrimaryType;
 import org.opennms.netmgt.provision.persist.requisition.*;
+import org.opennms.protocols.vmware.VmwareViJavaAccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -215,7 +215,7 @@ public class VmwareRequisitionUrlConnection extends GenericURLConnection {
      * @param managedEntity the managed entity
      * @return the generated requisition node
      */
-    private RequisitionNode createRequisitionNode(Set<String> ipAddresses, ManagedEntity managedEntity) {
+    private RequisitionNode createRequisitionNode(Set<String> ipAddresses, ManagedEntity managedEntity, int apiVersion) {
         RequisitionNode requisitionNode = new RequisitionNode();
 
         // Setting the node label
@@ -401,6 +401,8 @@ public class VmwareRequisitionUrlConnection extends GenericURLConnection {
         RequisitionAsset requisitionAssetState = new RequisitionAsset("vmwareState", vmState);
         requisitionNode.putAsset(requisitionAssetState);
 
+        requisitionNode.putCategory(new RequisitionCategory("VMware" + apiVersion));
+
         return requisitionNode;
     }
 
@@ -446,13 +448,25 @@ public class VmwareRequisitionUrlConnection extends GenericURLConnection {
             int apiVersion = vmwareViJavaAccess.getMajorApiVersion();
 
             // get services to be added to host systems
-            m_hostSystemServices = getHostSystemServices(apiVersion);
+            // m_hostSystemServices = getHostSystemServices(apiVersion);
+
+            if (m_args != null && m_args.get(VMWARE_HOSTSYSTEM_SERVICES) != null) {
+                m_hostSystemServices = m_args.get(VMWARE_HOSTSYSTEM_SERVICES).split(",");
+            } else {
+                m_hostSystemServices = new String[]{"VMware-ManagedEntity", "VMware-HostSystem", "VMwareCim-HostSystem"};
+            }
 
             // get services to be added to virtual machines
-            m_virtualMachineServices = getVirtualMachineServices(apiVersion);
+            // m_virtualMachineServices = getVirtualMachineServices(apiVersion);
 
-            iterateHostSystems(vmwareViJavaAccess);
-            iterateVirtualMachines(vmwareViJavaAccess);
+            if (m_args != null && m_args.get(VMWARE_VIRTUALMACHINE_SERVICES) != null) {
+                m_virtualMachineServices = m_args.get(VMWARE_VIRTUALMACHINE_SERVICES).split(",");
+            } else {
+                m_virtualMachineServices = new String[]{"VMware-ManagedEntity", "VMware-VirtualMachine"};
+            }
+
+            iterateHostSystems(vmwareViJavaAccess, apiVersion);
+            iterateVirtualMachines(vmwareViJavaAccess, apiVersion);
         } catch (RemoteException e) {
             logger.warn("Error retrieving managed objects from VMware management server '{}': '{}'", m_hostname, e.getMessage());
             return m_requisition;
@@ -516,7 +530,7 @@ public class VmwareRequisitionUrlConnection extends GenericURLConnection {
      * @param vmwareViJavaAccess the access/connection to use
      * @throws RemoteException
      */
-    private void iterateHostSystems(VmwareViJavaAccess vmwareViJavaAccess) throws RemoteException {
+    private void iterateHostSystems(VmwareViJavaAccess vmwareViJavaAccess, int apiVersion) throws RemoteException {
         ManagedEntity[] hostSystems;
 
         // search for host systems (esx hosts)
@@ -559,7 +573,7 @@ public class VmwareRequisitionUrlConnection extends GenericURLConnection {
                     }
 
                     // create the new node...
-                    RequisitionNode node = createRequisitionNode(ipAddresses, hostSystem);
+                    RequisitionNode node = createRequisitionNode(ipAddresses, hostSystem, apiVersion);
 
                     // ...and add it to the requisition
                     if (node != null) {
@@ -576,7 +590,7 @@ public class VmwareRequisitionUrlConnection extends GenericURLConnection {
      * @param vmwareViJavaAccess the access/connection to use
      * @throws RemoteException
      */
-    private void iterateVirtualMachines(VmwareViJavaAccess vmwareViJavaAccess) throws RemoteException {
+    private void iterateVirtualMachines(VmwareViJavaAccess vmwareViJavaAccess, int apiVersion) throws RemoteException {
         ManagedEntity[] virtualMachines;
 
         // search for all virtual machines
@@ -609,7 +623,7 @@ public class VmwareRequisitionUrlConnection extends GenericURLConnection {
                     }
 
                     // create the new node...
-                    RequisitionNode node = createRequisitionNode(ipAddresses, virtualMachine);
+                    RequisitionNode node = createRequisitionNode(ipAddresses, virtualMachine, apiVersion);
 
                     // add the operating system
                     if (virtualMachine.getGuest().getGuestFullName() != null) {
