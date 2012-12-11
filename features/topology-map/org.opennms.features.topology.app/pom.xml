@@ -5,7 +5,7 @@
     <relativePath>../poms/compiled/</relativePath>
     <groupId>org.opennms.features.topology.build</groupId>
     <artifactId>compiled-bundle-settings</artifactId>
-    <version>1.11.3-SNAPSHOT</version>
+    <version>1.11.4-SNAPSHOT</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
@@ -31,6 +31,33 @@
             <directory>src/main/resources</directory>
         </resource>
     </resources>
+    <plugins>
+        <plugin>
+		    <artifactId>maven-surefire-plugin</artifactId>
+		    <version>2.6</version>
+		    <configuration>
+		      <excludes>
+		        <exclude>**/*GwtTest.java</exclude>
+		      </excludes>
+		    </configuration>
+		</plugin>
+<!--       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>gwt-maven-plugin</artifactId>
+        <version>2.5.0-rc2</version>
+        <configuration>
+              <includes>**/*GwtTest.java</includes>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+-->
+    </plugins>
   </build>
 
 
@@ -42,16 +69,28 @@
       <type>pom</type>
     </dependency>
     <dependency>
-      <groupId>org.opennms.osgi.features.topology</groupId>
-      <artifactId>opennms-topology-api</artifactId>
+      <groupId>org.opennms.features.topology</groupId>
+      <artifactId>api</artifactId>
       <version>${project.version}</version>
-      <type>pom</type>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.opennms.features.topology.plugins.topo</groupId>
+      <artifactId>adapter</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <scope>provided</scope>
     </dependency>
     
     <dependency>
       <groupId>com.google.gwt</groupId>
       <artifactId>gwt-user</artifactId>
       <optional>true</optional>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>net.sf.jung</groupId>
@@ -87,8 +126,6 @@
     <dependency>
       <groupId>org.easymock</groupId>
       <artifactId>easymock</artifactId>
-      <version>3.1</version>
-      <scope>test</scope>
     </dependency>
     
     <dependency>

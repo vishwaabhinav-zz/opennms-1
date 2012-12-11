@@ -3,7 +3,7 @@
   <parent>
     <artifactId>opennms</artifactId>
     <groupId>org.opennms</groupId>
-    <version>1.11.3-SNAPSHOT</version>
+    <version>1.11.4-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>opennms-webapp</artifactId>
@@ -176,7 +176,7 @@
                 <configuration>
                     <artifacts>
                         <artifact>
-                            <file>target/opennms-webapp-1.11.3-SNAPSHOT/WEB-INF/lib/opennms-webapp-1.11.3-SNAPSHOT.jar</file>
+                            <file>target/opennms-webapp-1.11.4-SNAPSHOT/WEB-INF/lib/opennms-webapp-1.11.4-SNAPSHOT.jar</file>
                             <type>jar</type>
                         </artifact>
                     </artifacts>
@@ -197,6 +197,39 @@
         </executions>
       </plugin>
     </plugins>
+    <pluginManagement>
+    	<plugins>
+    		<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+    		<plugin>
+    			<groupId>org.eclipse.m2e</groupId>
+    			<artifactId>lifecycle-mapping</artifactId>
+    			<version>1.0.0</version>
+    			<configuration>
+    				<lifecycleMappingMetadata>
+    					<pluginExecutions>
+    						<pluginExecution>
+    							<pluginExecutionFilter>
+    								<groupId>
+    									org.opennms.maven.plugins
+    								</groupId>
+    								<artifactId>
+    									castor-maven-plugin
+    								</artifactId>
+    								<versionRange>[1.0,)</versionRange>
+    								<goals>
+    									<goal>generate</goal>
+    								</goals>
+    							</pluginExecutionFilter>
+    							<action>
+    								<ignore></ignore>
+    							</action>
+    						</pluginExecution>
+    					</pluginExecutions>
+    				</lifecycleMappingMetadata>
+    			</configuration>
+    		</plugin>
+    	</plugins>
+    </pluginManagement>
   </build>
   <profiles>
     <profile>
@@ -227,6 +260,7 @@
   <dependencies>
     <!-- indirect dependencies that belong in $OPENNMS_HOME/lib -->
     <!-- these should all be <scope>provided</scope> and also included in opennms-base-assembly -->
+
     <dependency>
       <groupId>org.opennms</groupId>
       <artifactId>opennms-web-dependencies</artifactId>
@@ -250,7 +284,7 @@
       <groupId>org.opennms.dependencies</groupId>
       <artifactId>felix-dependencies</artifactId>
       <type>pom</type>
-      <scope>provided</scope>
+      <scope>${onmsLibScope}</scope>
     </dependency>
     <dependency>
       <groupId>org.opennms.dependencies</groupId>
@@ -326,7 +360,6 @@
     <dependency>
         <groupId>org.opennms.core</groupId>
         <artifactId>org.opennms.core.soa</artifactId>
-        <scope>${onmsLibScope}</scope>
     </dependency>
     <dependency>
       <groupId>org.opennms.core</groupId>
@@ -347,6 +380,17 @@
       <groupId>org.opennms.dependencies</groupId>
       <artifactId>gwt-dependencies</artifactId>
       <type>pom</type>
+    </dependency>
+    <dependency>
+      <groupId>com.google.gwt</groupId>
+      <artifactId>gwt-user</artifactId>
+      <version>${gwtVersion}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty.orbit</groupId>
+      <artifactId>org.apache.taglibs.standard.glassfish</artifactId>
+      <version>1.2.0.v201112081803</version>
     </dependency>
     <dependency>
       <groupId>org.opennms.features</groupId>
@@ -445,20 +489,17 @@
     <dependency>
         <groupId>org.opennms.features</groupId>
         <artifactId>org.opennms.features.gwt-suggestion-combobox</artifactId>
-        <type>jar</type>
         <version>${project.version}</version>
         <scope>compile</scope>
     </dependency>
     <dependency>
         <groupId>org.opennms.features</groupId>
         <artifactId>org.opennms.features.gwt-graph-resources-list</artifactId>
-        <type>jar</type>
         <version>${project.version}</version>
     </dependency>
     <dependency>
         <groupId>org.opennms.features</groupId>
         <artifactId>org.opennms.features.gwt-snmpselect-list</artifactId>
-        <type>jar</type>
         <version>${project.version}</version>
     </dependency>
 
@@ -509,7 +550,11 @@
       <version>1.0.2</version>
       <scope>test</scope>
     </dependency>
-
-    
+    <dependency>
+      <groupId>org.opennms.core.snmp</groupId>
+      <artifactId>org.opennms.core.snmp.api</artifactId>
+      <version>${project.version}</version>
+      <type>jar</type>
+    </dependency>
   </dependencies>
 </project>

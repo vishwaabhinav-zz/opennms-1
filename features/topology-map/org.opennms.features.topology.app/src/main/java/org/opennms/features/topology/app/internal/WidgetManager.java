@@ -29,44 +29,83 @@
 package org.opennms.features.topology.app.internal;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.opennms.features.topology.api.IViewContribution;
+import org.opennms.features.topology.api.WidgetContext;
+import org.slf4j.LoggerFactory;
 
 import com.vaadin.ui.TabSheet;
 
+/**
+ * This class listens for {@link IViewContribution} service registrations and adds them
+ * to an internal {@link TabSheet}.
+ */
 public class WidgetManager {
 
     private List<IViewContribution> m_viewContributors = new ArrayList<IViewContribution>();
     private List<WidgetUpdateListener> m_listeners = new ArrayList<WidgetUpdateListener>();
     
-    public WidgetManager() {
-        
-    }
+    public WidgetManager() {}
     
     public void addUpdateListener(WidgetUpdateListener listener) {
-        m_listeners.add(listener);
+        LoggerFactory.getLogger(this.getClass()).info("Adding WidgetUpdateListener {} to WidgetManager {}", listener, this);
+        synchronized (m_listeners) {
+            m_listeners.add(listener);
+            updateWidgetListeners();
+        }
+    }
+
+    public void removeUpdateListener(WidgetUpdateListener listener) {
+        LoggerFactory.getLogger(this.getClass()).info("Removing WidgetUpdateListener {} from WidgetManager {}", listener, this);
+        synchronized (m_listeners) {
+            m_listeners.remove(listener);
+        }
+    }
+
+    public int widgetCount() {
+        return m_viewContributors.size();
     }
     
-    public TabSheet getTabSheet() {
+    /**
+     * Gets the list of Widgets as IViewContributions
+     * 
+     * @return List<IViewContribution>
+     */
+    public List<IViewContribution> getWidgets(){
+        return Collections.unmodifiableList(m_viewContributors);
+    }
+    
+    /**
+     * Gets a {@link TabSheet} view for all widgets in this manager.
+     * 
+     * @return TabSheet
+     */
+    public TabSheet getTabSheet(WidgetContext widgetContext) {
         TabSheet tabSheet = new TabSheet();
         
-        for(IViewContribution viewContrib : m_viewContributors) {
-            
-            if(viewContrib.getIcon() != null) {
-                tabSheet.addTab(viewContrib.getView(), viewContrib.getTitle(), viewContrib.getIcon());
-            } else {
-                tabSheet.addTab(viewContrib.getView(), viewContrib.getTitle());
+        synchronized (m_viewContributors) {
+            for(IViewContribution viewContrib : m_viewContributors) {
+                
+                if(viewContrib.getIcon() != null) {
+                    tabSheet.addTab(viewContrib.getView(widgetContext), viewContrib.getTitle(), viewContrib.getIcon());
+                } else {
+                    tabSheet.addTab(viewContrib.getView(widgetContext), viewContrib.getTitle());
+                }
+                
             }
-            
         }
         
         return tabSheet;
     }
     
     public void onBind(IViewContribution viewContribution) {
-        m_viewContributors.add(viewContribution);
-        updateWidgetListeners();
+        LoggerFactory.getLogger(this.getClass()).info("Binding IViewContribution {} to WidgetManager {}", viewContribution, this);
+        synchronized (m_viewContributors) {
+            m_viewContributors.add(viewContribution);
+            updateWidgetListeners();
+        }
     }
 
     private void updateWidgetListeners() {
@@ -76,10 +115,10 @@ public class WidgetManager {
     }
     
     public void onUnbind(IViewContribution viewContribution) {
-        m_viewContributors.remove(viewContribution);
-    }
-
-    public void removeUpdateListener(WidgetUpdateListener listener) {
-        m_listeners.remove(listener);
+        LoggerFactory.getLogger(this.getClass()).info("Unbinding IViewContribution {} from WidgetManager {}", viewContribution, this);
+        synchronized (m_viewContributors) {
+            m_viewContributors.remove(viewContribution);
+            updateWidgetListeners();
+        }
     }
 }

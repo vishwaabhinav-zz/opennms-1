@@ -31,17 +31,22 @@ package org.opennms.features.topology.plugins.topo.linkd.internal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.Assert;
 
 import org.easymock.EasyMock;
+import org.opennms.features.topology.api.GraphContainer;
+import org.opennms.features.topology.api.OperationContext;
 import org.opennms.netmgt.dao.DataLinkInterfaceDao;
 import org.opennms.netmgt.dao.IpInterfaceDao;
 import org.opennms.netmgt.dao.NodeDao;
+import org.opennms.netmgt.dao.SnmpInterfaceDao;
 
 import org.opennms.netmgt.model.DataLinkInterface;
 import org.opennms.netmgt.model.NetworkBuilder;
 import org.opennms.netmgt.model.OnmsDistPoller;
+import org.opennms.netmgt.model.OnmsIpInterface;
 import org.opennms.netmgt.model.OnmsNode;
 import org.opennms.netmgt.model.OnmsServiceType;
 
@@ -83,7 +88,16 @@ public class EasyMockDataPopulator {
     private NodeDao m_nodeDao;
     
     @Autowired
+    private SnmpInterfaceDao m_snmpInterfaceDao;
+
+    @Autowired
     private IpInterfaceDao m_ipInterfaceDao;
+
+    @Autowired
+    private OperationContext m_operationContext;
+    
+    @Autowired
+    private GraphContainer m_graphContainer;
     
     private OnmsNode m_node1;
     private OnmsNode m_node2;
@@ -238,14 +252,14 @@ public class EasyMockDataPopulator {
         nodes.add(node8);
         setNodes(nodes);
         
-        final DataLinkInterface dli12 = new DataLinkInterface(getNode2(), 1, getNode1().getId(), 1, "A", new Date());
-        final DataLinkInterface dli23 = new DataLinkInterface(getNode3(), 2, getNode2().getId(), 1, "A", new Date());
-        final DataLinkInterface dli34 = new DataLinkInterface(getNode4(), 1, getNode3().getId(), 1, "A", new Date());
-        final DataLinkInterface dli45 = new DataLinkInterface(getNode5(), 1, getNode4().getId(), 1, "A", new Date());
-        final DataLinkInterface dli56 = new DataLinkInterface(getNode6(), 1, getNode5().getId(), 1, "A", new Date());
-        final DataLinkInterface dli67 = new DataLinkInterface(getNode7(), 1, getNode6().getId(), 1, "A", new Date());
-        final DataLinkInterface dli78 = new DataLinkInterface(getNode8(), 2, getNode7().getId(), 1, "A", new Date());
-        final DataLinkInterface dli81 = new DataLinkInterface(getNode1(), 1, getNode8().getId(), 1, "A", new Date());
+        final DataLinkInterface dli12 = new DataLinkInterface(getNode2(), -1, getNode1().getId(), -1, "A", new Date());
+        final DataLinkInterface dli23 = new DataLinkInterface(getNode3(), -1, getNode2().getId(), -1, "A", new Date());
+        final DataLinkInterface dli34 = new DataLinkInterface(getNode4(), -1, getNode3().getId(), -1, "A", new Date());
+        final DataLinkInterface dli45 = new DataLinkInterface(getNode5(), -1, getNode4().getId(), -1, "A", new Date());
+        final DataLinkInterface dli56 = new DataLinkInterface(getNode6(), -1, getNode5().getId(), -1, "A", new Date());
+        final DataLinkInterface dli67 = new DataLinkInterface(getNode7(), -1, getNode6().getId(), -1, "A", new Date());
+        final DataLinkInterface dli78 = new DataLinkInterface(getNode8(), -1, getNode7().getId(), -1, "A", new Date());
+        final DataLinkInterface dli81 = new DataLinkInterface(getNode1(), -1, getNode8().getId(), -1, "A", new Date());
         
         dli12.setId(10012);
         dli23.setId(10023);
@@ -270,6 +284,14 @@ public class EasyMockDataPopulator {
 
     }
     
+    private List<OnmsIpInterface> getList(Set<OnmsIpInterface> ipset) {
+        List<OnmsIpInterface> ips = new ArrayList<OnmsIpInterface>();
+        for (OnmsIpInterface ip: ipset) {
+            ips.add(ip);
+        }
+        return ips;
+        
+    }
     public void setUpMock() {
         
         EasyMock.expect(m_dataLinkInterfaceDao.findAll()).andReturn(getLinks()).anyTimes();
@@ -277,11 +299,14 @@ public class EasyMockDataPopulator {
         
         for (int i=1;i<9;i++) {
             EasyMock.expect(m_nodeDao.get(i)).andReturn(getNode(i)).anyTimes();
+            EasyMock.expect(m_snmpInterfaceDao.findByNodeIdAndIfIndex(i, -1)).andReturn(null).anyTimes();
             EasyMock.expect(m_ipInterfaceDao.findPrimaryInterfaceByNodeId(i)).andReturn(getNode(i).getPrimaryInterface()).anyTimes();
+            EasyMock.expect(m_ipInterfaceDao.findByNodeId(i)).andReturn(getList(getNode(i).getIpInterfaces())).anyTimes();
         }
 
         EasyMock.replay(m_dataLinkInterfaceDao);
         EasyMock.replay(m_nodeDao);
+        EasyMock.replay(m_snmpInterfaceDao);
         EasyMock.replay(m_ipInterfaceDao);
     }
     
@@ -311,8 +336,9 @@ public class EasyMockDataPopulator {
 
     public void tearDown() {
         EasyMock.reset(m_dataLinkInterfaceDao);
-        EasyMock.reset(m_ipInterfaceDao);
         EasyMock.reset(m_nodeDao);
+        EasyMock.reset(m_snmpInterfaceDao);
+        EasyMock.reset(m_ipInterfaceDao);
     }
 
     public OnmsNode getNode1() {
@@ -411,14 +437,6 @@ public class EasyMockDataPopulator {
         this.m_nodeDao = nodeDao;
     }
 
-    public IpInterfaceDao getIpInterfaceDao() {
-        return m_ipInterfaceDao;
-    }
-
-    public void setIpInterfaceDao(IpInterfaceDao ipInterfaceDao) {
-        m_ipInterfaceDao = ipInterfaceDao;
-    }
-
     public void check(LinkdTopologyProvider topologyProvider) {
         Assert.assertTrue(topologyProvider.getVertexIds().size()==8);
         
@@ -470,4 +488,37 @@ public class EasyMockDataPopulator {
     public void setNodes(List<OnmsNode> nodes) {
         m_nodes = nodes;
     }
+
+    public OperationContext getOperationContext() {
+        return m_operationContext;
+    }
+
+    public void setOperationContext(OperationContext operationContext) {
+        m_operationContext = operationContext;
+    }
+
+    public GraphContainer getGraphContainer() {
+        return m_graphContainer;
+    }
+
+    public void setGraphContainer(GraphContainer graphContainer) {
+        m_graphContainer = graphContainer;
+    }
+
+    public SnmpInterfaceDao getSnmpInterfaceDao() {
+        return m_snmpInterfaceDao;
+    }
+
+    public void setSnmpInterfaceDao(SnmpInterfaceDao snmpInterfaceDao) {
+        m_snmpInterfaceDao = snmpInterfaceDao;
+    }
+
+    public IpInterfaceDao getIpInterfaceDao() {
+        return m_ipInterfaceDao;
+    }
+
+    public void setIpInterfaceDao(IpInterfaceDao ipInterfaceDao) {
+        m_ipInterfaceDao = ipInterfaceDao;
+    }
+
 }

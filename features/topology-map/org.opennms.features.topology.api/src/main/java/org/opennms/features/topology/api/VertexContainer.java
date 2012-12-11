@@ -28,17 +28,10 @@
 
 package org.opennms.features.topology.api;
 
-import com.vaadin.data.Container;
-import com.vaadin.data.util.BeanContainer;
-
-public abstract class VertexContainer<K, T> extends BeanContainer<K,T> implements Container.Hierarchical {
+public abstract class VertexContainer<K, T> extends HierarchicalBeanContainer<K,T> {
+    private static final long serialVersionUID = 1801742257915036973L;
 
     public VertexContainer(Class<? super T> type) {
         super(type);
     }
-    
-    public void fireItemSetChange() {
-        super.fireItemSetChange();
-    }
-
 }

@@ -29,64 +29,59 @@
 package org.opennms.features.topology.app.internal.jung;
 
 import java.awt.Dimension;
-import java.awt.Point;
-import java.awt.geom.Point2D;
-import java.util.List;
+import java.util.Collection;
 
-import org.apache.commons.collections15.Transformer;
+import org.opennms.features.topology.api.Graph;
 import org.opennms.features.topology.api.GraphContainer;
-import org.opennms.features.topology.api.LayoutAlgorithm;
-import org.opennms.features.topology.app.internal.Edge;
-import org.opennms.features.topology.app.internal.Graph;
-import org.opennms.features.topology.app.internal.Vertex;
+import org.opennms.features.topology.api.Layout;
+import org.opennms.features.topology.api.topo.Edge;
+import org.opennms.features.topology.api.topo.EdgeRef;
+import org.opennms.features.topology.api.topo.Vertex;
+import org.opennms.features.topology.api.topo.VertexRef;
 
 import edu.uci.ics.jung.algorithms.layout.FRLayout;
 import edu.uci.ics.jung.algorithms.layout.ISOMLayout;
 import edu.uci.ics.jung.algorithms.layout.SpringLayout;
 import edu.uci.ics.jung.graph.SparseGraph;
 
-public class RealUltimateLayoutAlgorithm implements LayoutAlgorithm, LayoutConstants {
+public class RealUltimateLayoutAlgorithm extends AbstractLayoutAlgorithm {
 
-	public void updateLayout(GraphContainer graph) {
+	public void updateLayout(GraphContainer graphContainer) {
 		
-		Graph g = new Graph(graph);
+		Graph g = graphContainer.getGraph();
 		
-		int szl = g.getSemanticZoomLevel();
+		final Layout graphLayout = g.getLayout();
 		
-		
-		SparseGraph<Vertex, Edge> jungGraph = new SparseGraph<Vertex, Edge>();
-		
-		
-		List<Vertex> vertices = g.getVertices(szl);
+		SparseGraph<VertexRef, EdgeRef> jungGraph = new SparseGraph<VertexRef, EdgeRef>();
+
+		Collection<? extends Vertex> vertices = g.getDisplayVertices();
 		
 		for(Vertex v : vertices) {
 			jungGraph.addVertex(v);
 		}
 		
-		List<Edge> edges = g.getEdges(szl);
+		Collection<? extends Edge> edges = g.getDisplayEdges();
 		
 		for(Edge e : edges) {
-			jungGraph.addEdge(e, e.getSource(), e.getTarget());
+			jungGraph.addEdge(e, e.getSource().getVertex(), e.getTarget().getVertex());
 		}
 		
+		Dimension size = selectLayoutSize(graphContainer);
+		Dimension paddedSize = new Dimension((int)(size.getWidth()*.75), (int)(size.getHeight()*.75));
 		
-		doISOMLayout(jungGraph, LAYOUT_WIDTH, LAYOUT_HEIGHT);
-		doSpringLayout(jungGraph, LAYOUT_WIDTH, LAYOUT_HEIGHT, LAYOUT_REPULSION);
-		doFRLayout(jungGraph, LAYOUT_WIDTH*3/4, LAYOUT_HEIGHT*3/4, LAYOUT_WIDTH/8, LAYOUT_HEIGHT/8);
-		doSpringLayout(jungGraph, LAYOUT_WIDTH, LAYOUT_HEIGHT, LAYOUT_REPULSION);
+		doISOMLayout(graphLayout, jungGraph, size);
+		doSpringLayout(graphLayout, jungGraph, size, LAYOUT_REPULSION);
+		doFRLayout(graphLayout, jungGraph, paddedSize, (int)(size.getWidth()/8), (int)(size.getHeight()/8));
+		doSpringLayout(graphLayout, jungGraph, size, LAYOUT_REPULSION);
 
 		
 	}
 
-	private void doSpringLayout(SparseGraph<Vertex, Edge> jungGraph, int width, int height, int repulsion) {
-		SpringLayout<Vertex, Edge> layout = new SpringLayout<Vertex, Edge>(jungGraph);
-		layout.setInitializer(new Transformer<Vertex, Point2D>() {
-			public Point2D transform(Vertex v) {
-				return new Point(v.getX(), v.getY());
-			}
-		});
+	private void doSpringLayout(final Layout graphLayout, SparseGraph<VertexRef, EdgeRef> jungGraph, Dimension size, int repulsion) {
+		SpringLayout<VertexRef, EdgeRef> layout = new SpringLayout<VertexRef, EdgeRef>(jungGraph);
+		layout.setInitializer(initializer(graphLayout));
 		
-		layout.setSize(new Dimension(width, height));
+		layout.setSize(size);
 		layout.setRepulsionRange(repulsion);
 
 		int count = 0;
@@ -95,50 +90,39 @@ public class RealUltimateLayoutAlgorithm implements LayoutAlgorithm, LayoutConst
 			count++;
 		}
 		
-		for(Vertex v : jungGraph.getVertices()) {
-			v.setX((int)layout.getX(v));
-			v.setY((int)layout.getY(v));
+		for(VertexRef v : jungGraph.getVertices()) {
+			graphLayout.setLocation(v, (int)layout.getX(v), (int)layout.getY(v));
 		}
 	}
 	
-	private void doFRLayout(SparseGraph<Vertex, Edge> jungGraph, int width, int height, final int xOffset, final int yOffset) {
-		FRLayout<Vertex, Edge> layout = new FRLayout<Vertex, Edge>(jungGraph);
-		layout.setInitializer(new Transformer<Vertex, Point2D>() {
-			public Point2D transform(Vertex v) {
-				return new Point(v.getX()-xOffset, v.getY()-yOffset);
-			}
-		});
-		layout.setSize(new Dimension(width,height));
+	private void doFRLayout(final Layout graphLayout, SparseGraph<VertexRef, EdgeRef> jungGraph, Dimension size, final int xOffset, final int yOffset) {
+		FRLayout<VertexRef, EdgeRef> layout = new FRLayout<VertexRef, EdgeRef>(jungGraph);
+		layout.setInitializer(initializer(graphLayout, xOffset, yOffset));
+		layout.setSize(size);
 		
 		while(!layout.done()) {
 			layout.step();
 		}
 		
 		
-		for(Vertex v : jungGraph.getVertices()) {
-			v.setX((int)layout.getX(v)+xOffset);
-			v.setY((int)layout.getY(v)+yOffset);
+		for(VertexRef v : jungGraph.getVertices()) {
+			graphLayout.setLocation(v, (int)layout.getX(v)+xOffset, (int)layout.getY(v)+yOffset);
 		}
 		
 	}
 
-	private void doISOMLayout(SparseGraph<Vertex, Edge> jungGraph, int width, int height) {
-		ISOMLayout<Vertex, Edge> layout = new ISOMLayout<Vertex, Edge>(jungGraph);
-		layout.setInitializer(new Transformer<Vertex, Point2D>() {
-			public Point2D transform(Vertex v) {
-				return new Point(v.getX(), v.getY());
-			}
-		});
-		layout.setSize(new Dimension(width,height));
+	private void doISOMLayout(final Layout graphLayout, SparseGraph<VertexRef, EdgeRef> jungGraph, Dimension size) {
+		ISOMLayout<VertexRef, EdgeRef> layout = new ISOMLayout<VertexRef, EdgeRef>(jungGraph);
+		layout.setInitializer(initializer(graphLayout));
+		layout.setSize(size);
 		
 		while(!layout.done()) {
 			layout.step();
 		}
 		
 		
-		for(Vertex v : jungGraph.getVertices()) {
-			v.setX((int)layout.getX(v));
-			v.setY((int)layout.getY(v));
+		for(VertexRef v : jungGraph.getVertices()) {
+			graphLayout.setLocation(v, (int)layout.getX(v), (int)layout.getY(v));
 		}
 		
 	}

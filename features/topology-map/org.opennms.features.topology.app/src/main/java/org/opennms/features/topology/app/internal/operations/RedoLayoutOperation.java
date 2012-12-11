@@ -33,13 +33,14 @@ import java.util.List;
 import org.opennms.features.topology.api.DisplayState;
 import org.opennms.features.topology.api.Operation;
 import org.opennms.features.topology.api.OperationContext;
+import org.opennms.features.topology.api.OperationContext.DisplayLocation;
+import org.opennms.features.topology.api.topo.VertexRef;
 
 
 public class RedoLayoutOperation implements Operation {
 
 	@Override
-    public Undoer execute(List<Object> targets,
-            OperationContext operationContext) {
+    public Undoer execute(List<VertexRef> targets, OperationContext operationContext) {
         DisplayState graphContainer = operationContext.getGraphContainer();
         
         graphContainer.redoLayout();
@@ -47,18 +48,18 @@ public class RedoLayoutOperation implements Operation {
     }
 
     @Override
-    public boolean display(List<Object> targets, OperationContext operationContext) {
+    public boolean display(List<VertexRef> targets, OperationContext operationContext) {
+        return (operationContext.getDisplayLocation() == DisplayLocation.MENUBAR)
+        		|| (targets != null && targets.size() == 0);
+    }
+
+    @Override
+    public boolean enabled(List<VertexRef> targets, OperationContext operationContext) {
         return true;
     }
 
     @Override
-    public boolean enabled(List<Object> targets, OperationContext operationContext) {
-        //Applies to background as a whole
-        return targets == null || targets.isEmpty();
-    }
-
-    @Override
     public String getId() {
-        return null;
+        return "RedoLayout";
     }
 }

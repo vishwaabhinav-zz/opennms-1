@@ -32,16 +32,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.opennms.features.topology.app.internal.gwt.client.GWTVertex;
+import org.opennms.features.topology.app.internal.gwt.client.VTopologyComponent.TopologyViewRenderer;
 import org.opennms.features.topology.app.internal.gwt.client.d3.D3;
 import org.opennms.features.topology.app.internal.gwt.client.d3.D3Events.Handler;
 import org.opennms.features.topology.app.internal.gwt.client.map.SVGTopologyMap;
 import org.opennms.features.topology.app.internal.gwt.client.svg.ClientRect;
 import org.opennms.features.topology.app.internal.gwt.client.svg.SVGElement;
+import org.opennms.features.topology.app.internal.gwt.client.svg.SVGMatrix;
 import org.opennms.features.topology.app.internal.gwt.client.svg.SVGRect;
+import org.opennms.features.topology.app.internal.gwt.client.view.TopologyView;
 
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.dom.client.Element;
-import com.google.gwt.user.client.ui.ToggleButton;
 
 public class MarqueeSelectHandler implements DragBehaviorHandler{
 
@@ -74,11 +76,12 @@ public class MarqueeSelectHandler implements DragBehaviorHandler{
     private int m_y1;
     private int m_offsetX;
     private int m_offsetY;
-    private ToggleButton m_toggle;
     private SVGTopologyMap m_svgTopologyMap;
+    private TopologyView<TopologyViewRenderer> m_topologyView;
     
-    public MarqueeSelectHandler(SVGTopologyMap topologyMap) {
+    public MarqueeSelectHandler(SVGTopologyMap topologyMap, TopologyView<TopologyViewRenderer> topologyView) {
         m_svgTopologyMap = topologyMap;
+        m_topologyView = topologyView;
     }
     
     @Override
@@ -86,18 +89,24 @@ public class MarqueeSelectHandler implements DragBehaviorHandler{
         if(!m_dragging) {
             m_dragging = true;
             
-            SVGElement svg = m_svgTopologyMap.getSVGElement();
-            ClientRect rect = svg.getBoundingClientRect();
-            m_offsetX = rect.getLeft();
-            m_offsetY = rect.getTop();
+            SVGElement svg = m_topologyView.getSVGElement().cast();
+            SVGMatrix rect = svg.getScreenCTM();
             
+            m_offsetX = (int) rect.getE();
+            m_offsetY = (int) rect.getF();
+            consoleLog(rect);
+            consoleLog("m_offsetX: " + m_offsetX + " m_offsetY: " + m_offsetY);
             m_x1 = D3.getEvent().getClientX() - m_offsetX;
             m_y1 = D3.getEvent().getClientY() - m_offsetY;
             
             setMarquee(m_x1, m_y1, 0, 0);
-            D3.d3().select(m_svgTopologyMap.getMarqueeElement()).attr("display", "inline");
+            D3.d3().select(m_topologyView.getMarqueeElement()).attr("display", "inline");
         }
     }
+    
+    public final native void consoleLog(Object log)/*-{
+        $wnd.console.log(log);
+    }-*/;
 
     @Override
     public void onDrag(Element elem) {
@@ -115,7 +124,7 @@ public class MarqueeSelectHandler implements DragBehaviorHandler{
     @Override
     public void onDragEnd(Element elem) {
         m_dragging = false;
-        D3.d3().select(m_svgTopologyMap.getMarqueeElement()).attr("display", "none");
+        D3.d3().select(m_topologyView.getMarqueeElement()).attr("display", "none");
         
         final List<String> vertIds = new ArrayList<String>();
         m_svgTopologyMap.selectAllVertexElements().each(new Handler<GWTVertex>() {
@@ -132,7 +141,7 @@ public class MarqueeSelectHandler implements DragBehaviorHandler{
     }
     
     private void setMarquee(int x, int y, int width, int height) {
-        D3.d3().select(m_svgTopologyMap.getMarqueeElement()).attr("x", x).attr("y", y).attr("width", width).attr("height", height);
+        D3.d3().select(m_topologyView.getMarqueeElement()).attr("x", x).attr("y", y).attr("width", width).attr("height", height);
     }
     
     private void selectVertices() {
@@ -149,10 +158,8 @@ public class MarqueeSelectHandler implements DragBehaviorHandler{
                 
                 if(inSelection(elem)) {
                     vertex.setSelected(true);
-                    D3.d3().select(elem).style("stroke", "blue");
                 }else {
                     vertex.setSelected(false);
-                    D3.d3().select(elem).style("stroke", "none");
                 }
                 
             }
@@ -161,7 +168,7 @@ public class MarqueeSelectHandler implements DragBehaviorHandler{
     }
 
     private boolean inSelection(SVGElement elem) {
-        SVGElement marquee = m_svgTopologyMap.getMarqueeElement().cast();
+        SVGElement marquee = m_topologyView.getMarqueeElement().cast();
         SVGRect mBBox = marquee.getBBox();
         ClientRect elemClientRect = elem.getBoundingClientRect();
         
@@ -179,13 +186,4 @@ public class MarqueeSelectHandler implements DragBehaviorHandler{
                marqueeY.contains(vertexY.getHi());
     }
 
-    @Override
-    public ToggleButton getToggleBtn() {
-        if(m_toggle == null) {
-            m_toggle = new ToggleButton("Select", "Select");
-        }
-        return m_toggle;
-    }
-
-    
 }

@@ -43,6 +43,7 @@ import org.junit.Test;
 import org.opennms.features.topology.api.CheckedOperation;
 import org.opennms.features.topology.api.Operation;
 import org.opennms.features.topology.api.OperationContext;
+import org.opennms.features.topology.api.topo.VertexRef;
 
 import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.MenuBar.Command;
@@ -138,6 +139,7 @@ public class TestMenuBarBuilder {
     @Test
     public void submenuAlphabeticalOrderTest() {
         CommandManager cmdManager = new CommandManager();
+        cmdManager.addOrUpdateGroupOrder("File", Arrays.asList("new", "additions"));
         cmdManager.onBind(getTestOperation(), getProps("File", "Operation1?group=new", ""));
         cmdManager.onBind(getTestOperation(), getProps("File", "Operation3", ""));
         cmdManager.onBind(getTestOperation(), getProps("File", "Operation4", ""));
@@ -158,6 +160,91 @@ public class TestMenuBarBuilder {
         assertEquals("Operation2", subMenuItems.get(3).getText());
         assertEquals("Operation3", subMenuItems.get(4).getText());
         assertEquals("Operation4", subMenuItems.get(5).getText());
+        
+    }
+    
+    @Test
+    public void groupingSeparatorTest() {
+        CommandManager cmdManager = new CommandManager();
+        cmdManager.addOrUpdateGroupOrder("Default", Arrays.asList("new", "help", "additions"));
+        
+        cmdManager.onBind(getTestOperation(), getProps("Device", "Operation1?group=additions", ""));
+        cmdManager.onBind(getTestOperation(), getProps("Device", "Operation3?group=additions", ""));
+        cmdManager.onBind(getTestOperation(), getProps("Device", "Operation4?group=additions", ""));
+        cmdManager.onBind(getTestOperation(), getProps("Device", "Operation2?group=additions", ""));
+        cmdManager.onBind(getTestOperation(), getProps(null, "Get Info?group=new", ""));
+        cmdManager.onBind(getTestOperation(), getProps("Device", "NewOperation?group=additions", ""));
+        
+        
+        MenuBar menuBar = cmdManager.getMenuBar(null, null);
+        
+        List<MenuItem> menuItems = menuBar.getItems();
+        assertEquals(1, menuItems.size());
+        
+        List<MenuItem> subMenuItems = menuItems.get(0).getChildren();
+        assertEquals(5, subMenuItems.size());
+        assertEquals("NewOperation", subMenuItems.get(0).getText());
+        assertEquals("Operation1", subMenuItems.get(1).getText());
+        assertEquals("Operation2", subMenuItems.get(2).getText());
+        assertEquals("Operation3", subMenuItems.get(3).getText());
+        assertEquals("Operation4", subMenuItems.get(4).getText());
+    }
+    
+    @Test
+    public void layoutEditMenuGroupingTest() {
+        CommandManager cmdManager = new CommandManager();
+        cmdManager.addOrUpdateGroupOrder("Edit", Arrays.asList("new", "layout", "additions"));
+        
+        cmdManager.onBind(getTestOperation(), getProps("Edit", "Circle Layout?group=layout", ""));
+        cmdManager.onBind(getTestOperation(), getProps("Edit", "FR Layout?group=layout", ""));
+        cmdManager.onBind(getTestOperation(), getProps("Edit", "ISOM Layout?group=layout", ""));
+        cmdManager.onBind(getTestOperation(), getProps("Edit", "KK Layout?group=layout", ""));
+        cmdManager.onBind(getTestOperation(), getProps("Edit", "Redo Layout", ""));
+        cmdManager.onBind(getTestOperation(), getProps("Edit", "Spring Layout?group=layout", ""));
+        
+        
+        MenuBar menuBar = cmdManager.getMenuBar(null, null);
+        
+        List<MenuItem> menuItems = menuBar.getItems();
+        assertEquals(1, menuItems.size());
+        
+        List<MenuItem> subMenuItems = menuItems.get(0).getChildren();
+        assertEquals(7, subMenuItems.size());
+        assertEquals("Circle Layout", subMenuItems.get(0).getText());
+        assertEquals("FR Layout", subMenuItems.get(1).getText());
+        assertEquals("ISOM Layout", subMenuItems.get(2).getText());
+        assertEquals("KK Layout", subMenuItems.get(3).getText());
+        assertEquals("Spring Layout", subMenuItems.get(4).getText());
+        assertEquals("", subMenuItems.get(5).getText());
+        assertEquals("Redo Layout", subMenuItems.get(6).getText());
+    }
+    
+    @Test
+    public void layoutEditMenuGroupingNoGroupTest() {
+        CommandManager cmdManager = new CommandManager();
+        cmdManager.addOrUpdateGroupOrder("Edit", Arrays.asList("new", "middle", "additions"));
+        
+        cmdManager.onBind(getTestOperation(), getProps("Edit", "Circle Layout?group=layout", ""));
+        cmdManager.onBind(getTestOperation(), getProps("Edit", "FR Layout?group=layout", ""));
+        cmdManager.onBind(getTestOperation(), getProps("Edit", "ISOM Layout?group=layout", ""));
+        cmdManager.onBind(getTestOperation(), getProps("Edit", "KK Layout?group=layout", ""));
+        cmdManager.onBind(getTestOperation(), getProps("Edit", "Redo Layout", ""));
+        cmdManager.onBind(getTestOperation(), getProps("Edit", "Spring Layout?group=layout", ""));
+        
+        
+        MenuBar menuBar = cmdManager.getMenuBar(null, null);
+        
+        List<MenuItem> menuItems = menuBar.getItems();
+        assertEquals(1, menuItems.size());
+        
+        List<MenuItem> subMenuItems = menuItems.get(0).getChildren();
+        assertEquals(6, subMenuItems.size());
+        assertEquals("Circle Layout", subMenuItems.get(0).getText());
+        assertEquals("FR Layout", subMenuItems.get(1).getText());
+        assertEquals("ISOM Layout", subMenuItems.get(2).getText());
+        assertEquals("KK Layout", subMenuItems.get(3).getText());
+        assertEquals("Redo Layout", subMenuItems.get(4).getText());
+        assertEquals("Spring Layout", subMenuItems.get(5).getText());
         
     }
     
@@ -211,19 +298,19 @@ public class TestMenuBarBuilder {
         return new CheckedOperation() {
 
             @Override
-            public Undoer execute(List<Object> targets, OperationContext operationContext) {
+            public Undoer execute(List<VertexRef> targets, OperationContext operationContext) {
                 // TODO Auto-generated method stub
                 return null;
             }
 
             @Override
-            public boolean display(List<Object> targets, OperationContext operationContext) {
+            public boolean display(List<VertexRef> targets, OperationContext operationContext) {
                 // TODO Auto-generated method stub
                 return false;
             }
 
             @Override
-            public boolean enabled(List<Object> targets, OperationContext operationContext) {
+            public boolean enabled(List<VertexRef> targets, OperationContext operationContext) {
                 // TODO Auto-generated method stub
                 return false;
             }
@@ -235,7 +322,7 @@ public class TestMenuBarBuilder {
             }
 
 			@Override
-			public boolean isChecked(List<Object> targets,
+			public boolean isChecked(List<VertexRef> targets,
 					OperationContext operationContext) {
 				// TODO Auto-generated method stub
 				return false;
@@ -286,19 +373,19 @@ public class TestMenuBarBuilder {
         return new Operation() {
 
             @Override
-            public Undoer execute(List<Object> targets, OperationContext operationContext) {
+            public Undoer execute(List<VertexRef> targets, OperationContext operationContext) {
                 // TODO Auto-generated method stub
                 return null;
             }
 
             @Override
-            public boolean display(List<Object> targets, OperationContext operationContext) {
+            public boolean display(List<VertexRef> targets, OperationContext operationContext) {
                 // TODO Auto-generated method stub
                 return false;
             }
 
             @Override
-            public boolean enabled(List<Object> targets, OperationContext operationContext) {
+            public boolean enabled(List<VertexRef> targets, OperationContext operationContext) {
                 // TODO Auto-generated method stub
                 return false;
             }

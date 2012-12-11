@@ -45,7 +45,8 @@ public interface AttributeDefinition {
 
     /**
      * <p>getName</p>
-     *
+     * 
+     * Human readable name for the attribute.
      * @return a {@link java.lang.String} object.
      */
     public abstract String getName();

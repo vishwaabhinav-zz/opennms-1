@@ -29,10 +29,6 @@
 package org.opennms.features.topology.plugins.topo.linkd.internal;
 
 
-
-import java.util.ArrayList;
-import java.util.List;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,12 +38,10 @@ import org.junit.runner.RunWith;
 import org.opennms.features.topology.api.OperationContext;
 import org.opennms.features.topology.plugins.topo.linkd.internal.LinkdTopologyProvider;
 import org.opennms.features.topology.plugins.topo.linkd.internal.operations.RefreshOperation;
-import org.opennms.features.topology.plugins.topo.linkd.internal.operations.SaveOperation;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
@@ -57,9 +51,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 public class LinkdTopologyProviderTest {
     @Autowired
     private RefreshOperation m_refreshOperation;
-    
-    @Autowired
-    private SaveOperation m_saveOperation;
     
     @Autowired
     private OperationContext m_operationContext;
@@ -80,9 +71,10 @@ public class LinkdTopologyProviderTest {
     public void tearDown() {
         m_databasePopulator.tearDown();
     }
+        
         @Test 
         public void testGetIcon() {
-            Assert.assertTrue("snmp:1.3.6.1.4.1.5813.1.25".equals(m_topologyProvider.getIconName(m_databasePopulator.getNode1())));
+            Assert.assertTrue("linkd:system:snmp:1.3.6.1.4.1.5813.1.25".equals(m_topologyProvider.getIconName(m_databasePopulator.getNode1())));
             Assert.assertTrue(LinkdTopologyProvider.SERVER_ICON_KEY.equals(m_topologyProvider.getIconName(m_databasePopulator.getNode2())));
             Assert.assertTrue(LinkdTopologyProvider.SERVER_ICON_KEY.equals(m_topologyProvider.getIconName(m_databasePopulator.getNode3())));
             Assert.assertTrue(LinkdTopologyProvider.SERVER_ICON_KEY.equals(m_topologyProvider.getIconName(m_databasePopulator.getNode4())));
@@ -111,10 +103,9 @@ public class LinkdTopologyProviderTest {
             m_databasePopulator.check(m_topologyProvider);
 	}
 
-	@Test
-	public void testOperationSave() {
-            List<Object> targets = new ArrayList<Object>(1);
-            targets.add("target/test-graph.xml");
-            m_saveOperation.execute(targets, m_operationContext);	            
-	}	
+	@Test 
+	public void testAddGroup() {
+	    Object parentId = m_topologyProvider.addGroup("Linkd Group", LinkdTopologyProvider.GROUP_ICON_KEY);
+	    Assert.assertEquals(true, m_topologyProvider.getVertexContainer().containsId(parentId));
+	}
 }

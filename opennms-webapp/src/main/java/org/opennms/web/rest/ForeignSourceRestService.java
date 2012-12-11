@@ -49,6 +49,7 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 
 import org.joda.time.Duration;
+import org.opennms.core.utils.LogUtils;
 import org.opennms.netmgt.provision.persist.ForeignSourceRepository;
 import org.opennms.netmgt.provision.persist.StringIntervalPropertyEditor;
 import org.opennms.netmgt.provision.persist.foreignsource.DetectorCollection;
@@ -357,10 +358,9 @@ public class ForeignSourceRestService extends OnmsRestService {
     public Response addForeignSource(ForeignSource foreignSource) {
         writeLock();
         try {
-            log().debug("addForeignSource: Adding foreignSource " + foreignSource.getName());
+            debug("addForeignSource: Adding foreignSource %s", foreignSource.getName());
             m_pendingForeignSourceRepository.save(foreignSource);
-            return Response.seeOther(m_uriInfo.getBaseUriBuilder().path(this.getClass(), "getForeignSource").build(foreignSource.getName())).build();
-            // return Response.ok(foreignSource).build();
+            return Response.seeOther(getRedirectUri(m_uriInfo, foreignSource.getName())).build();
         } finally {
             writeUnlock();
         }
@@ -380,12 +380,11 @@ public class ForeignSourceRestService extends OnmsRestService {
     public Response addDetector(@PathParam("foreignSource") String foreignSource, DetectorWrapper detector) {
         writeLock();
         try {
-            log().debug("addDetector: Adding detector " + detector.getName());
+            debug("addDetector: Adding detector " + detector.getName());
             ForeignSource fs = getActiveForeignSource(foreignSource);
             fs.addDetector(detector);
             m_pendingForeignSourceRepository.save(fs);
-            return Response.seeOther(m_uriInfo.getBaseUriBuilder().path(this.getClass(), "getDetector").build(foreignSource, detector.getName())).build();
-            // return Response.ok(detector).build();
+            return Response.seeOther(getRedirectUri(m_uriInfo, detector.getName())).build();
         } finally {
             writeUnlock();
         }
@@ -405,12 +404,11 @@ public class ForeignSourceRestService extends OnmsRestService {
     public Response addPolicy(@PathParam("foreignSource") String foreignSource, PolicyWrapper policy) {
         writeLock();
         try {
-            log().debug("addPolicy: Adding policy " + policy.getName());
+            debug("addPolicy: Adding policy %s", policy.getName());
             ForeignSource fs = getActiveForeignSource(foreignSource);
             fs.addPolicy(policy);
             m_pendingForeignSourceRepository.save(fs);
-            return Response.seeOther(m_uriInfo.getBaseUriBuilder().path(this.getClass(), "getPolicy").build(foreignSource, policy.getName())).build();
-            // return Response.ok(policy).build();
+            return Response.seeOther(getRedirectUri(m_uriInfo, policy.getName())).build();
         } finally {
             writeUnlock();
         }
@@ -431,7 +429,7 @@ public class ForeignSourceRestService extends OnmsRestService {
         writeLock();
         try {
             ForeignSource fs = getActiveForeignSource(foreignSource);
-            log().debug("updateForeignSource: updating foreign source " + foreignSource);
+            debug("updateForeignSource: updating foreign source %s", foreignSource);
             BeanWrapper wrapper = PropertyAccessorFactory.forBeanPropertyAccess(fs);
             wrapper.registerCustomEditor(Duration.class, new StringIntervalPropertyEditor());
             for(String key : params.keySet()) {
@@ -442,10 +440,9 @@ public class ForeignSourceRestService extends OnmsRestService {
                     wrapper.setPropertyValue(key, value);
                 }
             }
-            log().debug("updateForeignSource: foreign source " + foreignSource + " updated");
+            debug("updateForeignSource: foreign source %s updated", foreignSource);
             m_pendingForeignSourceRepository.save(fs);
-            return Response.seeOther(m_uriInfo.getBaseUriBuilder().path(this.getClass(), "getForeignSource").build(foreignSource)).build();
-            // return Response.ok(fs).build();
+            return Response.seeOther(getRedirectUri(m_uriInfo)).build();
         } finally {
             writeUnlock();
         }
@@ -464,7 +461,7 @@ public class ForeignSourceRestService extends OnmsRestService {
         writeLock();
         try {
             ForeignSource fs = getForeignSource(foreignSource);
-            log().debug("deletePendingForeignSource: deleting foreign source " + foreignSource);
+            debug("deletePendingForeignSource: deleting foreign source %s", foreignSource);
             m_pendingForeignSourceRepository.delete(fs);
             return Response.ok().build();
         } finally {
@@ -485,7 +482,7 @@ public class ForeignSourceRestService extends OnmsRestService {
         writeLock();
         try {
             ForeignSource fs = getForeignSource(foreignSource);
-            log().debug("deleteDeployedForeignSource: deleting foreign source " + foreignSource);
+            debug("deleteDeployedForeignSource: deleting foreign source %s", foreignSource);
             m_deployedForeignSourceRepository.delete(fs);
             return Response.ok().build();
         } finally {
@@ -573,5 +570,9 @@ public class ForeignSourceRestService extends OnmsRestService {
             return m_deployedForeignSourceRepository.getForeignSource(foreignSourceName);
         }
         return fs;
+    }
+
+    private void debug(final String format, final Object... args) {
+        LogUtils.debugf(this, format, args);
     }
 }

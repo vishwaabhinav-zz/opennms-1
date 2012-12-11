@@ -6,7 +6,7 @@
     <relativePath>../../poms/compiled/</relativePath>
     <groupId>org.opennms.features.topology.build</groupId>
     <artifactId>compiled-bundle-settings</artifactId>
-    <version>1.11.3-SNAPSHOT</version>
+    <version>1.11.4-SNAPSHOT</version>
   </parent>
   <groupId>org.opennms.features.topology</groupId>
   <artifactId>ssh</artifactId>
@@ -56,7 +56,7 @@
   	<dependency>
   	  <groupId>com.google.gwt</groupId>
   	  <artifactId>gwt-dev</artifactId>
-  	  <version>${gwt.version}</version>
+  	  <version>${gwtVersion}</version>
   	  <scope>test</scope>
 	</dependency>
       
@@ -64,7 +64,6 @@
     <dependency>
 	  <groupId>junit</groupId>
 	  <artifactId>junit</artifactId>
-	  <scope>test</scope>
 	</dependency>
     <dependency>
       <groupId>org.opennms.osgi.features.topology</groupId>
@@ -76,7 +75,7 @@
     <dependency>
       <groupId>com.google.gwt</groupId>
       <artifactId>gwt-user</artifactId>
-      <version>${gwt.version}</version>
+      <version>${gwtVersion}</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>

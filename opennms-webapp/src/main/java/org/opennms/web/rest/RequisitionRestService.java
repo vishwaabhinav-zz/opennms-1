@@ -28,6 +28,7 @@
 
 package org.opennms.web.rest;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.ParseException;
 import java.util.Set;
@@ -57,6 +58,7 @@ import org.opennms.netmgt.model.events.EventBuilder;
 import org.opennms.netmgt.model.events.EventProxy;
 import org.opennms.netmgt.model.events.EventProxyException;
 import org.opennms.netmgt.provision.persist.ForeignSourceRepository;
+import org.opennms.netmgt.provision.persist.RequisitionFileUtils;
 import org.opennms.netmgt.provision.persist.requisition.Requisition;
 import org.opennms.netmgt.provision.persist.requisition.RequisitionAsset;
 import org.opennms.netmgt.provision.persist.requisition.RequisitionAssetCollection;
@@ -208,7 +210,7 @@ public class RequisitionRestService extends OnmsRestService {
 
             final Set<Requisition> reqs = new TreeSet<Requisition>();
             for (final String fsName : getActiveForeignSourceNames()) {
-                final Requisition r = getActiveRequisition(fsName);
+                final Requisition r = getActiveRequisition(fsName, false);
                 if (r != null) {
                     reqs.add(r);
                 }
@@ -253,7 +255,7 @@ public class RequisitionRestService extends OnmsRestService {
             m_pendingForeignSourceRepository.flush();
             m_deployedForeignSourceRepository.flush();
 
-            return getActiveRequisition(foreignSource);
+            return getActiveRequisition(foreignSource, false);
         } finally {
             readUnlock();
         }
@@ -275,9 +277,9 @@ public class RequisitionRestService extends OnmsRestService {
             m_pendingForeignSourceRepository.flush();
             m_deployedForeignSourceRepository.flush();
 
-            final Requisition req = getActiveRequisition(foreignSource);
+            final Requisition req = getActiveRequisition(foreignSource, false);
             if (req == null) {
-                return null;
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
             return new RequisitionNodeCollection(req.getNodes());
         } finally {
@@ -302,9 +304,9 @@ public class RequisitionRestService extends OnmsRestService {
             m_pendingForeignSourceRepository.flush();
             m_deployedForeignSourceRepository.flush();
 
-            final Requisition req = getActiveRequisition(foreignSource);
+            final Requisition req = getActiveRequisition(foreignSource, false);
             if (req == null) {
-                return null;
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
             return req.getNode(foreignId);
         } finally {
@@ -327,10 +329,10 @@ public class RequisitionRestService extends OnmsRestService {
         readLock();
         try {
             final RequisitionNode node = getNode(foreignSource, foreignId);
-            if (node != null) {
-                return new RequisitionInterfaceCollection(node.getInterfaces());
+            if (node == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign ID '" + foreignId + "' not found in foreign source '" + foreignSource + "'.");
             }
-            return null;
+            return new RequisitionInterfaceCollection(node.getInterfaces());
         } finally {
             readUnlock();
         }
@@ -352,10 +354,10 @@ public class RequisitionRestService extends OnmsRestService {
         readLock();
         try {
             final RequisitionNode node = getNode(foreignSource, foreignId);
-            if (node != null) {
-                return node.getInterface(ipAddress);
+            if (node == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign ID '" + foreignId + "' not found in foreign source '" + foreignSource + "'.");
             }
-            return null;
+            return node.getInterface(ipAddress);
         } finally {
             readUnlock();
         }
@@ -377,10 +379,10 @@ public class RequisitionRestService extends OnmsRestService {
         readLock();
         try {
             final RequisitionInterface iface = getInterfaceForNode(foreignSource, foreignId, ipAddress);
-            if (iface != null) {
-                return new RequisitionMonitoredServiceCollection(iface.getMonitoredServices());
+            if (iface == null) {
+                throw getException(Response.Status.NOT_FOUND, "Unable to locate IP address '" + ipAddress + "' in " + foreignSource + ":" + foreignId + ".");
             }
-            return null;
+            return new RequisitionMonitoredServiceCollection(iface.getMonitoredServices());
         } finally {
             readUnlock();
         }
@@ -403,10 +405,10 @@ public class RequisitionRestService extends OnmsRestService {
         readLock();
         try {
             final RequisitionInterface iface = getInterfaceForNode(foreignSource, foreignId, ipAddress);
-            if (iface != null) {
-                return iface.getMonitoredService(service);
+            if (iface == null) {
+                throw getException(Response.Status.NOT_FOUND, "Unable to locate IP address '" + ipAddress + "' in " + foreignSource + ":" + foreignId + ".");
             }
-            return null;
+            return iface.getMonitoredService(service);
         } finally {
             readUnlock();
         }
@@ -426,14 +428,15 @@ public class RequisitionRestService extends OnmsRestService {
     public RequisitionCategoryCollection getCategories(@PathParam("foreignSource") final String foreignSource, @PathParam("foreignId") final String foreignId) throws ParseException {
         readLock();
         try {
-            final Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                final RequisitionNode node = req.getNode(foreignId);
-                if (node != null) {
-                    return new RequisitionCategoryCollection(node.getCategories());
-                }
+            final Requisition req = getActiveRequisition(foreignSource, false);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return null;
+            final RequisitionNode node = req.getNode(foreignId);
+            if (node == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign ID '" + foreignId + "' not found in foreign source '" + foreignSource + "'.");
+            }
+            return new RequisitionCategoryCollection(node.getCategories());
         } finally {
             readUnlock();
         }
@@ -454,14 +457,15 @@ public class RequisitionRestService extends OnmsRestService {
     public RequisitionCategory getCategory(@PathParam("foreignSource") final String foreignSource, @PathParam("foreignId") final String foreignId, @PathParam("category") final String category) throws ParseException {
         readLock();
         try {
-            final Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                final RequisitionNode node = req.getNode(foreignId);
-                if (node != null) {
-                    return node.getCategory(category);
-                }
+            final Requisition req = getActiveRequisition(foreignSource, false);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return null;
+            final RequisitionNode node = req.getNode(foreignId);
+            if (node == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign ID '" + foreignId + "' not found in foreign source '" + foreignSource + "'.");
+            }
+            return node.getCategory(category);
         } finally {
             readUnlock();
         }
@@ -481,14 +485,15 @@ public class RequisitionRestService extends OnmsRestService {
     public RequisitionAssetCollection getAssetParameters(@PathParam("foreignSource") final String foreignSource, @PathParam("foreignId") final String foreignId) throws ParseException {
         readLock();
         try {
-            final Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                final RequisitionNode node = req.getNode(foreignId);
-                if (node != null) {
-                    return new RequisitionAssetCollection(node.getAssets());
-                }
+            final Requisition req = getActiveRequisition(foreignSource, false);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return null;
+            final RequisitionNode node = req.getNode(foreignId);
+            if (node == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign ID '" + foreignId + "' not found in foreign source '" + foreignSource + "'.");
+            }
+            return new RequisitionAssetCollection(node.getAssets());
         } finally {
             readUnlock();
         }
@@ -509,14 +514,15 @@ public class RequisitionRestService extends OnmsRestService {
     public RequisitionAsset getAssetParameter(@PathParam("foreignSource") final String foreignSource, @PathParam("foreignId") final String foreignId, @PathParam("parameter") final String parameter) throws ParseException {
         readLock();
         try {
-            final Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                final RequisitionNode node = req.getNode(foreignId);
-                if (node != null) {
-                    return node.getAsset(parameter);
-                }
+            final Requisition req = getActiveRequisition(foreignSource, false);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return null;
+            final RequisitionNode node = req.getNode(foreignId);
+            if (node == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign ID '" + foreignId + "' not found in foreign source '" + foreignSource + "'.");
+            }
+            return node.getAsset(parameter);
         } finally {
             readUnlock();
         }
@@ -540,9 +546,9 @@ public class RequisitionRestService extends OnmsRestService {
                 LogUtils.debugf(this, e, "error validating incoming requisition with foreign source '%s'", requisition.getForeignSource());
                 throw getException(Status.BAD_REQUEST, e.getMessage());
             }
-            debug("addOrReplaceRequisition: Adding requisition %s", requisition.getForeignSource());
+            debug("addOrReplaceRequisition: Adding requisition %s (containing %d nodes)", requisition.getForeignSource(), requisition.getNodeCount());
             m_pendingForeignSourceRepository.save(requisition);
-            return Response.seeOther(m_uriInfo.getBaseUriBuilder().path(this.getClass(), "getRequisition").build(requisition.getForeignSource())).build();
+            return Response.seeOther(getRedirectUri(m_uriInfo, requisition.getForeignSource())).build();
         } finally {
             writeUnlock();
         }
@@ -563,14 +569,13 @@ public class RequisitionRestService extends OnmsRestService {
         writeLock();
         try {
             debug("addOrReplaceNode: Adding node %s to requisition %s", node.getForeignId(), foreignSource);
-            Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                req.putNode(node);
-                m_pendingForeignSourceRepository.save(req);
-                return Response.seeOther(m_uriInfo.getBaseUriBuilder().path(this.getClass(), "getNode").build(foreignSource, node.getForeignId())).build();
-                // return Response.ok(req).build();
+            Requisition req = getActiveRequisition(foreignSource, true);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return Response.notModified().build();
+            req.putNode(node);
+            m_pendingForeignSourceRepository.save(req);
+            return Response.seeOther(getRedirectUri(m_uriInfo, node.getForeignId())).build();
         } finally {
             writeUnlock();
         }
@@ -592,17 +597,17 @@ public class RequisitionRestService extends OnmsRestService {
         writeLock();
         try {
             debug("addOrReplaceInterface: Adding interface %s to node %s/%s", iface, foreignSource, foreignId);
-            Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                RequisitionNode node = req.getNode(foreignId);
-                if (node != null) {
-                    node.putInterface(iface);
-                    m_pendingForeignSourceRepository.save(req);
-                    return Response.seeOther(m_uriInfo.getBaseUriBuilder().path(this.getClass(), "getInterfaceForNode").build(foreignSource, foreignId, iface.getIpAddr())).build();
-                    // return Response.ok(req).build();
-                }
+            Requisition req = getActiveRequisition(foreignSource, true);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return Response.notModified().build();
+            final RequisitionNode node = req.getNode(foreignId);
+            if (node == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign ID '" + foreignId + "' not found in foreign source '" + foreignSource + "'.");
+            }
+            node.putInterface(iface);
+            m_pendingForeignSourceRepository.save(req);
+            return Response.seeOther(getRedirectUri(m_uriInfo, iface.getIpAddr())).build();
         } finally {
             writeUnlock();
         }
@@ -625,20 +630,21 @@ public class RequisitionRestService extends OnmsRestService {
         writeLock();
         try {
             debug("addOrReplaceService: Adding service %s to node %s/%s, interface %s", service.getServiceName(), foreignSource, foreignId, ipAddress);
-            Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                RequisitionNode node = req.getNode(foreignId);
-                if (node != null) {
-                    RequisitionInterface iface = node.getInterface(ipAddress);
-                    if (iface != null) {
-                        iface.putMonitoredService(service);
-                        m_pendingForeignSourceRepository.save(req);
-                        return Response.seeOther(m_uriInfo.getBaseUriBuilder().path(this.getClass(), "getServiceForInterface").build(foreignSource, foreignId, ipAddress, service.getServiceName())).build();
-                        // return Response.ok(req).build();
-                    }
-                }
+            Requisition req = getActiveRequisition(foreignSource, true);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return Response.notModified().build();
+            final RequisitionNode node = req.getNode(foreignId);
+            if (node == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign ID '" + foreignId + "' not found in foreign source '" + foreignSource + "'.");
+            }
+            RequisitionInterface iface = node.getInterface(ipAddress);
+            if (iface == null) {
+                throw getException(Response.Status.NOT_FOUND, "Unable to locate IP address '" + ipAddress + "' in " + foreignSource + ":" + foreignId + ".");
+            }
+            iface.putMonitoredService(service);
+            m_pendingForeignSourceRepository.save(req);
+            return Response.seeOther(getRedirectUri(m_uriInfo, service.getServiceName())).build();
         } finally {
             writeUnlock();
         }
@@ -660,17 +666,17 @@ public class RequisitionRestService extends OnmsRestService {
         writeLock();
         try {
             debug("addOrReplaceNodeCategory: Adding category %s to node %s/%s", category.getName(), foreignSource, foreignId);
-            Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                RequisitionNode node = req.getNode(foreignId);
-                if (node != null) {
-                    node.putCategory(category);
-                    m_pendingForeignSourceRepository.save(req);
-                    return Response.seeOther(m_uriInfo.getBaseUriBuilder().path(this.getClass(), "getCategory").build(foreignSource, foreignId, category.getName())).build();
-                    // return Response.ok(req).build();
-                }
+            Requisition req = getActiveRequisition(foreignSource, true);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return Response.notModified().build();
+            final RequisitionNode node = req.getNode(foreignId);
+            if (node == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign ID '" + foreignId + "' not found in foreign source '" + foreignSource + "'.");
+            }
+            node.putCategory(category);
+            m_pendingForeignSourceRepository.save(req);
+            return Response.seeOther(getRedirectUri(m_uriInfo, category.getName())).build();
         } finally {
             writeUnlock();
         }
@@ -692,17 +698,17 @@ public class RequisitionRestService extends OnmsRestService {
         writeLock();
         try {
             debug("addOrReplaceNodeCategory: Adding asset %s to node %s/%s", asset.getName(), foreignSource, foreignId);
-            Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                RequisitionNode node = req.getNode(foreignId);
-                if (node != null) {
-                    node.putAsset(asset);
-                    m_pendingForeignSourceRepository.save(req);
-                    return Response.seeOther(m_uriInfo.getBaseUriBuilder().path(this.getClass(), "getAssetParameter").build(foreignSource, foreignId, asset.getName())).build();
-                    // return Response.ok(req).build();
-                }
+            Requisition req = getActiveRequisition(foreignSource, true);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return Response.notModified().build();
+            final RequisitionNode node = req.getNode(foreignId);
+            if (node == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign ID '" + foreignId + "' not found in foreign source '" + foreignSource + "'.");
+            }
+            node.putAsset(asset);
+            m_pendingForeignSourceRepository.save(req);
+            return Response.seeOther(getRedirectUri(m_uriInfo, asset.getName())).build();
         } finally {
             writeUnlock();
         }
@@ -720,12 +726,13 @@ public class RequisitionRestService extends OnmsRestService {
     public Response importRequisition(@PathParam("foreignSource") String foreignSource, @QueryParam("rescanExisting") Boolean rescanExisting) {
         writeLock();
         try {
-            log().debug("importing requisition for foreign source " + foreignSource);
+            debug("importRequisition: Importing requisition for foreign source %s", foreignSource);
 
             m_pendingForeignSourceRepository.flush();
             m_deployedForeignSourceRepository.flush();
 
             final String url = getActiveUrl(foreignSource).toString();
+            debug("importRequisition: Sending import event with URL %s", url);
             final EventBuilder bldr = new EventBuilder(EventConstants.RELOAD_IMPORT_UEI, "Web");
             bldr.addParam(EventConstants.PARM_URL, url);
             if (rescanExisting != null) {
@@ -737,9 +744,12 @@ public class RequisitionRestService extends OnmsRestService {
             } catch (final EventProxyException e) {
                 throw new DataAccessResourceFailureException("Unable to send event to import group "+foreignSource, e);
             }
-            
-            return Response.seeOther(m_uriInfo.getBaseUriBuilder().path(this.getClass(), "getRequisition").build(foreignSource)).build();
-            // return suppressOutput == null || suppressOutput == false ? Response.ok(req).build() : Response.ok().build();
+
+            return Response.seeOther(m_uriInfo.getBaseUriBuilder().path(this.getClass()).path(this.getClass(), "getRequisition").build(foreignSource)).build();
+        } catch (final MalformedURLException e) {
+            final DataAccessResourceFailureException exception = new DataAccessResourceFailureException("Failed to create a requisition URL for the '" + foreignSource + "' foreign source.", e);
+            LogUtils.warnf(this, exception, "Unable to send event to import group %s", foreignSource);
+            throw exception;
         } finally {
             writeUnlock();
         }
@@ -759,16 +769,15 @@ public class RequisitionRestService extends OnmsRestService {
     public Response updateRequisition(@PathParam("foreignSource") String foreignSource, MultivaluedMapImpl params) {
         writeLock();
         try {
-            Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                debug("updateRequisition: updating requisition with foreign source %s", foreignSource);
-                setProperties(params, req);
-                debug("updateRequisition: requisition with foreign source %s updated", foreignSource);
-                m_pendingForeignSourceRepository.save(req);
-                return Response.seeOther(m_uriInfo.getBaseUriBuilder().path(this.getClass(), "getRequisition").build(foreignSource)).build();
-                // return Response.ok(req).build();
+            debug("updateRequisition: Updating requisition with foreign source %s", foreignSource);
+            Requisition req = getActiveRequisition(foreignSource, false);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return Response.notModified(foreignSource).build();
+            setProperties(params, req);
+            debug("updateRequisition: Requisition with foreign source %s updated", foreignSource);
+            m_pendingForeignSourceRepository.save(req);
+            return Response.seeOther(getRedirectUri(m_uriInfo)).build();
         } finally {
             writeUnlock();
         }
@@ -789,19 +798,20 @@ public class RequisitionRestService extends OnmsRestService {
     public Response updateNode(@PathParam("foreignSource") String foreignSource, @PathParam("foreignId") String foreignId, MultivaluedMapImpl params) {
         writeLock();
         try {
-            Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                RequisitionNode node = req.getNode(foreignId);
-                if (node != null) {
-                    debug("updateNode: updating node with foreign source %s and foreign id %s", foreignSource, foreignId);
-                    setProperties(params, node);
-                    debug("updateNode: node with foreign source %s and foreign id %s updated", foreignSource, foreignId);
-                    m_pendingForeignSourceRepository.save(req);
-                    return Response.seeOther(m_uriInfo.getBaseUriBuilder().path(this.getClass(), "getNode").build(foreignSource, foreignId)).build();
-                    // return Response.ok(node).build();
-                }
+            debug("updateNode: Updating node with foreign source %s and foreign id %s", foreignSource, foreignId);
+            final Requisition req = getActiveRequisition(foreignSource, false);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return Response.notModified(foreignSource + "/" + foreignId).build();
+            final RequisitionNode node = req.getNode(foreignId);
+            if (node == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign ID '" + foreignId + "' not found in foreign source '" + foreignSource + "'.");
+            }
+
+            setProperties(params, node);
+            debug("updateNode: Node with foreign source %s and foreign id %s updated", foreignSource, foreignId);
+            m_pendingForeignSourceRepository.save(req);
+            return Response.seeOther(getRedirectUri(m_uriInfo)).build();
         } finally {
             writeUnlock();
         }
@@ -823,22 +833,23 @@ public class RequisitionRestService extends OnmsRestService {
     public Response updateInterface(@PathParam("foreignSource") String foreignSource, @PathParam("foreignId") String foreignId, @PathParam("ipAddress") String ipAddress, MultivaluedMapImpl params) {
         writeLock();
         try {
-            Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                RequisitionNode node = req.getNode(foreignId);
-                if (node != null) {
-                    RequisitionInterface iface = node.getInterface(ipAddress);
-                    if (iface != null) {
-                        debug("updateInterface: updating interface %s on node %s/%s", ipAddress, foreignSource, foreignId);
-                        setProperties(params, iface);
-                        debug("updateInterface: interface %s on node %s/%s updated", ipAddress, foreignSource, foreignId);
-                        m_pendingForeignSourceRepository.save(req);
-                        return Response.seeOther(m_uriInfo.getBaseUriBuilder().path(this.getClass(), "getInterfaceForNode").build(foreignSource, foreignId, ipAddress)).build();
-                        // return Response.ok(node).build();
-                    }
-                }
+            debug("updateInterface: Updating interface %s on node %s/%s", ipAddress, foreignSource, foreignId);
+            final Requisition req = getActiveRequisition(foreignSource, false);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return Response.notModified(foreignSource + "/" + foreignId).build();
+            final RequisitionNode node = req.getNode(foreignId);
+            if (node == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign ID '" + foreignId + "' not found in foreign source '" + foreignSource + "'.");
+            }
+            RequisitionInterface iface = node.getInterface(ipAddress);
+            if (iface == null) {
+                throw getException(Response.Status.NOT_FOUND, "Unable to locate IP address '" + ipAddress + "' in " + foreignSource + ":" + foreignId + ".");
+            }
+            setProperties(params, iface);
+            debug("updateInterface: Interface %s on node %s/%s updated", ipAddress, foreignSource, foreignId);
+            m_pendingForeignSourceRepository.save(req);
+            return Response.seeOther(getRedirectUri(m_uriInfo)).build();
         } finally {
             writeUnlock();
         }
@@ -856,8 +867,8 @@ public class RequisitionRestService extends OnmsRestService {
     public Response deletePendingRequisition(@PathParam("foreignSource") String foreignSource) {
         writeLock();
         try {
-            Requisition req = getActiveRequisition(foreignSource);
             debug("deletePendingRequisition: deleting pending requisition with foreign source %s", foreignSource);
+            Requisition req = getActiveRequisition(foreignSource, false);
             m_pendingForeignSourceRepository.delete(req);
             return Response.ok().build();
         } finally {
@@ -877,8 +888,8 @@ public class RequisitionRestService extends OnmsRestService {
     public Response deleteDeployedRequisition(@PathParam("foreignSource") String foreignSource) {
         writeLock();
         try {
-            Requisition req = getActiveRequisition(foreignSource);
             debug("deleteDeployedRequisition: deleting pending requisition with foreign source %s", foreignSource);
+            Requisition req = getActiveRequisition(foreignSource, false);
             m_deployedForeignSourceRepository.delete(req);
             return Response.ok().build();
         } finally {
@@ -899,13 +910,14 @@ public class RequisitionRestService extends OnmsRestService {
     public Response deleteNode(@PathParam("foreignSource") String foreignSource, @PathParam("foreignId") String foreignId) {
         writeLock();
         try {
-            Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                req.deleteNode(foreignId);
-                m_pendingForeignSourceRepository.save(req);
-                return Response.ok().build();
+            debug("deleteNode: Deleting node %s from foreign source %s", foreignId, foreignSource);
+            final Requisition req = getActiveRequisition(foreignSource, false);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return null;
+            req.deleteNode(foreignId);
+            m_pendingForeignSourceRepository.save(req);
+            return Response.ok().build();
         } finally {
             writeUnlock();
         }
@@ -925,19 +937,21 @@ public class RequisitionRestService extends OnmsRestService {
     public Response deleteInterface(@PathParam("foreignSource") String foreignSource, @PathParam("foreignId") String foreignId, @PathParam("ipAddress") String ipAddress) {
         writeLock();
         try {
-            Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                final RequisitionNode node = req.getNode(foreignId);
-                if (node != null) {
-                    if (node.deleteInterface(ipAddress)) {
-                        m_pendingForeignSourceRepository.save(req);
-                        return Response.ok().build();
-                    } else {
-                        return Response.notModified().build();
-                    }
-                }
+            debug("deleteInterface: Deleting interface %s from node %s/%s", ipAddress, foreignSource, foreignId);
+            Requisition req = getActiveRequisition(foreignSource, false);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return null;
+            final RequisitionNode node = req.getNode(foreignId);
+            if (node == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign ID '" + foreignId + "' not found in foreign source '" + foreignSource + "'.");
+            }
+            if (node.deleteInterface(ipAddress)) {
+                m_pendingForeignSourceRepository.save(req);
+                return Response.ok().build();
+            } else {
+                return Response.notModified().build();
+            }
         } finally {
             writeUnlock();
         }
@@ -958,19 +972,22 @@ public class RequisitionRestService extends OnmsRestService {
     public Response deleteInterfaceService(@PathParam("foreignSource") String foreignSource, @PathParam("foreignId") String foreignId, @PathParam("ipAddress") String ipAddress, @PathParam("service") String service) {
         writeLock();
         try {
-            Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                RequisitionNode node = req.getNode(foreignId);
-                if (node != null) {
-                    RequisitionInterface iface = node.getInterface(ipAddress);
-                    if (iface != null) {
-                        iface.deleteMonitoredService(service);
-                        m_pendingForeignSourceRepository.save(req);
-                        return Response.ok().build();
-                    }
-                }
+            debug("deleteInterfaceService: Deleting service %s from interface %s on node %s/%s", service, ipAddress, foreignSource, foreignId);
+            final Requisition req = getActiveRequisition(foreignSource, false);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return null;
+            final RequisitionNode node = req.getNode(foreignId);
+            if (node == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign ID '" + foreignId + "' not found in foreign source '" + foreignSource + "'.");
+            }
+            RequisitionInterface iface = node.getInterface(ipAddress);
+            if (iface == null) {
+                throw getException(Response.Status.NOT_FOUND, "Unable to locate IP address '" + ipAddress + "' in " + foreignSource + ":" + foreignId + ".");
+            }
+            iface.deleteMonitoredService(service);
+            m_pendingForeignSourceRepository.save(req);
+            return Response.ok().build();
         } finally {
             writeUnlock();
         }
@@ -990,19 +1007,21 @@ public class RequisitionRestService extends OnmsRestService {
     public Response deleteCategory(@PathParam("foreignSource") String foreignSource, @PathParam("foreignId") String foreignId, @PathParam("category") String category) {
         writeLock();
         try {
-            Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                RequisitionNode node = req.getNode(foreignId);
-                if (node != null) {
-                    if (node.deleteCategory(category)) {
-                        m_pendingForeignSourceRepository.save(req);
-                        return Response.ok().build();
-                    } else {
-                        return Response.notModified().build();
-                    }
-                }
+            debug("deleteCategory: Deleting category %s from node %s/%s", category, foreignSource, foreignId);
+            Requisition req = getActiveRequisition(foreignSource, false);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return null;
+            final RequisitionNode node = req.getNode(foreignId);
+            if (node == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign ID '" + foreignId + "' not found in foreign source '" + foreignSource + "'.");
+            }
+            if (node.deleteCategory(category)) {
+                m_pendingForeignSourceRepository.save(req);
+                return Response.ok().build();
+            } else {
+                return Response.notModified().build();
+            }
         } finally {
             writeUnlock();
         }
@@ -1022,19 +1041,21 @@ public class RequisitionRestService extends OnmsRestService {
     public Response deleteAssetParameter(@PathParam("foreignSource") String foreignSource, @PathParam("foreignId") String foreignId, @PathParam("parameter") String parameter) {
         writeLock();
         try {
-            final Requisition req = getActiveRequisition(foreignSource);
-            if (req != null) {
-                final RequisitionNode node = req.getNode(foreignId);
-                if (node != null) {
-                    if (node.deleteAsset(parameter)) {
-                        m_pendingForeignSourceRepository.save(req);
-                        return Response.ok().build();
-                    } else {
-                        return Response.notModified().build();
-                    }
-                }
+            debug("deleteAssetParameter: Deleting asset parameter %s from node %s/%s", parameter, foreignSource, foreignId);
+            final Requisition req = getActiveRequisition(foreignSource, false);
+            if (req == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign source '" + foreignSource + "' not found.");
             }
-            return null;
+            final RequisitionNode node = req.getNode(foreignId);
+            if (node == null) {
+                throw getException(Response.Status.NOT_FOUND, "Foreign ID '" + foreignId + "' not found in foreign source '" + foreignSource + "'.");
+            }
+            if (node.deleteAsset(parameter)) {
+                m_pendingForeignSourceRepository.save(req);
+                return Response.ok().build();
+            } else {
+                return Response.notModified().build();
+            }
         } finally {
             writeUnlock();
         }
@@ -1046,26 +1067,25 @@ public class RequisitionRestService extends OnmsRestService {
         return fsNames;
     }
 
-    private URL getActiveUrl(String foreignSourceName) {
+    private URL getActiveUrl(String foreignSourceName) throws MalformedURLException {
         Requisition pending = m_pendingForeignSourceRepository.getRequisition(foreignSourceName);
         Requisition deployed = m_deployedForeignSourceRepository.getRequisition(foreignSourceName);
-        
-        if (pending == null) {
-            return m_deployedForeignSourceRepository.getRequisitionURL(foreignSourceName);
-        } else if (deployed == null) {
-            return m_pendingForeignSourceRepository.getRequisitionURL(foreignSourceName);
-        } else if (deployed.getDateStamp().compare(pending.getDateStamp()) > -1) {
-            // deployed is newer than pending
+
+        if (pending == null || (deployed != null && deployed.getDateStamp().compare(pending.getDateStamp()) > -1)) {
+            // all we have is deployed, or deployed is newer than pending
             return m_deployedForeignSourceRepository.getRequisitionURL(foreignSourceName);
         }
-        return m_pendingForeignSourceRepository.getRequisitionURL(foreignSourceName);
+        
+        return RequisitionFileUtils.createSnapshot(m_pendingForeignSourceRepository, foreignSourceName).toURI().toURL();
     }
 
-    private Requisition getActiveRequisition(String foreignSourceName) {
+    private Requisition getActiveRequisition(String foreignSourceName, boolean createIfMissing) {
         Requisition pending = m_pendingForeignSourceRepository.getRequisition(foreignSourceName);
         Requisition deployed = m_deployedForeignSourceRepository.getRequisition(foreignSourceName);
-        
-        if (pending == null) {
+
+        if (pending == null && deployed == null && createIfMissing) {
+            return new Requisition(foreignSourceName);
+        } else if (pending == null) {
             return deployed;
         } else if (deployed == null) {
             return pending;
@@ -1076,9 +1096,8 @@ public class RequisitionRestService extends OnmsRestService {
         return pending;
     }
 
-    private void debug(String format, Object... values) {
-//        System.err.println(String.format(format, values));
-//        log().debug(String.format(format, values));
+    private void debug(final String format, final Object... values) {
+        LogUtils.debugf(this, format, values);
     }
     
 }

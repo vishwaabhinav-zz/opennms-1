@@ -31,46 +31,37 @@ package org.opennms.features.topology.netutils.internal.operations;
 import java.net.URL;
 import java.util.List;
 
+import org.opennms.features.topology.api.AbstractOperation;
 import org.opennms.features.topology.api.Operation;
 import org.opennms.features.topology.api.OperationContext;
+import org.opennms.features.topology.api.OperationContext.DisplayLocation;
+import org.opennms.features.topology.api.topo.VertexRef;
 import org.opennms.features.topology.netutils.internal.EventsAlarmsWindow;
 import org.opennms.features.topology.netutils.internal.Node;
 
-import com.vaadin.data.Item;
-import com.vaadin.data.Property;
-
-public class EventsAlarmsOperation implements Operation {
+public class EventsAlarmsOperation extends AbstractOperation implements Operation {
 
     private String m_eventsURL;
 
     private String m_alarmsURL;
 
-    public boolean display(final List<Object> targets, final OperationContext operationContext) {
-        return true;
-    }
-
-    public boolean enabled(final List<Object> targets, final OperationContext operationContext) {
-        if (targets == null || targets.size() < 2)
-            return true;
-        return false;
-    }
-
-    public Undoer execute(final List<Object> targets, final OperationContext operationContext) {
+    public Undoer execute(final List<VertexRef> targets, final OperationContext operationContext) {
         String label = "";
         int nodeID = -1;
 
         try {
             if (targets != null) {
-                for (final Object target : targets) {
-                    final Item vertexItem = operationContext.getGraphContainer().getVertexItem(target);
-                    if (vertexItem != null) {
-                        final Property labelProperty = vertexItem.getItemProperty("label");
-                        label = labelProperty == null ? "" : (String) labelProperty.getValue();
-                        final Property nodeIDProperty = vertexItem.getItemProperty("nodeID");
-                        nodeID = nodeIDProperty == null ? -1 : (Integer) nodeIDProperty.getValue();
+                for (final VertexRef target : targets) {
+                    final String labelValue = getLabelValue(operationContext, target);
+                    final Integer nodeValue = getNodeIdValue(operationContext, target);
+
+                    if (nodeValue != null && nodeValue > 0) {
+                        label = labelValue == null ? "" : labelValue;
+                        nodeID = nodeValue;
                     }
                 }
             }
+
             final Node node = new Node(nodeID, null, label);
 
             final URL baseURL = operationContext.getMainWindow().getURL();
@@ -79,7 +70,7 @@ public class EventsAlarmsOperation implements Operation {
             final URL alarmsURL;
             if (node.getNodeID() >= 0) {
                 eventsURL = new URL(baseURL, getEventsURL() + "?filter=node%3D" + node.getNodeID());
-                alarmsURL = new URL(baseURL, getAlarmsURL() + "?sortby=id&amp;acktype=unacklimit=20&amp;filter=node%3D" + node.getNodeID());
+                alarmsURL = new URL(baseURL, getAlarmsURL() + "?sortby=id&acktype=unacklimit=20&filter=node%3D" + node.getNodeID());
             } else {
                 eventsURL = new URL(baseURL, getEventsURL());
                 alarmsURL = new URL(baseURL, getAlarmsURL());
@@ -90,6 +81,16 @@ public class EventsAlarmsOperation implements Operation {
             e.printStackTrace();
         }
         return null;
+    }
+    
+    @Override
+    public boolean display(final List<VertexRef> targets, final OperationContext operationContext) {
+    	if (operationContext.getDisplayLocation() == DisplayLocation.MENUBAR) {
+    		return true;
+    	} else {
+			return targets != null && targets.size() > 0 && targets.get(0) != null;
+    	}
+        
     }
 
     public String getId() {

@@ -7,7 +7,7 @@
 		<relativePath>../../poms/compiled/</relativePath>
 		<groupId>org.opennms.features.topology.build</groupId>
 		<artifactId>compiled-bundle-settings</artifactId>
-		<version>1.11.3-SNAPSHOT</version>
+		<version>1.11.4-SNAPSHOT</version>
 	</parent>
 
 	<groupId>org.opennms.features.topology</groupId>
@@ -48,7 +48,7 @@
 	            <plugin>
 	                <groupId>org.codehaus.mojo</groupId>
 	                <artifactId>gwt-maven-plugin</artifactId>
-	                <version>${gwt.plugin.version}</version>
+	                <version>${gwtPluginVersion}</version>
 	                <configuration>
 	                    <webappDirectory>${project.build.directory}/${project.build.finalName}/VAADIN/widgetsets</webappDirectory>
 	                    <extraJvmArgs>-Xmx512M -Xss1024k</extraJvmArgs>
@@ -65,12 +65,12 @@
 	                    <dependency>
 	                        <groupId>com.google.gwt</groupId>
 	                        <artifactId>gwt-dev</artifactId>
-	                        <version>${gwt.version}</version>
+	                        <version>${gwtVersion}</version>
 	                    </dependency>
 	                    <dependency>
 	                        <groupId>com.google.gwt</groupId>
 	                        <artifactId>gwt-user</artifactId>
-	                        <version>${gwt.version}</version>
+	                        <version>${gwtVersion}</version>
 	                    </dependency>
 	                </dependencies>
 	            </plugin>
@@ -200,7 +200,6 @@
 	    <dependency>
 	      <groupId>junit</groupId>
 	      <artifactId>junit</artifactId>
-	      <scope>test</scope>
 	    </dependency>
 		<dependency>
             <groupId>org.opennms.osgi.features.topology</groupId>
@@ -211,8 +210,8 @@
 		<dependency>
 			<groupId>com.google.gwt</groupId>
 			<artifactId>gwt-user</artifactId>
-			<version>${gwt.version}</version>
-			<scope>${scope.type}</scope>
+			<version>${gwtVersion}</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<dependency>

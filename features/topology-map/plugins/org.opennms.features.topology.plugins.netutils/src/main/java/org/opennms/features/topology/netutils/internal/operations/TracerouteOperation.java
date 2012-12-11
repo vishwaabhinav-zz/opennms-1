@@ -30,55 +30,49 @@ package org.opennms.features.topology.netutils.internal.operations;
 
 import java.util.List;
 
-import org.opennms.features.topology.api.Operation;
+import org.opennms.features.topology.api.AbstractOperation;
 import org.opennms.features.topology.api.OperationContext;
+import org.opennms.features.topology.api.topo.VertexRef;
 import org.opennms.features.topology.netutils.internal.Node;
 import org.opennms.features.topology.netutils.internal.TracerouteWindow;
 
-import com.vaadin.data.Item;
-import com.vaadin.data.Property;
-
-public class TracerouteOperation implements Operation {
+public class TracerouteOperation extends AbstractOperation {
 
     private String tracerouteURL;
 
-    public boolean enabled(final List<Object> targets, final OperationContext operationContext) {
-        return true;
-    }
-
-    public boolean display(final List<Object> targets, final  OperationContext operationContext) {
+    public boolean display(final List<VertexRef> targets, final  OperationContext operationContext) {
         String ipAddr = "";
 
         if (targets != null) {
-            for (final Object target : targets) {
-                final Item vertexItem = operationContext.getGraphContainer().getVertexItem(target);
-                if (vertexItem != null) {
-                    final Property ipAddrProperty = vertexItem.getItemProperty("ipAddr");
-                    ipAddr = ipAddrProperty == null ? "" : (String) ipAddrProperty.getValue();
+            for (final VertexRef target : targets) {
+                final String addrValue = getIpAddrValue(operationContext, target);
+                if (addrValue != null) {
+                    ipAddr = addrValue;
                 }
             }
         }
         if ("".equals(ipAddr)) {
             return false;
         }
-        return true;
+        return super.display(targets, operationContext);
     }
 
-    public Undoer execute(final List<Object> targets, final OperationContext operationContext) {
+    public Undoer execute(final List<VertexRef> targets, final OperationContext operationContext) {
         String ipAddr = "";
         String label = "";
         int nodeID = -1;
 
         if (targets != null) {
-            for (final Object target : targets) {
-                final Item vertexItem = operationContext.getGraphContainer().getVertexItem(target);
-                if (vertexItem != null) {
-                    final Property ipAddrProperty = vertexItem.getItemProperty("ipAddr");
-                    ipAddr = ipAddrProperty == null ? "" : (String) ipAddrProperty.getValue();
-                    final Property labelProperty = vertexItem.getItemProperty("label");
-                    label = labelProperty == null ? "" : (String) labelProperty.getValue();
-                    final Property nodeIDProperty = vertexItem.getItemProperty("nodeID");
-                    nodeID = nodeIDProperty == null ? -1 : (Integer) nodeIDProperty.getValue();
+            for (final VertexRef target : targets) {
+                
+                final String addrValue = getIpAddrValue(operationContext, target);
+                final String labelValue = getLabelValue(operationContext, target);
+                final Integer nodeValue = getNodeIdValue(operationContext, target);
+                
+                if (addrValue != null && nodeValue != null && nodeValue > 0) {
+                    ipAddr = addrValue;
+                    label = labelValue == null ? "" : labelValue;
+                    nodeID = nodeValue.intValue();
                 }
             }
         }
@@ -88,7 +82,6 @@ public class TracerouteOperation implements Operation {
     }
 
     public String getId() {
-        // TODO Auto-generated method stub
         return "traceroute";
     }
 

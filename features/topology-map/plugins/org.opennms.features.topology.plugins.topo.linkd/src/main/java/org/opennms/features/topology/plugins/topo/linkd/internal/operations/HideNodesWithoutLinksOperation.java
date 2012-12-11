@@ -32,7 +32,9 @@ import java.util.List;
 
 import org.opennms.features.topology.api.CheckedOperation;
 import org.opennms.features.topology.api.OperationContext;
+import org.opennms.features.topology.api.topo.VertexRef;
 import org.opennms.features.topology.plugins.topo.linkd.internal.LinkdTopologyProvider;
+import org.slf4j.LoggerFactory;
 
 public class HideNodesWithoutLinksOperation implements CheckedOperation {
 
@@ -42,24 +44,28 @@ public class HideNodesWithoutLinksOperation implements CheckedOperation {
     }
 
     @Override
-    public Undoer execute(List<Object> targets,
+    public Undoer execute(List<VertexRef> targets,
             OperationContext operationContext) {
+        log("executing Hide Nodes Without Link Checked Operation");
         log("found addNodeWithoutLinks: " + m_topologyProvider.isAddNodeWithoutLink());
         m_topologyProvider.setAddNodeWithoutLink(!m_topologyProvider.isAddNodeWithoutLink());
         log("switched addNodeWithoutLinks to: " + m_topologyProvider.isAddNodeWithoutLink());
-        log("loading topology");
         m_topologyProvider.load(null);
+        if (operationContext != null && operationContext.getGraphContainer() != null) {
+            log("operationcontext and GraphContainer not null: executing redoLayout");
+            operationContext.getGraphContainer().redoLayout();
+        }
         return null;
     }
 
     @Override
-    public boolean display(List<Object> targets,
+    public boolean display(List<VertexRef> targets,
             OperationContext operationContext) {
         return true;
     }
 
     @Override
-    public boolean enabled(List<Object> targets,
+    public boolean enabled(List<VertexRef> targets,
             OperationContext operationContext) {
         return true;
     }
@@ -70,13 +76,12 @@ public class HideNodesWithoutLinksOperation implements CheckedOperation {
     }
 
     @Override
-    public boolean isChecked(List<Object> targets,
+    public boolean isChecked(List<VertexRef> targets,
             OperationContext operationContext) {
         return !m_topologyProvider.isAddNodeWithoutLink();
     }
 
     private void log(final String string) {
-        System.err.println(getId()+": "+ string);
+        LoggerFactory.getLogger(getClass()).debug("{}: {}", getId(), string);
     }
-
 }

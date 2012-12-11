@@ -66,7 +66,7 @@
     <property name="transactionManager" ref="transactionManager" />
   </bean>
   
-  <onmsgi:service interface="org.springframework.transaction.support.TransactionTemplate" ref="transactionTemplate" />
+  <onmsgi:service interface="org.springframework.transaction.support.TransactionOperations" ref="transactionTemplate" />
     
   <bean id="filterManager" class="org.opennms.netmgt.dao.hibernate.HibernateFilterManager">
     <property name="sessionFactory" ref="sessionFactory" />
@@ -347,6 +347,8 @@
 
   <bean id="dataCollectionConfig" class="org.opennms.netmgt.config.DataCollectionConfigFactory" depends-on="dataCollectionConfig-init" factory-method="getInstance" />
 
+  <onmsgi:service interface="org.opennms.netmgt.config.DataCollectionConfigDao" ref="dataCollectionConfigDao" />
+
   <bean id="resourceDao" class="org.opennms.netmgt.dao.support.DefaultResourceDao">
     <property name="nodeDao" ref="nodeDao" />
     <property name="locationMonitorDao" ref="locationMonitorDao" />
@@ -354,6 +356,8 @@
     <property name="dataCollectionConfigDao" ref="dataCollectionConfig" />
     <property name="rrdDirectory" value="${rrd.base.dir}" />
   </bean>
+  
+  <onmsgi:service interface="org.opennms.netmgt.dao.ResourceDao" ref="resourceDao" />
 
   <bean id="rrdStrategy" class="org.opennms.netmgt.rrd.RrdUtils" factory-method="getStrategy"/>
 
@@ -404,6 +408,8 @@
   </bean>
 
   <bean id="snmpPeerFactory" class="org.opennms.netmgt.config.SnmpPeerFactory" depends-on="init-snmpPeerFactory" factory-method="getInstance"/>
+
+  <onmsgi:service interface="org.opennms.netmgt.config.SnmpAgentConfigFactory" ref="snmpPeerFactory"/>
   
   <bean id="simpleJdbcTemplate" class="org.springframework.jdbc.core.simple.SimpleJdbcTemplate">
     <constructor-arg ref="jdbcTemplate" />

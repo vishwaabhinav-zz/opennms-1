@@ -46,8 +46,8 @@ public class D3 extends JavaScriptObject {
         return this.select(elementId);
     }-*/;
     
-    public final native Element selectElement(String elementId) /*-{
-        var retElement = this.select(elementId);
+    public final native Element selectElement(String selector) /*-{
+        var retElement = this.select(selector);
         if(retElement.length > 0){
             return retElement[0][0];
         }
@@ -55,7 +55,7 @@ public class D3 extends JavaScriptObject {
         return null;
     }-*/;
     
-    public final native Element getElement(D3 selection, int index) /*-{
+    public static final native Element getElement(D3 selection, int index) /*-{
         return selection[0][index];
     }-*/;
     
@@ -80,6 +80,21 @@ public class D3 extends JavaScriptObject {
 			return func.@org.opennms.features.topology.app.internal.gwt.client.d3.Func::call(Ljava/lang/Object;I)(d,i);
 		}
 		return this.attr(attrName, f);
+    }-*/;
+    
+    public final native void timer(BooleanFunc func) /*-{
+        var f = function(){
+            return func.@org.opennms.features.topology.app.internal.gwt.client.d3.BooleanFunc::call()();
+        }
+        $wnd.d3.timer(f);
+    }-*/;
+    
+    public final native void timer() /*-{
+        $wnd.d3.timer(function() {
+            $wnd.console.log("timer tick");
+            return false;
+            
+        })
     }-*/;
 
     public final native D3 selectAll(String selectionName) /*-{
@@ -116,6 +131,25 @@ public class D3 extends JavaScriptObject {
 
     public final native D3 transition() /*-{
         return this.transition();
+    }-*/;
+    
+    public final native D3 styleTween(String name, Tween<?, ?> t) /*-{
+        
+        function interpolate(a, b) {
+          var numA = a.replace('px', '');
+          var numB = b.replace('px', '');
+          numB -= numA;
+          return function(t) { $wnd.console.log("numA: " + numA + " numB: " + numB + " t: " + t); return (numA + numB * t) + "px"; };
+        };
+        
+        function tween(d, i, a){
+            var f = $wnd.d3.interpolate(a,"11px");
+            $wnd.console.log("f: ");
+            $wnd.console.log(f);
+            return function(t){ var ret = f(t); $wnd.console.log("t: " + t + " ret: " + ret); return ret; }
+            //return $wnd.d3.interpolate(a, t.@org.opennms.features.topology.app.internal.gwt.client.d3.Tween::call(Ljava/lang/Object;ILjava/lang/String;)(d,i,a));
+        }
+        return this.styleTween(name, tween);
     }-*/;
 
     public final native D3 duration(int duration) /*-{
@@ -298,8 +332,10 @@ public class D3 extends JavaScriptObject {
         
     }-*/;
 
-    
+    public final native String style(String style) /*-{
+        return this.style(style);
+    }-*/;
 
-    
+
 
 }

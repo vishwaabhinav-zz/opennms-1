@@ -54,7 +54,7 @@ import org.opennms.netmgt.rrd.RrdException;
  */
 public class BasePersister extends AbstractCollectionSetVisitor implements Persister {
 
-	private boolean m_ignorePersist = false;
+    private boolean m_ignorePersist = false;
     private ServiceParameters m_params;
     private RrdRepository m_repository;
     private LinkedList<Boolean> m_stack = new LinkedList<Boolean>();
@@ -178,6 +178,7 @@ public class BasePersister extends AbstractCollectionSetVisitor implements Persi
     	log().debug("Persisting "+attribute + (isIgnorePersist() ? ". Ignoring value because of sysUpTime changed" : ""));
     	String value = isIgnorePersist() ? "U" : attribute.getNumericValue();
         m_builder.setAttributeValue(attribute.getAttributeType(), value);
+        m_builder.setAttributeMetadata(attribute.getMetricIdentifier(), attribute.getName());
     }
 
     /** {@inheritDoc} */

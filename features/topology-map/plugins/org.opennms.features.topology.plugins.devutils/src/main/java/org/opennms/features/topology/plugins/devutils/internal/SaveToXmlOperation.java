@@ -41,34 +41,28 @@ import javax.xml.bind.JAXB;
 import org.opennms.features.topology.api.Operation;
 import org.opennms.features.topology.api.OperationContext;
 import org.opennms.features.topology.api.TopologyProvider;
-
+import org.opennms.features.topology.api.topo.VertexRef;
 
 public class SaveToXmlOperation implements Operation {
     
-    TopologyProvider m_topologyProvider;
-	
-    public SaveToXmlOperation(TopologyProvider topologyProvider) {
-        m_topologyProvider = topologyProvider;
-    }
-
     @Override
-    public Undoer execute(List<Object> targets, OperationContext operationContext) {
+    public Undoer execute(List<VertexRef> targets, OperationContext operationContext) {
     	
-    	
+    	TopologyProvider topologyProvider = operationContext.getGraphContainer().getDataSource();
     	
 		Map<Object, WrappedVertex> idMap = new HashMap<Object, WrappedVertex>();
 		
 		// first create all the vertices;
 		List<WrappedVertex> vertices = new ArrayList<WrappedVertex>();
-		for(Object vertexId : m_topologyProvider.getVertexIds()) {
-			WrappedVertex wrappedVertex = WrappedVertex.create(m_topologyProvider.getVertexItem(vertexId));
+		for(Object vertexId : topologyProvider.getVertexIds()) {
+			WrappedVertex wrappedVertex = WrappedVertex.create(topologyProvider.getVertexContainer().getItem(vertexId));
 			vertices.add(wrappedVertex);
 			idMap.put(vertexId, wrappedVertex);
 		}
 		
 		// then set the parents for each
-		for(Object vertexId : m_topologyProvider.getVertexIds()) {
-			Object parentId = m_topologyProvider.getVertexContainer().getParent(vertexId);
+		for(Object vertexId : topologyProvider.getVertexIds()) {
+			Object parentId = topologyProvider.getVertexContainer().getParent(vertexId);
 			WrappedVertex vertex = idMap.get(vertexId);
 			WrappedVertex parent = idMap.get(parentId);
 			
@@ -77,9 +71,9 @@ public class SaveToXmlOperation implements Operation {
 		
 		// then create the edges
 		List<WrappedEdge> edges = new ArrayList<WrappedEdge>();
-		for(Object edgeId : m_topologyProvider.getEdgeIds()) {
+		for(Object edgeId : topologyProvider.getEdgeIds()) {
 			
-			Collection<?> vertexIds = m_topologyProvider.getEndPointIdsForEdge(edgeId);
+			Collection<?> vertexIds = topologyProvider.getEndPointIdsForEdge(edgeId);
 			
 			Iterator<?> it = vertexIds.iterator();
 			
@@ -89,12 +83,12 @@ public class SaveToXmlOperation implements Operation {
 			WrappedVertex source = idMap.get(sourceId);
 			WrappedVertex target = idMap.get(targetId);
 			
-			edges.add(new WrappedEdge(m_topologyProvider.getEdgeItem(edgeId), source, target));
+			edges.add(new WrappedEdge(topologyProvider.getEdgeContainer().getItem(edgeId), source, target));
 			
 
 		}
 		
-		WrappedGraph graph = new WrappedGraph(vertices, edges);
+		WrappedGraph graph = new WrappedGraph(topologyProvider.getNamespace(), vertices, edges);
 		
         JAXB.marshal(graph, new File("/tmp/saved-graph.xml"));
 
@@ -103,12 +97,12 @@ public class SaveToXmlOperation implements Operation {
     }
 
     @Override
-    public boolean display(List<Object> targets, OperationContext operationContext) {
+    public boolean display(List<VertexRef> targets, OperationContext operationContext) {
         return true;
     }
 
     @Override
-    public boolean enabled(List<Object> targets, OperationContext operationContext) {
+    public boolean enabled(List<VertexRef> targets, OperationContext operationContext) {
         return true;
     }
 

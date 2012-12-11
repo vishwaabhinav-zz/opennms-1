@@ -42,14 +42,16 @@ import com.vaadin.data.Item;
 import com.vaadin.data.util.BeanContainer;
 import com.vaadin.data.util.BeanItem;
 
-public class TestTopologyProvider implements TopologyProvider{
+public class TestTopologyProvider implements TopologyProvider {
+	private final String m_namespace;
     private TestVertexContainer m_vertexContainer;
     private BeanContainer<String, TestEdge> m_edgeContainer;
     private int m_vertexCounter = 0;
     private int m_edgeCounter = 0;
     private int m_groupCounter = 0;
     
-    public TestTopologyProvider() {
+    public TestTopologyProvider(String namespace) {
+    	m_namespace = namespace;
         m_vertexContainer = new TestVertexContainer();
         m_edgeContainer = new BeanContainer<String, TestEdge>(TestEdge.class);
         m_edgeContainer.setBeanIdProperty("id");
@@ -57,12 +59,14 @@ public class TestTopologyProvider implements TopologyProvider{
         String vId1 = getNextVertexId();
         TestVertex v1 = new TestLeafVertex(vId1, 0, 0);
         v1.setIcon("icon.jpg");
+        v1.setLabel("a leaf");
         
         Item beanItem = m_vertexContainer.addBean(v1);
         
         String vId2 = getNextVertexId();
         TestVertex v2 = new TestLeafVertex(vId2, 0, 0);
         v2.setIcon("icon.jpg");
+        v2.setLabel("another leaf");
         Item beanItem2 = m_vertexContainer.addBean(v2);
         
         String edgeId = getNextEdgeId();
@@ -75,6 +79,7 @@ public class TestTopologyProvider implements TopologyProvider{
         String id = getNextVertexId();
         TestVertex vert = new TestLeafVertex(id, 0, 0);
         vert.setIcon("icon.jpb");
+        vert.setLabel("a vertex");
         m_vertexContainer.addBean(vert);
         return id;
         
@@ -97,18 +102,19 @@ public class TestTopologyProvider implements TopologyProvider{
     }
 
     @Override
-    public Object addGroup(String groupIcon) {
+    public Object addGroup(String groupLabel, String groupIcon) {
         String nextGroupId = getNextGroupId();
-        addGroup(nextGroupId, groupIcon);
+        addGroup(nextGroupId, groupIcon, groupLabel);
         return nextGroupId;
     }
 
-    private Item addGroup(String groupId, String groupIcon) {
+    private Item addGroup(String groupId, String groupIcon, String groupLabel) {
         if(m_vertexContainer.containsId(groupId)) {
             throw new IllegalArgumentException("A vertex or group with id " + groupId + " already exists!");
         }
         TestVertex vertex = new TestGroup(groupId);
         vertex.setIcon(groupIcon);
+        vertex.setLabel(groupLabel);
         return m_vertexContainer.addBean(vertex);
     }
 
@@ -123,61 +129,75 @@ public class TestTopologyProvider implements TopologyProvider{
 
     @Override
     public void save(String filename) {
-        // TODO Auto-generated method stub
-        
+        // Do nothing
     }
 
     @Override
     public void load(String filename) {
-        // TODO Auto-generated method stub
+
+        m_edgeContainer.removeAllItems();
+        m_vertexContainer.removeAllItems();
         
+        List<TestVertex> vertices = new ArrayList<TestVertex>();
+        List<TestEdge> edges = new ArrayList<TestEdge>();
+        
+        String vId1 = getNextVertexId();
+        TestVertex v1 = new TestLeafVertex(vId1, 0, 0);
+        v1.setIcon("icon.jpg");
+        v1.setLabel("a leaf vertex");
+        
+        vertices.add(v1);
+        //Item beanItem = m_vertexContainer.addBean(v1);
+        
+        String vId2 = getNextVertexId();
+        TestVertex v2 = new TestLeafVertex(vId2, 0, 0);
+        v2.setIcon("icon.jpg");
+        v2.setLabel("another leaf");
+        vertices.add(v2);
+        //Item beanItem2 = m_vertexContainer.addBean(v2);
+        
+        String edgeId = getNextEdgeId();
+        TestEdge edge = new TestEdge(edgeId, v1, v2);
+        edges.add(edge);
+        //m_edgeContainer.addBean(edge);
+                 
+        m_vertexContainer.addAll(vertices);
+        m_edgeContainer.addAll(edges);
     }
 
     @Override
-    public VertexContainer<?, ?> getVertexContainer() {
+    public VertexContainer<Object,TestVertex> getVertexContainer() {
         return m_vertexContainer;
     }
 
     @Override
-    public BeanContainer<?, ?> getEdgeContainer() {
+    public BeanContainer<String,TestEdge> getEdgeContainer() {
         return m_edgeContainer;
     }
 
     @Override
-    public Collection<?> getVertexIds() {
+    public Collection<Object> getVertexIds() {
         return m_vertexContainer.getItemIds();
     }
 
     @Override
-    public Collection<?> getEdgeIds() {
+    public Collection<String> getEdgeIds() {
         return m_edgeContainer.getItemIds();
     }
 
     @Override
-    public BeanItem<TestVertex> getVertexItem(Object vertexId) {
-        return m_vertexContainer.getItem(vertexId);
-    }
-
-    @Override
-    public BeanItem<TestEdge> getEdgeItem(Object edgeId) {
-        assertEdge(edgeId);
-        return m_edgeContainer.getItem(edgeId);
-    }
-
-    @Override
-    public Collection<?> getEdgeIdsForVertex(Object vertexId) {
+    public Collection<String> getEdgeIdsForVertex(Object vertexId) {
         TestVertex vertex = getRequiresVertex(vertexId);
-        List<Object> edges = new ArrayList<Object>(vertex.getEdges().size());
+        List<String> edges = new ArrayList<String>(vertex.getEdges().size());
         
         for(TestEdge e : vertex.getEdges()) {
-            Object edgeId = e.getId();
-            edges.add(edgeId);
+            edges.add(e.getId());
         }
         return edges;
     }
 
     @Override
-    public Collection<?> getEndPointIdsForEdge(Object edgeId) {
+    public Collection<Object> getEndPointIdsForEdge(Object edgeId) {
         TestEdge edge = getRequiredEdge(edgeId);
         List<Object> endPoints = new ArrayList<Object>(2);
         endPoints.add(edge.getSource().getId());
@@ -222,6 +242,11 @@ public class TestTopologyProvider implements TopologyProvider{
     private void assertEdge(Object edgeId) {
         assertTrue(m_edgeContainer.containsId(edgeId));
     }
+
+	@Override
+	public String getNamespace() {
+		return m_namespace;
+	}
 
 
 

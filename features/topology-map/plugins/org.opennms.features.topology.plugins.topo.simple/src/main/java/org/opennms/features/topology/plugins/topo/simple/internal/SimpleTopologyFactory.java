@@ -29,10 +29,10 @@
 package org.opennms.features.topology.plugins.topo.simple.internal;
 
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.util.Dictionary;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
 
@@ -63,7 +63,7 @@ public class SimpleTopologyFactory implements ManagedServiceFactory {
 	}
 
 	@Override
-	public void updated(String pid, @SuppressWarnings("rawtypes") Dictionary properties) throws ConfigurationException {
+	public void updated(String pid, @SuppressWarnings("unchecked") Dictionary properties) throws ConfigurationException {
 		
 		try {
 			String location = (String)properties.get(TOPOLOGY_LOCATION);
@@ -74,14 +74,14 @@ public class SimpleTopologyFactory implements ManagedServiceFactory {
 
 				m_providers.put(pid, topoProvider);
 
-				Properties metaData = new Properties();
+				Dictionary<String,Object> metaData = new Hashtable<String,Object>();
 				metaData.put(Constants.SERVICE_PID, pid);
 
 				if (properties.get(LABEL) != null) {
 					metaData.put(LABEL, properties.get(LABEL));
 				}
 
-				ServiceRegistration registration = m_bundleContext.registerService(new String[] { TopologyProvider.class.getName(), EditableTopologyProvider.class.getName() },
+				ServiceRegistration<?> registration = m_bundleContext.registerService(new String[] { TopologyProvider.class.getName(), EditableTopologyProvider.class.getName() },
 						topoProvider, metaData);
 
 				m_registrations.put(pid, registration);

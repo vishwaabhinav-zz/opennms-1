@@ -49,6 +49,8 @@
     <intercept-url pattern="/admin/editForeignSource.htm" access="ROLE_PROVISION, ROLE_ADMIN" />
     <intercept-url pattern="/admin/editProvisioningGroup.htm" access="ROLE_PROVISION, ROLE_ADMIN" />
     <intercept-url pattern="/admin/**" access="ROLE_ADMIN" />
+    <intercept-url pattern="/**/mib-compiler" access="ROLE_ADMIN" />
+    <intercept-url pattern="/**/admin-*" access="ROLE_ADMIN" />
     <intercept-url pattern="/rtc/post/**" access="ROLE_RTC" />
     
     <intercept-url pattern="/frontpage.htm" access="ROLE_USER,ROLE_DASHBOARD" />
@@ -60,6 +62,11 @@
     <intercept-url pattern="/coreweb/**" access="ROLE_USER,ROLE_DASHBOARD" />
     
     <intercept-url pattern="/**" access="ROLE_USER" />
+    
+    
+    
+    <!-- NrtCollection -->
+    <intercept-url pattern="/amq/*" access="ROLE_ANONYMOUS,ROLE_USER,ROLE_DASHBOARD" />
     
     <form-login login-page="/login.jsp" authentication-failure-url="/login.jsp?login_error=1" />
     <http-basic />

@@ -177,7 +177,7 @@ public abstract class JMXCollector implements ServiceCollector {
      * During initialization the JMX collector: - Initializes various
      * configuration factories. - Verifies access to the database - Verifies
      * access to RRD file repository - Verifies access to JNI RRD shared
-     * library - Determines if JMX to be stored for only the node'sprimary
+     * library - Determines if JMX to be stored for only the node's primary
      * interface or for all interfaces.
      * </p>
      * @exception RuntimeException
@@ -715,6 +715,7 @@ public abstract class JMXCollector implements ServiceCollector {
         public String getType() {
             return m_dataSource.getType();
         }
+
     }
     
     class JMXCollectionAttribute extends AbstractCollectionAttribute implements CollectionAttribute {
@@ -771,6 +772,17 @@ public abstract class JMXCollector implements ServiceCollector {
         public String toString() {
              return "alias " + m_alias + ", value " + m_value + ", resource "
                  + m_resource + ", attributeType " + m_attribType;
+        }
+
+        @Override
+        public String getMetricIdentifier() {
+            String metricId = m_attribType.getGroupType().getName();
+            metricId = metricId.replace("_type_", ":type=");
+            metricId = metricId.replace("_", ".");
+            metricId = metricId.concat(".");
+            metricId = metricId.concat(getName());
+            return "JMX_".concat(metricId);
+
         }
         
     }

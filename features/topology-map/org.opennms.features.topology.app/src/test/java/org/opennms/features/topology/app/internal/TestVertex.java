@@ -36,7 +36,7 @@ import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlTransient;
 
 
-abstract public class TestVertex {
+public abstract class TestVertex {
 	String m_id;
 	int m_x;
 	int m_y;
@@ -44,6 +44,7 @@ abstract public class TestVertex {
 	TestGroup m_parent = null;
 	List<TestEdge> m_edges = new ArrayList<TestEdge>();
 	String m_iconKey = "";
+	private String m_label;
 	
 	public TestVertex() {}
 	
@@ -156,6 +157,18 @@ abstract public class TestVertex {
 			return false;
 		return true;
 	}
+
+	public String getLabel() {
+		return m_label;
+	}
 	
-	
+	public void setLabel(String label) {
+		m_label = label;
+	}
+
+	public String getTooltipText() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

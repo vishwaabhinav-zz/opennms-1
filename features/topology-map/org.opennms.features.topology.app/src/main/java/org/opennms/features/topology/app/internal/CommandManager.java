@@ -30,6 +30,7 @@ package org.opennms.features.topology.app.internal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,15 +38,16 @@ import java.util.List;
 import java.util.Map;
 
 import org.opennms.features.topology.api.CheckedOperation;
+import org.opennms.features.topology.api.GraphContainer;
 import org.opennms.features.topology.api.Operation;
 import org.opennms.features.topology.api.OperationContext;
+import org.opennms.features.topology.api.OperationContext.DisplayLocation;
+import org.opennms.features.topology.api.topo.VertexRef;
 import org.opennms.features.topology.app.internal.TopoContextMenu.TopoContextMenuItem;
 import org.vaadin.peter.contextmenu.ContextMenu;
 import org.vaadin.peter.contextmenu.ContextMenu.ClickEvent;
 import org.vaadin.peter.contextmenu.ContextMenu.ContextMenuItem;
 
-import com.vaadin.data.Item;
-import com.vaadin.event.Action;
 import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.MenuBar.MenuItem;
 import com.vaadin.ui.Window;
@@ -55,13 +57,14 @@ public class CommandManager {
 	public class DefaultOperationContext implements OperationContext {
 
 		private Window m_mainWindow;
-		private SimpleGraphContainer m_graphContainer;
+		private GraphContainer m_graphContainer;
+		private DisplayLocation m_displayLocation;
 		private boolean m_checked = false;
 
-		public DefaultOperationContext(Window mainWindow,
-				SimpleGraphContainer graphContainer) {
+		public DefaultOperationContext(Window mainWindow, GraphContainer graphContainer, DisplayLocation displayLocation) {
 			m_mainWindow = mainWindow;
 			m_graphContainer = graphContainer;
+			m_displayLocation = displayLocation;
 		}
 
 		@Override
@@ -70,8 +73,12 @@ public class CommandManager {
 		}
 
 		@Override
-		public SimpleGraphContainer getGraphContainer() {
+		public GraphContainer getGraphContainer() {
 			return m_graphContainer;
+		}
+		
+		public DisplayLocation getDisplayLocation() {
+			return m_displayLocation;
 		}
 
 		public void setChecked(boolean checked) {
@@ -99,7 +106,7 @@ public class CommandManager {
 			//TODO: Do some implementation here for execute
 			if (operation != null) {
 				TopoContextMenu source = (TopoContextMenu)event.getSource();
-				operation.execute(Arrays.asList(source.getTarget()), m_opContext);
+				operation.execute(asVertexList(source.getTarget()), m_opContext);
 			}
 		}
 		
@@ -148,17 +155,15 @@ public class CommandManager {
 		m_menuItemUpdateListeners.remove(listener);
 	}
 
-	MenuBar getMenuBar(SimpleGraphContainer graphContainer, Window mainWindow) {
-		OperationContext opContext = new DefaultOperationContext(mainWindow,
-				graphContainer);
+	MenuBar getMenuBar(GraphContainer graphContainer, Window mainWindow) {
+		OperationContext opContext = new DefaultOperationContext(mainWindow, graphContainer, DisplayLocation.MENUBAR);
 		MenuBarBuilder menuBarBuilder = new MenuBarBuilder();
 		menuBarBuilder.setTopLevelMenuOrder(m_topLevelMenuOrder);
 		menuBarBuilder.setSubMenuGroupOder(m_subMenuGroupOrder);
 
 		for (Command command : getCommandList()) {
 			String menuPosition = command.getMenuPosition();
-			MenuBar.Command menuCommand = menuCommand(command, graphContainer,
-					mainWindow, opContext);
+			MenuBar.Command menuCommand = menuCommand(command, graphContainer, mainWindow, opContext);
 			updateCommandToOperationMap(command, menuCommand);
 			menuBarBuilder.addMenuCommand(menuCommand, menuPosition);
 		}
@@ -172,8 +177,8 @@ public class CommandManager {
 	 * @param mainWindow
 	 * @return
 	 */
-	public TopoContextMenu getContextMenu(SimpleGraphContainer graphContainer, Window mainWindow) {
-		OperationContext opContext = new DefaultOperationContext(mainWindow, graphContainer);
+	public TopoContextMenu getContextMenu(GraphContainer graphContainer, Window mainWindow) {
+		OperationContext opContext = new DefaultOperationContext(mainWindow, graphContainer, DisplayLocation.CONTEXTMENU);
 		ContextMenuBuilder contextMenuBuilder = new ContextMenuBuilder();
 		Map<String, Operation> operationMap = new HashMap<String, Operation>(); 
 		for (Command command : getCommandList()) {
@@ -205,13 +210,13 @@ public class CommandManager {
 	}
 
 	public MenuBar.Command menuCommand(final Command command,
-			final SimpleGraphContainer graphContainer, final Window mainWindow,
+			final GraphContainer graphContainer, final Window mainWindow,
 			final OperationContext operationContext) {
 
 		return new MenuBar.Command() {
 
 			public void menuSelected(MenuItem selectedItem) {
-				List<Object> targets = graphContainer.getSelectedVertices();
+				List<VertexRef> targets = new ArrayList<VertexRef>(graphContainer.getSelectionManager().getSelectedVertexRefs());
 
 				DefaultOperationContext context = (DefaultOperationContext) operationContext;
 				context.setChecked(selectedItem.isChecked());
@@ -229,49 +234,12 @@ public class CommandManager {
 		}
 	}
 
-	void addActionHandlers(TopologyComponent topologyComponent,
-			SimpleGraphContainer graphContainer, Window mainWindow) {
-		topologyComponent.addActionHandler(new ActionHandler(
-				new DefaultOperationContext(mainWindow, graphContainer)));
-	}
-
 	public List<Command> getHistoryList() {
 		return m_commandHistoryList;
 	}
 
 	public Operation getOperationByMenuItemCommand(MenuBar.Command command) {
 		return m_commandToOperationMap.get(command);
-	}
-
-	private class ActionHandler implements Action.Handler {
-		SimpleGraphContainer m_graphContainer;
-		Window m_mainWindow;
-		private DefaultOperationContext m_operationContext;
-
-		public ActionHandler(DefaultOperationContext operationContext) {
-			m_operationContext = operationContext;
-		}
-
-		public Action[] getActions(Object target, Object sender) {
-			List<Action> actionList = new ArrayList<Action>();
-			for (Command command : m_commandList) {
-				if (command.isAction()
-						&& command.appliesToTarget(target, m_operationContext)) {
-					actionList.add(command.getAction());
-				}
-			}
-			return actionList.toArray(new Action[actionList.size()]);
-		}
-
-		public void handleAction(Action action, Object sender, Object target) {
-			if (action instanceof Command) {
-				Command command = (Command) action;
-				command.doCommand(target, m_operationContext);
-
-				m_commandHistoryList.add(command);
-				updateMenuItemListeners();
-			}
-		}
 	}
 
 	public void onBind(Command command) {
@@ -283,8 +251,7 @@ public class CommandManager {
 	}
 
 	public void onBind(Operation operation, Map<String, String> props) {
-		OperationCommand operCommand = new OperationCommand(null, operation,
-				props);
+		OperationCommand operCommand = new OperationCommand(null, operation, props);
 		addCommand(operCommand);
 	}
 
@@ -348,45 +315,41 @@ public class CommandManager {
 		return m_subMenuGroupOrder;
 	}
 
-	private List<Object> getSelectedVertices(final OperationContext operationContext) {
-		List<Object> targets = new ArrayList<Object>();
-		for (Object vId : operationContext.getGraphContainer().getVertexIds()) {
-			Item vItem = operationContext.getGraphContainer().getVertexItem(vId);
-			boolean selected = (Boolean) vItem.getItemProperty("selected").getValue();
-			if (selected) {
-				targets.add(vItem.getItemProperty("key").getValue());
-			}
-		}
-		return targets;
-	}
-
-	public void updateMenuItem(MenuItem menuItem, SimpleGraphContainer graphContainer, Window mainWindow) {
-		DefaultOperationContext operationContext = new DefaultOperationContext(mainWindow, graphContainer);
+	public void updateMenuItem(MenuItem menuItem, GraphContainer graphContainer, Window mainWindow) {
+		DefaultOperationContext operationContext = new DefaultOperationContext(mainWindow, graphContainer, DisplayLocation.MENUBAR);
 		Operation operation = getOperationByMenuItemCommand(menuItem.getCommand());
-
-		boolean visibility = operation.display(graphContainer.getSelectedVertices(), operationContext);
-		menuItem.setVisible(visibility);
-		boolean enabled = operation.enabled(graphContainer.getSelectedVertices(), operationContext);
-		menuItem.setEnabled(enabled);
-
-		if (operation instanceof CheckedOperation) {
-			if (!menuItem.isCheckable()) {
-				menuItem.setCheckable(true);
-			}
-
-			menuItem.setChecked(((CheckedOperation) operation).isChecked(graphContainer.getSelectedVertices(), operationContext));
+		
+		//Check for null because separators have no Operation
+		if(operation != null) {
+    		List<VertexRef> selectedVertices = new ArrayList<VertexRef>(graphContainer.getSelectionManager().getSelectedVertexRefs());
+			boolean visibility = operation.display(selectedVertices, operationContext);
+    		menuItem.setVisible(visibility);
+    		boolean enabled = operation.enabled(selectedVertices, operationContext);
+    		menuItem.setEnabled(enabled);
+    
+    		if (operation instanceof CheckedOperation) {
+    			if (!menuItem.isCheckable()) {
+    				menuItem.setCheckable(true);
+    			}
+    
+    			menuItem.setChecked(((CheckedOperation) operation).isChecked(selectedVertices, operationContext));
+    		}
 		}
 	}
 
-    public void updateContextMenuItem(Object target, TopoContextMenuItem contextItem, SimpleGraphContainer graphContainer, Window mainWindow) {
-        DefaultOperationContext operationContext = new DefaultOperationContext(mainWindow, graphContainer);
+    public void updateContextMenuItem(Object target, TopoContextMenuItem contextItem, GraphContainer graphContainer, Window mainWindow) {
+        DefaultOperationContext operationContext = new DefaultOperationContext(mainWindow, graphContainer, DisplayLocation.CONTEXTMENU);
         
         ContextMenuItem ctxMenuItem = contextItem.getItem();
         Operation operation = m_contextMenuItemsToOperationMap.get(ctxMenuItem);
      
-        List<Object> targets = Arrays.asList(target);
+        List<VertexRef> targets = asVertexList(target);
         ctxMenuItem.setVisible(operation.display(targets, operationContext));
         ctxMenuItem.setEnabled(operation.enabled(targets, operationContext));   
     }
+
+	private List<VertexRef> asVertexList(Object target) {
+		return (target != null && target instanceof VertexRef) ? Arrays.asList((VertexRef)target) : Collections.<VertexRef>emptyList();
+	}
 
 }

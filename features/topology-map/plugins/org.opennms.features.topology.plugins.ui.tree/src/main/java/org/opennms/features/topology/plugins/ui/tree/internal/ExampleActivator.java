@@ -29,12 +29,12 @@
 package org.opennms.features.topology.plugins.ui.tree.internal;
 
 import java.util.Dictionary;
-import java.util.Properties;
-
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
+import java.util.Hashtable;
 
 import org.opennms.features.topology.plugins.ui.tree.ExampleService;
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.slf4j.LoggerFactory;
 
 /**
  * Extension of the default OSGi bundle activator
@@ -45,29 +45,30 @@ public final class ExampleActivator
     /**
      * Called whenever the OSGi framework starts our bundle
      */
+    @Override
     public void start( BundleContext bc )
         throws Exception
     {
-        System.out.println( "STARTING org.opennms.features.topology.plugins.ui.tree" );
+        LoggerFactory.getLogger(getClass()).debug("STARTING {}", ExampleService.class.getName());
 
-        Dictionary<Object,Object> props = new Properties();
+        Dictionary<String,Object> props = new Hashtable<String,Object>();
         // add specific service properties here...
 
-        System.out.println( "REGISTER org.opennms.features.topology.plugins.ui.tree.ExampleService" );
+        LoggerFactory.getLogger(getClass()).debug("REGISTER {}", ExampleService.class.getName());
 
         // Register our example service implementation in the OSGi service registry
-        bc.registerService( ExampleService.class.getName(), new ExampleServiceImpl(), props );
+        bc.registerService( ExampleService.class, new ExampleServiceImpl(), props );
     }
 
     /**
      * Called whenever the OSGi framework stops our bundle
      */
+    @Override
     public void stop( BundleContext bc )
         throws Exception
     {
-        System.out.println( "STOPPING org.opennms.features.topology.plugins.ui.tree" );
+        LoggerFactory.getLogger(getClass()).debug("STOPPING {}", ExampleService.class.getName());
 
         // no need to unregister our service - the OSGi framework handles it for us
     }
 }
-
