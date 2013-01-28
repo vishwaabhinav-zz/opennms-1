@@ -8,9 +8,19 @@
     </parent>
     <groupId>org.opennms.features</groupId>
     <artifactId>org.opennms.features.name-cutter</artifactId>
-    <packaging>jar</packaging>
+    <packaging>bundle</packaging>
     <name>OpenNMS Name Cutter</name>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <extensions>true</extensions>
+            </plugin>
+        </plugins>
+    </build>
+ 
     <dependencies>
       
         <!-- Helpers -->
