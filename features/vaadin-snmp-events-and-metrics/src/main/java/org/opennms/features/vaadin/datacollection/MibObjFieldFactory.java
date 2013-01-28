@@ -31,6 +31,7 @@ import java.util.List;
 
 import com.vaadin.data.Container;
 import com.vaadin.data.validator.RegexpValidator;
+import com.vaadin.data.validator.StringLengthValidator;
 import com.vaadin.ui.AbstractSelect.NewItemHandler;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
@@ -89,6 +90,7 @@ public class MibObjFieldFactory implements TableFieldFactory {
         if (propertyId.equals("alias")) {
             final TextField field = new TextField();
             field.setRequired(true);
+            field.addValidator(new StringLengthValidator("Invalid alias. It should not contain more than 19 characters.", 1, 19, false));
             return field;
         }
         if (propertyId.equals("type")) {
