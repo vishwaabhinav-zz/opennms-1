@@ -233,7 +233,7 @@ public class JsmiMibParser implements MibParser, Serializable {
                 Group group = getGroup(dcGroup, groupName, resourceType);
                 String typeName = getType(v.getType().getPrimitiveType());
                 if (typeName != null) {
-                    String alias = cutter.trimByCamelCase(v.getId(), 19);
+                    String alias = cutter.trimByCamelCase(v.getId(), 19); // RRDtool/JRobin DS size restriction.
                     MibObj mibObj = new MibObj();
                     mibObj.setOid('.' + v.getOidStr());
                     mibObj.setInstance(resourceType == null ? "0" : resourceType);
