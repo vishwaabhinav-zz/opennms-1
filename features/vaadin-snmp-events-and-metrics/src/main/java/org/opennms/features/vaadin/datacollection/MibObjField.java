@@ -166,6 +166,14 @@ public class MibObjField extends CustomField implements Button.ClickListener {
         }
     }
 
+    /* (non-Javadoc)
+     * @see org.vaadin.addon.customfield.CustomField#isValid()
+     */
+    @Override
+    public boolean isValid() {
+        return table.isValid(); // FIXME This is not working
+    }
+
     /**
      * Adds the handler.
      */
