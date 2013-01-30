@@ -1,0 +1,209 @@
+package org.opennms.netmgt.poller.monitors;
+
+import jcifs.smb.NtlmPasswordAuthentication;
+import jcifs.smb.SmbException;
+import jcifs.smb.SmbFile;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.opennms.netmgt.model.PollStatus;
+import org.opennms.netmgt.poller.MonitoredService;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.Map;
+import java.util.TreeMap;
+
+import static org.easymock.EasyMock.*;
+import static org.junit.Assert.assertEquals;
+import static org.powermock.api.easymock.PowerMock.createNiceMock;
+import static org.powermock.api.easymock.PowerMock.*;
+import static org.powermock.api.easymock.PowerMock.replay;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({SmbFile.class, JCifsMonitor.class})
+public class JCifsMonitorTest {
+    private SmbFile mockSmbFileValidPath;
+    private SmbFile mockSmbFileInvalidPath;
+    private SmbFile mockSmbFolderNotEmpty;
+    private SmbFile mockSmbFolderEmpty;
+    private SmbFile mockSmbFileSmbException;
+    private SmbFile mockSmbFileMalformedUrlException;
+
+    @Before
+    public void setUp() throws Exception {
+        mockSmbFileValidPath = createNiceMock(SmbFile.class);
+        expect(mockSmbFileValidPath.exists()).andReturn(true).anyTimes();
+        expectNew(SmbFile.class, new Class<?>[]{String.class, NtlmPasswordAuthentication.class}, eq("smb://10.123.123.123/validPath"), isA(NtlmPasswordAuthentication.class)).andReturn(mockSmbFileValidPath).anyTimes();
+
+        mockSmbFileInvalidPath = createNiceMock(SmbFile.class);
+        expect(mockSmbFileInvalidPath.exists()).andReturn(false).anyTimes();
+        expectNew(SmbFile.class, new Class<?>[]{String.class, NtlmPasswordAuthentication.class}, eq("smb://10.123.123.123/invalidPath"), isA(NtlmPasswordAuthentication.class)).andReturn(mockSmbFileInvalidPath).anyTimes();
+
+        mockSmbFolderEmpty = createNiceMock(SmbFile.class);
+        expect(mockSmbFolderEmpty.exists()).andReturn(true).anyTimes();
+        expect(mockSmbFolderEmpty.list()).andReturn(new String[]{}).anyTimes();
+        expectNew(SmbFile.class, new Class<?>[]{String.class, NtlmPasswordAuthentication.class}, eq("smb://10.123.123.123/folderEmpty"), isA(NtlmPasswordAuthentication.class)).andReturn(mockSmbFolderEmpty).anyTimes();
+
+        mockSmbFolderNotEmpty = createNiceMock(SmbFile.class);
+        expect(mockSmbFolderNotEmpty.exists()).andReturn(true).anyTimes();
+        expect(mockSmbFolderNotEmpty.list()).andReturn(new String[]{"1", "2", "3", "4", "5"}).anyTimes();
+        expectNew(SmbFile.class, new Class<?>[]{String.class, NtlmPasswordAuthentication.class}, eq("smb://10.123.123.123/folderNotEmpty"), isA(NtlmPasswordAuthentication.class)).andReturn(mockSmbFolderNotEmpty).anyTimes();
+
+        mockSmbFileSmbException = createNiceMock(SmbFile.class);
+        expect(mockSmbFileSmbException.exists()).andThrow(new SmbException(SmbException.ERROR_ACCESS_DENIED, true));
+        expectNew(SmbFile.class, new Class<?>[]{String.class, NtlmPasswordAuthentication.class}, eq("smb://10.123.123.123/smbException"), isA(NtlmPasswordAuthentication.class)).andReturn(mockSmbFileSmbException).anyTimes();
+
+        mockSmbFileMalformedUrlException = createNiceMock(SmbFile.class);
+        expect(mockSmbFileMalformedUrlException.exists()).andThrow(new SmbException(SmbException.ERROR_ACCESS_DENIED, true));
+        expectNew(SmbFile.class, new Class<?>[]{String.class, NtlmPasswordAuthentication.class}, eq("smb://10.123.123.123/malformedUrlException"), isA(NtlmPasswordAuthentication.class)).andReturn(mockSmbFileMalformedUrlException).anyTimes();
+    }
+
+    @Test
+    public void testPoll() throws UnknownHostException {
+
+        MonitoredService svc = MonitorTestUtils.getMonitoredService(99, "10.123.123.123", "JCIFS");
+
+        Map<String, Object> m = Collections.synchronizedMap(new TreeMap<String, Object>());
+
+        replay(mockSmbFolderEmpty, mockSmbFolderNotEmpty, mockSmbFileValidPath, mockSmbFileInvalidPath, SmbFile.class);
+
+        JCifsMonitor jCifsMonitor = new JCifsMonitor();
+
+        PollStatus pollStatus;
+
+        /*
+         * checking path does exist and mode is PATH_EXIST => up
+         */
+        m.put("username", "user");
+        m.put("password", "pass");
+        m.put("domain", "dom");
+        m.put("mode", "PATH_EXIST");
+        m.put("path", "/validPath");
+
+        pollStatus = jCifsMonitor.poll(svc, m);
+        assertEquals(PollStatus.up(), pollStatus);
+
+        /*
+         * checking path does not exist and mode is PATH_EXIST => down
+         */
+        m.put("username", "user");
+        m.put("password", "pass");
+        m.put("domain", "dom");
+        m.put("mode", "PATH_EXIST");
+        m.put("path", "/invalidPath");
+
+        pollStatus = jCifsMonitor.poll(svc, m);
+        assertEquals(PollStatus.down(), pollStatus);
+
+        /*
+         * checking path does exist and mode is PATH_NOT_EXIST => down
+         */
+        m.put("username", "user");
+        m.put("password", "pass");
+        m.put("domain", "dom");
+        m.put("mode", "PATH_NOT_EXIST");
+        m.put("path", "/validPath");
+
+        pollStatus = jCifsMonitor.poll(svc, m);
+        assertEquals(PollStatus.down(), pollStatus);
+
+        /*
+         * checking path does not exist and mode is PATH_NOT_EXIST => up
+         */
+        m.put("username", "user");
+        m.put("password", "pass");
+        m.put("domain", "dom");
+        m.put("mode", "PATH_NOT_EXIST");
+        m.put("path", "/invalidPath");
+
+        pollStatus = jCifsMonitor.poll(svc, m);
+        assertEquals(PollStatus.up(), pollStatus);
+
+        /*
+         * checking folder not empty and mode is FOLDER_EMPTY => down
+         */
+        m.put("username", "user");
+        m.put("password", "pass");
+        m.put("domain", "dom");
+        m.put("mode", "FOLDER_EMPTY");
+        m.put("path", "/folderNotEmpty");
+
+        pollStatus = jCifsMonitor.poll(svc, m);
+        assertEquals(PollStatus.down(), pollStatus);
+
+        /*
+         * checking folder empty and mode is FOLDER_EMPTY => up
+         */
+        m.put("username", "user");
+        m.put("password", "pass");
+        m.put("domain", "dom");
+        m.put("mode", "FOLDER_EMPTY");
+        m.put("path", "/folderEmpty");
+
+        pollStatus = jCifsMonitor.poll(svc, m);
+        assertEquals(PollStatus.up(), pollStatus);
+
+        /*
+         * checking folder not empty and mode is FOLDER_NOT_EMPTY => up
+         */
+        m.put("username", "user");
+        m.put("password", "pass");
+        m.put("domain", "dom");
+        m.put("mode", "FOLDER_NOT_EMPTY");
+        m.put("path", "/folderNotEmpty");
+
+        pollStatus = jCifsMonitor.poll(svc, m);
+        assertEquals(PollStatus.up(), pollStatus);
+
+        /*
+         * checking folder empty and mode is FOLDER_NOT_EMPTY => down
+         */
+        m.put("username", "user");
+        m.put("password", "pass");
+        m.put("domain", "dom");
+        m.put("mode", "FOLDER_NOT_EMPTY");
+        m.put("path", "/folderEmpty");
+
+        pollStatus = jCifsMonitor.poll(svc, m);
+        assertEquals(PollStatus.down(), pollStatus);
+
+        /*
+         * checking for invalid mode => down
+         */
+        m.put("username", "user");
+        m.put("password", "pass");
+        m.put("domain", "dom");
+        m.put("mode", "ABC");
+        m.put("path", "/folderEmpty");
+
+        pollStatus = jCifsMonitor.poll(svc, m);
+        assertEquals(PollStatus.unknown(), pollStatus);
+
+        /*
+         * checking for SmbException => down
+         */
+        m.put("username", "user");
+        m.put("password", "pass");
+        m.put("domain", "dom");
+        m.put("mode", "PATH_EXIST");
+        m.put("path", "/smbException");
+
+        pollStatus = jCifsMonitor.poll(svc, m);
+        assertEquals(PollStatus.down(), pollStatus);
+
+        /*
+         * checking for MalformedUrlException => down
+         */
+        m.put("username", "user");
+        m.put("password", "pass");
+        m.put("domain", "dom");
+        m.put("mode", "PATH_EXIST");
+        m.put("path", "/malformedUrlException");
+
+        pollStatus = jCifsMonitor.poll(svc, m);
+        assertEquals(PollStatus.down(), pollStatus);
+    }
+}

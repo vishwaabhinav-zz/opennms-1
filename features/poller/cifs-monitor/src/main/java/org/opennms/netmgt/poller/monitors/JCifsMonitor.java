@@ -66,6 +66,25 @@ public class JCifsMonitor extends AbstractServiceMonitor {
      */
     private static final int DEFAULT_TIMEOUT = 3000;
 
+    private enum Mode {
+        PATH_EXIST,
+        PATH_NOT_EXIST,
+        FOLDER_EMPTY,
+        FOLDER_NOT_EMPTY
+    }
+
+    private static String modeCandidates;
+
+    static {
+        modeCandidates = "";
+        for (Mode m : Mode.values()) {
+            if (!"".equals(modeCandidates)) {
+                modeCandidates += ", ";
+            }
+            modeCandidates += m;
+        }
+    }
+
     /**
      * This method queries the CIFS share.
      *
@@ -78,31 +97,38 @@ public class JCifsMonitor extends AbstractServiceMonitor {
         String domain = parameters.containsKey("domain") ? (String) parameters.get("domain") : "";
         String username = parameters.containsKey("username") ? (String) parameters.get("username") : "";
         String password = parameters.containsKey("password") ? (String) parameters.get("password") : "";
-        String file = parameters.containsKey("file") ? (String) parameters.get("file") : "";
+        String mode = parameters.containsKey("mode") ? ((String) parameters.get("mode")).toUpperCase() : "PATH_EXIST";
+        String path = parameters.containsKey("path") ? (String) parameters.get("path") : "";
 
-        logger.debug("Domain: [{}], Username: [{}], Password: [{}], File: [{}]", new Object[]{domain, username, password, file});
+        Mode enumMode = Mode.PATH_EXIST;
 
-        if (!file.startsWith("/")) {
-            file = "/" + file;
-            logger.debug("No root path given, add /. File to check '{}'", file);
+        try {
+            enumMode = Mode.valueOf(mode);
+        } catch (IllegalArgumentException exception) {
+            logger.error("Mode '{}‘ does not exists. Valid candidates are {}", mode, modeCandidates);
+            return PollStatus.unknown();
+        }
+
+        // Checking path parameter
+        if (!path.startsWith("/")) {
+            path = "/" + path;
+            logger.debug("Added leading / to path.");
         }
 
         // Build authentication string for NtlmPasswordAuthentication: syntax: domain;username:password
-        String authenticationString = "";
+        String authString = "";
 
         // Setting up authenticationString...
         if (domain != null && !"".equals(domain)) {
-            authenticationString += domain + ";";
+            authString += domain + ";";
         }
-        authenticationString += username + ":" + password;
+
+        authString += username + ":" + password;
 
         // ... and path
-        String pathString = "smb://" + svc.getIpAddr() + file;
+        String fullUrl = "smb://" + svc.getIpAddr() + path;
 
-        // Setting existence
-        boolean existence = "true".equals(parameters.get("existence")) || "yes".equals(parameters.get("existence"));
-
-        logger.debug("NTLM authentication string: [{}], Path string: [{}], Existence: [{}]", new Object[]{authenticationString, pathString, String.valueOf(existence)});
+        logger.debug("Domain: [{}], Username: [{}], Password: [{}], Mode: [{}], Path: [{}], Authentication: [{}], Full Url: [{}]", new Object[]{domain, username, password, mode, path, authString, fullUrl});
 
         // Initializing TimeoutTracker with default values
         TimeoutTracker tracker = new TimeoutTracker(parameters, DEFAULT_RETRY, DEFAULT_TIMEOUT);
@@ -112,39 +138,56 @@ public class JCifsMonitor extends AbstractServiceMonitor {
 
         for (tracker.reset(); tracker.shouldRetry() && !serviceStatus.isAvailable(); tracker.nextAttempt()) {
 
-            NtlmPasswordAuthentication auth = new NtlmPasswordAuthentication(authenticationString);
+            NtlmPasswordAuthentication ntlmPasswordAuthentication = new NtlmPasswordAuthentication(authString);
 
             try {
                 // Creating SmbFile object
-                SmbFile smbFile = new SmbFile(pathString, auth);
+                SmbFile smbFile = new SmbFile(fullUrl, ntlmPasswordAuthentication);
                 // Setting the defined timeout
                 smbFile.setConnectTimeout(tracker.getConnectionTimeout());
                 // Does the file exists?
                 boolean smbFileExists = smbFile.exists();
 
-                    /*
-                     * existence = true, smbFile.exists = true --> UP
-                     * existence = true, smbFile.exists = false --> DOWN
-                     * existence = false, smbFile.exists = true --> DOWN
-                     * existence = false, smbFile.exists = false --> UP
-                     */
-
-                if (existence) {
-                    if (smbFileExists) {
-                        serviceStatus = PollStatus.up();
-                    } else {
-                        serviceStatus = PollStatus.down("File " + pathString + " should exists but doesn't!");
-                        // we can break here because the possibility is quite poor that this condition will change on the next iteration of the for-loop
+                switch (enumMode) {
+                    case PATH_EXIST:
+                        if (smbFileExists) {
+                            serviceStatus = PollStatus.up();
+                        } else {
+                            serviceStatus = PollStatus.down("File " + fullUrl + " should exists but doesn't!");
+                        }
                         break;
-                    }
-                } else {
-                    if (!smbFileExists) {
-                        serviceStatus = PollStatus.up();
-                    } else {
-                        serviceStatus = PollStatus.down("File " + pathString + " should not exists but does!");
-                        // we can break here because the possibility is quite poor that this condition will change on the next iteration of the for-loop
+                    case PATH_NOT_EXIST:
+                        if (!smbFileExists) {
+                            serviceStatus = PollStatus.up();
+                        } else {
+                            serviceStatus = PollStatus.down("File " + fullUrl + " should not exists but does!");
+                        }
                         break;
-                    }
+                    case FOLDER_EMPTY:
+                        if (smbFileExists) {
+                            if (smbFile.list().length == 0) {
+                                serviceStatus = PollStatus.up();
+                            } else {
+                                serviceStatus = PollStatus.down("Directory " + fullUrl + " should be empty but isn't!");
+                            }
+                        } else {
+                            serviceStatus = PollStatus.down("Directory " + fullUrl + " should exists but doesn't!");
+                        }
+                        break;
+                    case FOLDER_NOT_EMPTY:
+                        if (smbFileExists) {
+                            if (smbFile.list().length > 0) {
+                                serviceStatus = PollStatus.up();
+                            } else {
+                                serviceStatus = PollStatus.down("Directory " + fullUrl + " should not be empty but is!");
+                            }
+                        } else {
+                            serviceStatus = PollStatus.down("Directory " + fullUrl + " should exists but doesn't!");
+                        }
+                        break;
+                    default:
+                        logger.warn("There is no implementation for the specified mode '{}'", mode);
+                        break;
                 }
 
             } catch (MalformedURLException exception) {
