@@ -30,14 +30,6 @@ public class JCifsMonitor extends AbstractServiceMonitor {
     private static final int DEFAULT_TIMEOUT = 3000;
 
     /**
-     * Initializes this object with a given parameter map.
-     *
-     * @param parameters the parameter map to use
-     */
-    public void initialize(Map<String, Object> parameters) {
-    }
-
-    /**
      * This method queries the CIFS share.
      *
      * @param svc        the monitored service
@@ -46,6 +38,7 @@ public class JCifsMonitor extends AbstractServiceMonitor {
      */
     public PollStatus poll(MonitoredService svc, Map<String, Object> parameters) {
 
+        String domain = (String) parameters.get("domain");
         String username = parameters.containsKey("username") ? (String) parameters.get("username") : "";
         String password = parameters.containsKey("password") ? (String) parameters.get("password") : "";
 
@@ -54,6 +47,14 @@ public class JCifsMonitor extends AbstractServiceMonitor {
         if (!file.startsWith("/")) {
             file = "/" + file;
         }
+
+        String authenticationString = "";
+
+        if (domain != null) {
+            authenticationString += domain + ";";
+        }
+
+        authenticationString += username + ":" + password;
 
         boolean existence = "true".equals(parameters.get("existence"));
 
@@ -68,7 +69,7 @@ public class JCifsMonitor extends AbstractServiceMonitor {
 
             for (tracker.reset(); tracker.shouldRetry() && !serviceStatus.isAvailable(); tracker.nextAttempt()) {
 
-                NtlmPasswordAuthentication auth = new NtlmPasswordAuthentication(username + ":" + password);
+                NtlmPasswordAuthentication auth = new NtlmPasswordAuthentication(authenticationString);
 
                 try {
                     SmbFile smbFile = new SmbFile(path, auth);
