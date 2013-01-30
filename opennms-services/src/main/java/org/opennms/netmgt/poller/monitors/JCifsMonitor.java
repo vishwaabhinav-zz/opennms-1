@@ -75,47 +75,47 @@ public class JCifsMonitor extends AbstractServiceMonitor {
      */
     public PollStatus poll(MonitoredService svc, Map<String, Object> parameters) {
 
-        String domain = (String) parameters.get("domain");
+        String domain = parameters.containsKey("domain") ? (String) parameters.get("domain") : "";
         String username = parameters.containsKey("username") ? (String) parameters.get("username") : "";
         String password = parameters.containsKey("password") ? (String) parameters.get("password") : "";
+        String file = parameters.containsKey("file") ? (String) parameters.get("file") : "";
 
-        String file = (String) parameters.get("file");
+        logger.debug("Domain: [{}], Username: [{}], Password: [{}], File: [{}]", new Object[]{domain, username, password, file});
 
-        logger.debug("Domain: [], Username: [], Password: [], File: []");
         if (!file.startsWith("/")) {
             file = "/" + file;
             logger.debug("No root path given, add /. File to check '{}'", file);
         }
 
-        //Build authentication string for NtlmPasswordAuthentication: syntax: domain;username:password
+        // Build authentication string for NtlmPasswordAuthentication: syntax: domain;username:password
         String authenticationString = "";
 
-        if (domain != null) {
+        // Setting up authenticationString...
+        if (domain != null && !"".equals(domain)) {
             authenticationString += domain + ";";
         }
-
         authenticationString += username + ":" + password;
-        logger.debug("NTLM authentication string is set to '{}'", authenticationString);
 
-        boolean existence = "true".equals(parameters.get("existence"));
+        // ... and path
+        String pathString = "smb://" + svc.getIpAddr() + file;
 
+        // Setting existence
+        boolean existence = "true".equals(parameters.get("existence")) || "yes".equals(parameters.get("existence"));
+
+        logger.debug("NTLM authentication string: [{}], Path string: [{}], Existence: [{}]", new Object[]{authenticationString, pathString, String.valueOf(existence)});
+
+        // Initializing TimeoutTracker with default values
         TimeoutTracker tracker = new TimeoutTracker(parameters, DEFAULT_RETRY, DEFAULT_TIMEOUT);
 
+        // Setting default PollStatus
         PollStatus serviceStatus = PollStatus.unknown();
 
-        if (file == null) {
-            logger.error("File parameter is not set.");
-            return PollStatus.unknown("File parameter is not set.");
-        } else {
-            String path = "smb://" + svc.getIpAddr() + file;
+        for (tracker.reset(); tracker.shouldRetry() && !serviceStatus.isAvailable(); tracker.nextAttempt()) {
 
-            for (tracker.reset(); tracker.shouldRetry() && !serviceStatus.isAvailable(); tracker.nextAttempt()) {
+            NtlmPasswordAuthentication auth = new NtlmPasswordAuthentication(authenticationString);
 
-                NtlmPasswordAuthentication auth = new NtlmPasswordAuthentication(authenticationString);
-
-                try {
-                    SmbFile smbFile = new SmbFile(path, auth);
-                    boolean smbFileExists = smbFile.exists();
+            try {
+                boolean smbFileExists = (new SmbFile(pathString, auth)).exists();
 
                     /*
                      * existence = true, smbFile.exists = true --> UP
@@ -123,25 +123,24 @@ public class JCifsMonitor extends AbstractServiceMonitor {
                      * existence = false, smbFile.exists = true --> DOWN
                      * existence = false, smbFile.exists = false --> UP
                      */
-                    if ((existence && !smbFileExists)) {
-                        return PollStatus.down("File " + path + " should exist but is not available.");
-                    } else {
-                        if (!existence && smbFileExists) {
-                            return PollStatus.down("File " + path + " should NOT exist but is available.");
-                        } else {
-                            return PollStatus.up();
-                        }
+
+                if (existence && smbFileExists) {
+                    serviceStatus = PollStatus.up();
+                } else {
+                    if (!existence && !smbFileExists) {
+                        serviceStatus = PollStatus.up();
                     }
-                } catch (MalformedURLException exception) {
-                    logger.error("URL exception '{}'",exception.getMessage());
-                    return PollStatus.unresponsive(exception.getMessage());
-                } catch (SmbException exception) {
-                    logger.error("SMB exception '{}'", exception.getMessage());
-                    return PollStatus.unresponsive(exception.getMessage());
                 }
+
+            } catch (MalformedURLException exception) {
+                logger.error("URL exception '{}'", exception.getMessage());
+                serviceStatus = PollStatus.unresponsive(exception.getMessage());
+            } catch (SmbException exception) {
+                logger.error("SMB exception '{}'", exception.getMessage());
+                serviceStatus = PollStatus.unresponsive(exception.getMessage());
             }
         }
-        logger.warn("Unknow error occured.");
+
         return serviceStatus;
     }
 }
