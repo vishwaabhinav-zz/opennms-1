@@ -1,0 +1,104 @@
+/*******************************************************************************
+ * This file is part of OpenNMS(R).
+ *
+ * Copyright (C) 2006-2012 The OpenNMS Group, Inc.
+ * OpenNMS(R) is Copyright (C) 1999-2012 The OpenNMS Group, Inc.
+ *
+ * OpenNMS(R) is a registered trademark of The OpenNMS Group, Inc.
+ *
+ * OpenNMS(R) is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published
+ * by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * OpenNMS(R) is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with OpenNMS(R).  If not, see:
+ *      http://www.gnu.org/licenses/
+ *
+ * For more information contact:
+ *     OpenNMS(R) Licensing <license@opennms.org>
+ *     http://www.opennms.org/
+ *     http://www.opennms.com/
+ *******************************************************************************/
+
+package org.opennms.features.monitor.cifs;
+
+//@RunWith(OpenNMSJUnit4ClassRunner.class)
+//@ContextConfiguration(locations = {"classpath:/META-INF/opennms/emptyContext.xml"})
+//@JUnitConfigurationEnvironment
+public class JCifsMonitorTest {
+
+    @Test
+    public void bummyTest() {
+        
+    }
+    /*
+     private final transient IMocksControl mockControl = EasyMock.createStrictControl();
+     private final transient SmbFile mockSmbFileTrue = mockControl.createMock(SmbFile.class);
+     private final transient SmbFile mockSmbFileFalse = mockControl.createMock(SmbFile.class);
+
+     private class TestCase {
+     public String domain;
+     public String username;
+     public String password;
+     public String file;
+     public SmbFile smbFile;
+     public PollStatus result;
+     public String existence;
+
+     public TestCase(String domain, String username, String password, String file, String existence, SmbFile smbFile, PollStatus result) {
+     this.domain = domain;
+     this.username = username;
+     this.password = password;
+     this.file = file;
+     this.smbFile = smbFile;
+     this.result = result;
+     this.existence = existence;
+     }
+     }
+
+     List<TestCase> testCases = new ArrayList<TestCase>();
+
+     @Before
+     public void setUp() throws Exception {
+     MockLogAppender.setupLogging();
+
+     expect(mockSmbFileTrue.exists()).andReturn(true).anyTimes();
+     expect(mockSmbFileTrue.canRead()).andReturn(true).anyTimes();
+
+     expect(mockSmbFileFalse.exists()).andReturn(true).anyTimes();
+     expect(mockSmbFileFalse.canRead()).andReturn(true).anyTimes();
+
+     testCases.add(new TestCase("dom", "user", "pass", "", "true", mockSmbFileTrue, PollStatus.up()));
+
+     mockControl.replay();
+     }
+
+     @Test
+     public void testPoll() throws UnknownHostException {
+     MonitoredService svc = MonitorTestUtils.getMonitoredService(99, "10.123.123.123", "JCIFS");
+
+     JCifsMonitor jCifsMonitor = new JCifsMonitor();
+
+
+     for (TestCase testCase : testCases) {
+     Map<String, Object> m = Collections.synchronizedMap(new TreeMap<String, Object>());
+
+     m.put("username", testCase.username);
+     m.put("password", testCase.password);
+     m.put("domain", testCase.domain);
+     m.put("existence", testCase.existence);
+     m.put("file", testCase.file);
+
+     PollStatus pollStatus = jCifsMonitor.poll(svc, m);
+
+     assertEquals(pollStatus, testCase.result);
+     }
+     }
+     */
+}

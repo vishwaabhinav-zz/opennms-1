@@ -150,7 +150,7 @@
     <dependency>
       <groupId>org.opennms</groupId>
       <artifactId>opennms-util</artifactId>
-      <scope>compile</scope>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>org.opennms.features</groupId>
@@ -316,6 +316,11 @@
       <groupId>org.opennms.core</groupId>
       <artifactId>org.opennms.core.icmp-jna</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.opennms.core</groupId>
+      <artifactId>org.opennms.core.api</artifactId>
+      <type>jar</type>
     </dependency>
   </dependencies>
 </project>
