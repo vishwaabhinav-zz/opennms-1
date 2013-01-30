@@ -124,11 +124,17 @@ public class JCifsMonitor extends AbstractServiceMonitor {
                      * existence = false, smbFile.exists = false --> UP
                      */
 
-                if (existence && smbFileExists) {
-                    serviceStatus = PollStatus.up();
-                } else {
-                    if (!existence && !smbFileExists) {
+                if (existence) {
+                    if (smbFileExists) {
                         serviceStatus = PollStatus.up();
+                    } else {
+                        serviceStatus = PollStatus.down("File " + pathString + " should exists but doesn't!");
+                    }
+                } else {
+                    if (!smbFileExists) {
+                        serviceStatus = PollStatus.up();
+                    } else {
+                        serviceStatus = PollStatus.down("File " + pathString + " should not exists but does!");
                     }
                 }
 

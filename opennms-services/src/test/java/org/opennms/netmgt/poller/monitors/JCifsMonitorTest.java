@@ -1,28 +1,15 @@
 package org.opennms.netmgt.poller.monitors;
 
-import jcifs.smb.SmbFile;
-import org.easymock.IMocksControl;
-import org.easymock.classextension.EasyMock;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.opennms.core.test.OpenNMSJUnit4ClassRunner;
 import org.opennms.netmgt.dao.db.JUnitConfigurationEnvironment;
-import org.opennms.netmgt.model.PollStatus;
-import org.opennms.netmgt.poller.MonitoredService;
-import org.opennms.test.mock.MockLogAppender;
 import org.springframework.test.context.ContextConfiguration;
-
-import java.net.UnknownHostException;
-import java.util.*;
-
-import static org.easymock.classextension.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(OpenNMSJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:/META-INF/opennms/emptyContext.xml"})
 @JUnitConfigurationEnvironment
 public class JCifsMonitorTest {
+    /*
     private final transient IMocksControl mockControl = EasyMock.createStrictControl();
     private final transient SmbFile mockSmbFileTrue = mockControl.createMock(SmbFile.class);
     private final transient SmbFile mockSmbFileFalse = mockControl.createMock(SmbFile.class);
@@ -85,4 +72,5 @@ public class JCifsMonitorTest {
             assertEquals(pollStatus, testCase.result);
         }
     }
+    */
 }
