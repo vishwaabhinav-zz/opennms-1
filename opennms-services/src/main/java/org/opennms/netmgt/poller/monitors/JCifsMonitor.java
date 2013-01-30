@@ -115,7 +115,12 @@ public class JCifsMonitor extends AbstractServiceMonitor {
             NtlmPasswordAuthentication auth = new NtlmPasswordAuthentication(authenticationString);
 
             try {
-                boolean smbFileExists = (new SmbFile(pathString, auth)).exists();
+                // Creating SmbFile object
+                SmbFile smbFile = new SmbFile(pathString, auth);
+                // Setting the defined timeout
+                smbFile.setConnectTimeout(tracker.getConnectionTimeout());
+                // Does the file exists?
+                boolean smbFileExists = smbFile.exists();
 
                     /*
                      * existence = true, smbFile.exists = true --> UP
@@ -140,10 +145,10 @@ public class JCifsMonitor extends AbstractServiceMonitor {
 
             } catch (MalformedURLException exception) {
                 logger.error("URL exception '{}'", exception.getMessage());
-                serviceStatus = PollStatus.unresponsive(exception.getMessage());
+                serviceStatus = PollStatus.down(exception.getMessage());
             } catch (SmbException exception) {
                 logger.error("SMB exception '{}'", exception.getMessage());
-                serviceStatus = PollStatus.unresponsive(exception.getMessage());
+                serviceStatus = PollStatus.down(exception.getMessage());
             }
         }
 
