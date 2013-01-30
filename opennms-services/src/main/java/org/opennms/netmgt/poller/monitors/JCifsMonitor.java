@@ -134,12 +134,16 @@ public class JCifsMonitor extends AbstractServiceMonitor {
                         serviceStatus = PollStatus.up();
                     } else {
                         serviceStatus = PollStatus.down("File " + pathString + " should exists but doesn't!");
+                        // we can break here because the possibility is quite poor that this condition will change on the next iteration of the for-loop
+                        break;
                     }
                 } else {
                     if (!smbFileExists) {
                         serviceStatus = PollStatus.up();
                     } else {
                         serviceStatus = PollStatus.down("File " + pathString + " should not exists but does!");
+                        // we can break here because the possibility is quite poor that this condition will change on the next iteration of the for-loop
+                        break;
                     }
                 }
 
