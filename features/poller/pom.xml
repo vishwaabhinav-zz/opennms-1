@@ -13,6 +13,5 @@
   <modules>
     <module>api</module>
     <module>runtime</module>
-    <module>cifs-monitor</module>
   </modules>
 </project>
