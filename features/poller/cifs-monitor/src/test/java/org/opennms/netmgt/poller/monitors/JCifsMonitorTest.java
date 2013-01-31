@@ -11,6 +11,7 @@ import org.opennms.netmgt.poller.MonitoredService;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Map;
@@ -64,7 +65,7 @@ public class JCifsMonitorTest {
     @Test
     public void testPoll() throws UnknownHostException {
 
-        MonitoredService svc = MonitorTestUtils.getMonitoredService(99, "10.123.123.123", "JCIFS");
+        MonitoredService svc = MonitorTestUtils.getMonitoredService(99, InetAddress.getByName("10.123.123.123"), "JCIFS");
 
         Map<String, Object> m = Collections.synchronizedMap(new TreeMap<String, Object>());
 
