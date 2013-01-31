@@ -51,11 +51,6 @@ import java.util.Map;
  */
 public class JCifsMonitor extends AbstractServiceMonitor {
 
-    /**
-     * logging for JCifs monitor
-     */
-    private final Logger logger = LoggerFactory.getLogger("OpenNMS.JCifs." + JCifsMonitor.class.getName());
-
     /*
     * default retries
     */
@@ -65,13 +60,6 @@ public class JCifsMonitor extends AbstractServiceMonitor {
      * default timeout
      */
     private static final int DEFAULT_TIMEOUT = 3000;
-
-    private enum Mode {
-        PATH_EXIST,
-        PATH_NOT_EXIST,
-        FOLDER_EMPTY,
-        FOLDER_NOT_EMPTY
-    }
 
     private static String modeCandidates;
 
@@ -84,6 +72,11 @@ public class JCifsMonitor extends AbstractServiceMonitor {
             modeCandidates += m;
         }
     }
+
+    /**
+     * logging for JCifs monitor
+     */
+    private final Logger logger = LoggerFactory.getLogger("OpenNMS.JCifs." + JCifsMonitor.class.getName());
 
     /**
      * This method queries the CIFS share.
@@ -106,7 +99,7 @@ public class JCifsMonitor extends AbstractServiceMonitor {
             enumMode = Mode.valueOf(mode);
         } catch (IllegalArgumentException exception) {
             logger.error("Mode '{}‘ does not exists. Valid candidates are {}", mode, modeCandidates);
-            return PollStatus.unknown();
+            return PollStatus.unknown("Mode " + mode + " does not exists. Valid candidates are " + modeCandidates);
         }
 
         // Checking path parameter
@@ -200,5 +193,12 @@ public class JCifsMonitor extends AbstractServiceMonitor {
         }
 
         return serviceStatus;
+    }
+
+    private enum Mode {
+        PATH_EXIST,
+        PATH_NOT_EXIST,
+        FOLDER_EMPTY,
+        FOLDER_NOT_EMPTY
     }
 }
