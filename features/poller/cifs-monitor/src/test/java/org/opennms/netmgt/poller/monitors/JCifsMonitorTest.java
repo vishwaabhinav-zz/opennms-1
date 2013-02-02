@@ -3,6 +3,7 @@ package org.opennms.netmgt.poller.monitors;
 import jcifs.smb.NtlmPasswordAuthentication;
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
+import jcifs.smb.SmbFilenameFilter;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,12 +46,12 @@ public class JCifsMonitorTest {
 
         mockSmbFolderEmpty = createNiceMock(SmbFile.class);
         expect(mockSmbFolderEmpty.exists()).andReturn(true).anyTimes();
-        expect(mockSmbFolderEmpty.list()).andReturn(new String[]{}).anyTimes();
+        expect(mockSmbFolderEmpty.list((SmbFilenameFilter) anyObject())).andReturn(new String[]{}).anyTimes();
         expectNew(SmbFile.class, new Class<?>[]{String.class, NtlmPasswordAuthentication.class}, eq("smb://10.123.123.123/folderEmpty"), isA(NtlmPasswordAuthentication.class)).andReturn(mockSmbFolderEmpty).anyTimes();
 
         mockSmbFolderNotEmpty = createNiceMock(SmbFile.class);
         expect(mockSmbFolderNotEmpty.exists()).andReturn(true).anyTimes();
-        expect(mockSmbFolderNotEmpty.list()).andReturn(new String[]{"1", "2", "3", "4", "5"}).anyTimes();
+        expect(mockSmbFolderNotEmpty.list((SmbFilenameFilter) anyObject())).andReturn(new String[]{"ABCD", "ACBD", "DCBA", "DABC"}).anyTimes();
         expectNew(SmbFile.class, new Class<?>[]{String.class, NtlmPasswordAuthentication.class}, eq("smb://10.123.123.123/folderNotEmpty"), isA(NtlmPasswordAuthentication.class)).andReturn(mockSmbFolderNotEmpty).anyTimes();
 
         mockSmbFileSmbException = createNiceMock(SmbFile.class);

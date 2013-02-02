@@ -31,6 +31,7 @@ package org.opennms.netmgt.poller.monitors;
 import jcifs.smb.NtlmPasswordAuthentication;
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
+import jcifs.smb.SmbFilenameFilter;
 import org.opennms.core.utils.TimeoutTracker;
 import org.opennms.netmgt.model.PollStatus;
 import org.opennms.netmgt.poller.MonitoredService;
@@ -99,6 +100,15 @@ public class JCifsMonitor extends AbstractServiceMonitor {
         String password = parameters.containsKey("password") ? (String) parameters.get("password") : "";
         String mode = parameters.containsKey("mode") ? ((String) parameters.get("mode")).toUpperCase() : "PATH_EXIST";
         String path = parameters.containsKey("path") ? (String) parameters.get("path") : "";
+        final String folderIgnoreFiles = parameters.containsKey("folderIgnoreFiles") ? (String) parameters.get("folderIgnoreFiles") : "";
+
+
+        SmbFilenameFilter smbFilenameFilter = new SmbFilenameFilter() {
+            @Override
+            public boolean accept(SmbFile smbFile, String s) throws SmbException {
+                return !s.matches(folderIgnoreFiles);
+            }
+        };
 
         Mode enumMode = Mode.PATH_EXIST;
 
@@ -165,7 +175,7 @@ public class JCifsMonitor extends AbstractServiceMonitor {
                         break;
                     case FOLDER_EMPTY:
                         if (smbFileExists) {
-                            if (smbFile.list().length == 0) {
+                            if (smbFile.list(smbFilenameFilter).length == 0) {
                                 serviceStatus = PollStatus.up();
                             } else {
                                 serviceStatus = PollStatus.down("Directory " + fullUrl + " should be empty but isn't!");
@@ -176,7 +186,7 @@ public class JCifsMonitor extends AbstractServiceMonitor {
                         break;
                     case FOLDER_NOT_EMPTY:
                         if (smbFileExists) {
-                            if (smbFile.list().length > 0) {
+                            if (smbFile.list(smbFilenameFilter).length > 0) {
                                 serviceStatus = PollStatus.up();
                             } else {
                                 serviceStatus = PollStatus.down("Directory " + fullUrl + " should not be empty but is!");
