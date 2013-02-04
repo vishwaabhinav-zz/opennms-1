@@ -77,7 +77,8 @@ public class JCifsMonitor extends AbstractServiceMonitor {
     /**
      * logging for JCifs monitor
      */
-    private final Logger logger = LoggerFactory.getLogger("OpenNMS.JCifs." + JCifsMonitor.class.getName());
+    "OpenNMS.Report." + DefaultGlobalReportRepository.        class.getName()
+    private final Logger logger = LoggerFactory.getLogger("OpenNMS.Poller." + JCifsMonitor.class.getName());
 
     /**
      * This method queries the CIFS share.
@@ -88,14 +89,15 @@ public class JCifsMonitor extends AbstractServiceMonitor {
      */
     public PollStatus poll(MonitoredService svc, Map<String, Object> parameters) {
 
-        String domain = parameters.containsKey("domain") ? (String) parameters.get("domain") : "";
-        String username = parameters.containsKey("username") ? (String) parameters.get("username") : "";
-        String password = parameters.containsKey("password") ? (String) parameters.get("password") : "";
+        final String domain = parameters.containsKey("domain") ? (String) parameters.get("domain") : "";
+        final String username = parameters.containsKey("username") ? (String) parameters.get("username") : "";
+        final String password = parameters.containsKey("password") ? (String) parameters.get("password") : "";
         String mode = parameters.containsKey("mode") ? ((String) parameters.get("mode")).toUpperCase() : "PATH_EXIST";
         String path = parameters.containsKey("path") ? (String) parameters.get("path") : "";
+        final String smbHost = parameters.containsKey("smb-host") ? (String) parameters.get("smb-host") : svc.getIpAddr();
         final String folderIgnoreFiles = parameters.containsKey("folderIgnoreFiles") ? (String) parameters.get("folderIgnoreFiles") : "";
 
-
+        // Filename filter to give user the possibility to ignore specific files in folder for the folder check.
         SmbFilenameFilter smbFilenameFilter = new SmbFilenameFilter() {
             @Override
             public boolean accept(SmbFile smbFile, String s) throws SmbException {
@@ -103,6 +105,7 @@ public class JCifsMonitor extends AbstractServiceMonitor {
             }
         };
 
+        // Initialize mode with default as PATH_EXIST
         Mode enumMode = Mode.PATH_EXIST;
 
         try {
@@ -129,7 +132,7 @@ public class JCifsMonitor extends AbstractServiceMonitor {
         authString += username + ":" + password;
 
         // ... and path
-        String fullUrl = "smb://" + svc.getIpAddr() + path;
+        String fullUrl = "smb://" + smbHost + path;
 
         logger.debug("Domain: [{}], Username: [{}], Password: [{}], Mode: [{}], Path: [{}], Authentication: [{}], Full Url: [{}]", new Object[]{domain, username, password, mode, path, authString, fullUrl});
 
@@ -194,10 +197,10 @@ public class JCifsMonitor extends AbstractServiceMonitor {
                 }
 
             } catch (MalformedURLException exception) {
-                logger.error("URL exception '{}'", exception.getMessage());
+                logger.error("Malformed URL on '{}' with error: '{}'", smbHost, exception.getMessage());
                 serviceStatus = PollStatus.down(exception.getMessage());
             } catch (SmbException exception) {
-                logger.error("SMB exception '{}'", exception.getMessage());
+                logger.error("SMB error on '{}' with error: '{}'", smbHost, exception.getMessage());
                 serviceStatus = PollStatus.down(exception.getMessage());
             }
         }
@@ -205,6 +208,9 @@ public class JCifsMonitor extends AbstractServiceMonitor {
         return serviceStatus;
     }
 
+    /**
+     * Supported modes for CIFS monitor
+     */
     private enum Mode {
         PATH_EXIST,
         PATH_NOT_EXIST,
