@@ -424,5 +424,17 @@
       <type>tar.gz</type>
       <classifier>etc</classifier>
     </dependency>
+    <dependency>
+      <groupId>org.opennms.features.poller</groupId>
+      <artifactId>org.opennms.features.poller.cifsmonitor</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.opennms.features.poller</groupId>
+      <artifactId>org.opennms.features.poller.cifsmonitor</artifactId>
+      <version>${project.version}</version>
+      <type>tar.gz</type>
+      <classifier>lib</classifier>
+    </dependency>
   </dependencies>
 </project>

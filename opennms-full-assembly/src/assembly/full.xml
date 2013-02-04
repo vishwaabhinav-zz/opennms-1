@@ -16,5 +16,6 @@
     <componentDescriptor>src/assembly/components/xmp.xml</componentDescriptor>
     <componentDescriptor>src/assembly/components/juniper-tca.xml</componentDescriptor>
     <componentDescriptor>src/assembly/components/selenium-monitor.xml</componentDescriptor>
+    <componentDescriptor>src/assembly/components/cifs-monitor.xml</componentDescriptor>
   </componentDescriptors>
 </assembly>
