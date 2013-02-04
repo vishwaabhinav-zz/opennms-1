@@ -77,7 +77,6 @@ public class JCifsMonitor extends AbstractServiceMonitor {
     /**
      * logging for JCifs monitor
      */
-    "OpenNMS.Report." + DefaultGlobalReportRepository.        class.getName()
     private final Logger logger = LoggerFactory.getLogger("OpenNMS.Poller." + JCifsMonitor.class.getName());
 
     /**
@@ -94,8 +93,13 @@ public class JCifsMonitor extends AbstractServiceMonitor {
         final String password = parameters.containsKey("password") ? (String) parameters.get("password") : "";
         String mode = parameters.containsKey("mode") ? ((String) parameters.get("mode")).toUpperCase() : "PATH_EXIST";
         String path = parameters.containsKey("path") ? (String) parameters.get("path") : "";
-        final String smbHost = parameters.containsKey("smb-host") ? (String) parameters.get("smb-host") : svc.getIpAddr();
+        String smbHost = parameters.containsKey("smbHost") ? (String) parameters.get("smbHost") : "";
         final String folderIgnoreFiles = parameters.containsKey("folderIgnoreFiles") ? (String) parameters.get("folderIgnoreFiles") : "";
+
+        // changing to Ip address of MonitoredService if no smbHost is given
+        if ("".equals(smbHost)) {
+            smbHost = svc.getIpAddr();
+        }
 
         // Filename filter to give user the possibility to ignore specific files in folder for the folder check.
         SmbFilenameFilter smbFilenameFilter = new SmbFilenameFilter() {

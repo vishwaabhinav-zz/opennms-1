@@ -20,6 +20,7 @@ import java.util.TreeMap;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.powermock.api.easymock.PowerMock.createNiceMock;
 import static org.powermock.api.easymock.PowerMock.*;
 import static org.powermock.api.easymock.PowerMock.replay;
@@ -33,6 +34,7 @@ public class JCifsMonitorTest {
     private SmbFile mockSmbFolderEmpty;
     private SmbFile mockSmbFileSmbException;
     private SmbFile mockSmbFileMalformedUrlException;
+    private SmbFile mockSmbFileSmbHost;
 
     @Before
     public void setUp() throws Exception {
@@ -61,6 +63,10 @@ public class JCifsMonitorTest {
         mockSmbFileMalformedUrlException = createNiceMock(SmbFile.class);
         expect(mockSmbFileMalformedUrlException.exists()).andThrow(new SmbException(SmbException.ERROR_ACCESS_DENIED, true));
         expectNew(SmbFile.class, new Class<?>[]{String.class, NtlmPasswordAuthentication.class}, eq("smb://10.123.123.123/malformedUrlException"), isA(NtlmPasswordAuthentication.class)).andReturn(mockSmbFileMalformedUrlException).anyTimes();
+
+        mockSmbFileSmbHost = createNiceMock(SmbFile.class);
+        expect(mockSmbFileSmbHost.exists()).andThrow(new SmbException(SmbException.ERROR_ACCESS_DENIED, true));
+        expectNew(SmbFile.class, new Class<?>[]{String.class, NtlmPasswordAuthentication.class}, eq("smb://192.168.0.123/smbException"), isA(NtlmPasswordAuthentication.class)).andReturn(mockSmbFileSmbHost).anyTimes();
     }
 
     @Test
@@ -207,5 +213,32 @@ public class JCifsMonitorTest {
 
         pollStatus = jCifsMonitor.poll(svc, m);
         assertEquals(PollStatus.down(), pollStatus);
+
+        /*
+         * checking for overriding Ip address via empty string => up
+         */
+        m.put("username", "user");
+        m.put("password", "pass");
+        m.put("domain", "dom");
+        m.put("mode", "PATH_EXIST");
+        m.put("smbHost", "");
+        m.put("path", "/validPath");
+
+        pollStatus = jCifsMonitor.poll(svc, m);
+        assertEquals(PollStatus.up(), pollStatus);
+
+        /*
+         * checking for overriding Ip address via smbHost => down
+         */
+        m.put("username", "user");
+        m.put("password", "pass");
+        m.put("domain", "dom");
+        m.put("mode", "PATH_EXIST");
+        m.put("smbHost", "192.168.0.123");
+        m.put("path", "/smbException");
+
+        pollStatus = jCifsMonitor.poll(svc, m);
+        assertEquals(PollStatus.down(), pollStatus);
+        assertTrue(pollStatus.getReason().matches(".*192\\.168\\.0\\.123.*"));
     }
 }
