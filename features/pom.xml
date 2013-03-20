@@ -29,7 +29,8 @@
 
     <!-- Jmx config generator -->
     <module>jmx-config-generator</module>
-    
+    <module>jmx-config-generator-webui</module>   
+ 
     <!-- SNMP MIB Parser and Event/Collection Configuration -->
     <module>vaadin-snmp-events-and-metrics</module>
 
