@@ -81,6 +81,11 @@ public class ConfigTesterTest {
     }
 
 	@Test
+	public void testAccessPointMonitorConfiguration() {
+        ignoreConfigFile("access-point-monitor-configuration.xml");
+	}
+
+	@Test
 	public void testAckdConfiguration() {
         testConfigFile("ackd-configuration.xml");
 	}
@@ -507,11 +512,6 @@ public class ConfigTesterTest {
     }
 
 	@Test
-    public void testVulnscandConfiguration() {
-        testConfigFile("vulnscand-configuration.xml");
-    }
-
-	@Test
     public void testWmiConfig() {
         testConfigFile("wmi-config.xml");
     }
@@ -526,7 +526,23 @@ public class ConfigTesterTest {
         testConfigFile("xmlrpcd-configuration.xml");
     }
 
-	@Test
+
+    @Test
+    public void testVMwareCimDatacollectionConfig() {
+        testConfigFile("vmware-cim-datacollection-config.xml");
+    }
+
+    @Test
+    public void testVMwareConfigConfig() {
+        testConfigFile("vmware-config.xml");
+    }
+
+    @Test
+    public void testVMwareDatacollectionConfig() {
+        testConfigFile("vmware-datacollection-config.xml");
+    }
+
+    @Test
 	@Ignore
     public void testXmpConfig() {
         testConfigFile("xmp-config.xml");
@@ -552,8 +568,7 @@ public class ConfigTesterTest {
     public void testRemoteRepositoyConfig() {
 	    ignoreConfigFile("remote-repository.xml");
     }
-    
-	
+
 	@Test
 	public void testAllConfigs() {
 		ConfigTester.main(new String[] { "-a" });

@@ -6,7 +6,7 @@
     <parent>
         <artifactId>org.opennms.features</artifactId>
         <groupId>org.opennms</groupId>
-        <version>1.11.4-SNAPSHOT</version>
+        <version>1.11.90-SNAPSHOT</version>
     </parent>
     <groupId>org.opennms.features</groupId>
     <artifactId>jmxconfiggenerator</artifactId>
@@ -101,6 +101,21 @@
     
     <dependencies>
 
+        <!-- OpenNMS Tools -->
+        <dependency>
+            <groupId>org.opennms.features</groupId>
+            <artifactId>org.opennms.features.name-cutter</artifactId>
+            <version>1.11.90-SNAPSHOT</version>
+            <type>jar</type>
+        </dependency>
+        
+        
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+            <version>2.2.6</version>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.velocity</groupId>
             <artifactId>velocity</artifactId>
@@ -129,9 +144,9 @@
             <artifactId>commons-lang3</artifactId>
             <version>${commons.lang3.version}</version>
         </dependency>
-
+        
         <dependency>
-            <groupId>org.apache.commons</groupId>
+            <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${commons.io.version}</version>
             <scope>provided</scope>
@@ -141,12 +156,15 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <version>4.10</version>
+            <scope>test</scope>
         </dependency>
 
         <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <version>1.6.6</version>
         </dependency>
 
         <dependency>

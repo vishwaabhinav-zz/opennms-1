@@ -46,7 +46,7 @@ import java.io.StringWriter;
 import java.net.MalformedURLException;
 import javax.management.remote.JMXConnector;
 import javax.xml.bind.JAXB;
-import org.opennms.features.jmxconfiggenerator.helper.NameTools;
+import org.opennms.features.jmxconfiggenerator.Starter;
 import org.opennms.features.jmxconfiggenerator.jmxconfig.JmxDatacollectionConfiggenerator;
 import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.MBeansController;
 import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.MBeansView;
@@ -200,10 +200,10 @@ public class JmxConfigGeneratorApplication extends com.vaadin.Application implem
 			try {
 				ConfigModel config = ((BeanItem<ConfigModel>) getConfigView().getItemDataSource()).getBean();
 
-				NameTools.loadInternalDictionary();
+                                // TODO loading of the dictionary should not be done via the Starter class and not in a static way!
 				JmxDatacollectionConfiggenerator jmxConfigGenerator = new JmxDatacollectionConfiggenerator();
 				JMXConnector connector = jmxConfigGenerator.getJmxConnector(config.getHost(), config.getPort(), config.getUser(), config.getPassword(), config.isSsl(), config.isJmxmp());
-				JmxDatacollectionConfig generateJmxConfigModel = jmxConfigGenerator.generateJmxConfigModel(connector.getMBeanServerConnection(), "anyservice", !config.isSkipDefaultVM(), config.isRunWritableMBeans());
+				JmxDatacollectionConfig generateJmxConfigModel = jmxConfigGenerator.generateJmxConfigModel(connector.getMBeanServerConnection(), "anyservice", !config.isSkipDefaultVM(), config.isRunWritableMBeans(), Starter.loadInternalDictionary());
 				connector.close();
 
 				showMBeansView(new InternalModel().setRawModel(generateJmxConfigModel));
