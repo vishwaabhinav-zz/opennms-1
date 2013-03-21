@@ -19,7 +19,6 @@
 		<gwt.version>2.3.0</gwt.version>
 		<gwt.plugin.version>2.2.0</gwt.plugin.version>
 		<guava.version>10.0.1</guava.version>
-		<netbeans.hint.deploy.server>gfv3ee6</netbeans.hint.deploy.server>
 		<quartz.version>2.1.5</quartz.version>
 	</properties>
 

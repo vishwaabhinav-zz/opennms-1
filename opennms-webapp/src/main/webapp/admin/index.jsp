@@ -149,6 +149,7 @@
         <li><a href="admin/mibCompiler.jsp">SNMP MIB Compiler</a></li>
         <li><a href="admin/manageEvents.jsp">Manage Events Configuration</a></li>
         <li><a href="admin/manageSnmpCollections.jsp">Manage SNMP Collections and Data Collection Groups</a></li>
+        <li><a href="admin/jmxConfigGenerator.jsp">JMX Config Generator Web UI ALPHA</a></li>
       </ul>
     </div>
 	<div class="boxWrapper">
