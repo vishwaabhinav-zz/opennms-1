@@ -15,5 +15,20 @@ http://www.osgi.org/xmlns/blueprint-ext/v1.1.0 https://svn.apache.org/repos/asf/
 			<!-- <entry key="widgetset" value="${widgetset}"/> -->
 		</service-properties>
 	</service>
+        
+        
+        <bean id="jmxconfiggeneratoruiLink" class="org.opennms.features.jmxconfiggenerator.webui.AdminPageNavEntry">
+            <property name="url" value="admin/jmxConfigGenerator.jsp" />
+            <property name="name" value="JMX Config Generator Web UI ALPHA" />
+        </bean>
+
+
+        <service id="jmxconfiggeneratoruiService" interface="org.opennms.web.navigate.PageNavEntry" ref="jmxconfiggeneratoruiLink">
+            <service-properties>
+                <entry key="Page" value="admin" />
+                <entry key="Category" value="operations" />
+                <entry key="registration.export" value="true" />
+            </service-properties>
+        </service>
 
 </blueprint>

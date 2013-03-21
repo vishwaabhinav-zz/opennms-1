@@ -29,6 +29,11 @@
 
 --%>
 
+<%@page import="java.util.Collection"%>
+<%@page import="org.opennms.web.navigate.PageNavEntry"%>
+<%@page import="org.springframework.web.context.support.WebApplicationContextUtils"%>
+<%@page import="org.opennms.core.soa.ServiceRegistry"%>
+<%@page import="org.springframework.web.context.WebApplicationContext"%>
 <%@page language="java"
 	contentType="text/html"
 	session="true"
@@ -149,7 +154,7 @@
         <li><a href="admin/mibCompiler.jsp">SNMP MIB Compiler</a></li>
         <li><a href="admin/manageEvents.jsp">Manage Events Configuration</a></li>
         <li><a href="admin/manageSnmpCollections.jsp">Manage SNMP Collections and Data Collection Groups</a></li>
-        <li><a href="admin/jmxConfigGenerator.jsp">JMX Config Generator Web UI ALPHA</a></li>
+        <%=getAdminPageNavEntries("operations")%>
       </ul>
     </div>
 	<div class="boxWrapper">
@@ -299,3 +304,25 @@
   </div>
   <hr />
 <jsp:include page="/includes/footer.jsp" flush="false"/>
+
+<%!
+/** Loads all in OSGI installed PageNavEntries with the properties 
+ * <ul>
+ *  <li>Page=admin</li>
+ *  <li><b>AND</li>
+ *  <li>Category=<category></li>
+ * </ul>
+ * */
+protected String getAdminPageNavEntries(final String category){
+        String retVal = "";
+        WebApplicationContext webappContext = WebApplicationContextUtils.getRequiredWebApplicationContext(getServletContext());
+        ServiceRegistry registry = webappContext.getBean(ServiceRegistry.class);
+        Collection<PageNavEntry> navEntries = registry.findProviders(PageNavEntry.class, "(Page=admin)");
+        
+        for(PageNavEntry navEntry : navEntries){
+            retVal += "<li><a href=\"" + navEntry.getUrl() + "\" >" + navEntry.getName() + "</a></li>";
+        }
+        
+        return retVal;
+    }
+%>
