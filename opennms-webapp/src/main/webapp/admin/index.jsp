@@ -151,10 +151,9 @@
             <li><a href="admin/sendevent.jsp">Send Event</a></li>
             <li><a href="admin/notification/index.jsp">Configure Notifications</a></li>
             <li><a href="admin/sched-outages/index.jsp">Scheduled Outages</a></li>
-            <li><a href="admin/mibCompiler.jsp">SNMP MIB Compiler</a></li>
             <li><a href="admin/manageEvents.jsp">Manage Events Configuration</a></li>
             <li><a href="admin/manageSnmpCollections.jsp">Manage SNMP Collections and Data Collection Groups</a></li>
-                <%=getAdminPageNavEntries("operations")%>
+            <%=getAdminPageNavEntries("operations")%>
         </ul>
     </div>
     <div class="boxWrapper">
