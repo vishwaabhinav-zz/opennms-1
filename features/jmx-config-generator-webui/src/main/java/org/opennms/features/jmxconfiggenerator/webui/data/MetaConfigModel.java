@@ -37,6 +37,8 @@ package org.opennms.features.jmxconfiggenerator.webui.data;
  */
 public interface MetaConfigModel {
 
+	String SERVICE_NAME = "serviceName";
+    String PACKAGE_NAMES = "packageNames";
 	String JMXMP = "jmxmp";
 	String HOST = "host";
 	String PASSWORD = "password";

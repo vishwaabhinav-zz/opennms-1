@@ -30,6 +30,8 @@ package org.opennms.features.jmxconfiggenerator.graphs;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.StringWriter;
 import java.util.Collection;
 import org.apache.velocity.Template;
@@ -81,46 +83,33 @@ public class GraphConfigGenerator {
         return sw.toString();
     }
 
-    public String generateSnmpGraph(Collection<Report> reports) throws IOException, Exception {
+    public String generateSnmpGraph(Collection<Report> reports) throws IOException {
         String jarInternTemplate = "graphTemplate.vm";
 
+        // init VelocityEngine
         VelocityEngine velocityEngine = new VelocityEngine();
         velocityEngine.setProperty(RuntimeConstants.RESOURCE_LOADER, "classpath");
         velocityEngine.setProperty("classpath.resource.loader.class", ClasspathResourceLoader.class.getName());
-
         velocityEngine.init();
 
+        // check if tmeplate exists in jar
         final String templatePath = jarInternTemplate;
-        InputStream input = this.getClass().getClassLoader().getResourceAsStream(templatePath);
-        if (input == null) {
-            throw new IOException("Template file doesn't exist " + jarInternTemplate);
+        InputStream templateInputStream = this.getClass().getClassLoader().getResourceAsStream(templatePath);
+        if (templateInputStream == null) {
+            throw new IOException(String.format("Template file '%s' doesn't exist.", jarInternTemplate));
         }
+        
+        // create reader and writer for template extraction from jar
+        StringWriter templateWriter = new StringWriter();
+        Reader templateReader = new InputStreamReader(templateInputStream); 
 
+        // create context
         VelocityContext context = new VelocityContext();
-
         context.put("reportsList", reports.iterator());
         context.put("reportsBody", reports.iterator());
-
-        Template template = null;
-
-        try {
-            template = velocityEngine.getTemplate(templatePath, "UTF-8");
-        } catch (ResourceNotFoundException rnfe) {
-            logger.debug("couldn't find the template:'{}'", rnfe.getMessage());
-        } catch (ParseErrorException pee) {
-            logger.debug("syntax error: problem parsing the template:'{}'", pee.getMessage());
-        } catch (MethodInvocationException mie) {
-            logger.debug("something invoked in the template threw an exception:'{}'", mie.getMessage());
-        } catch (Exception e) {
-            logger.debug("undefined exception:'{}'", e.getMessage());
-        }
-
-        StringWriter sw = new StringWriter();
-
-        if (template != null) {
-            template.merge(context, sw);
-        }
-
-        return sw.toString();
+        
+        // get template
+        Velocity.evaluate(context, templateWriter, jarInternTemplate, templateReader);
+        return templateWriter.toString();
     }
 }

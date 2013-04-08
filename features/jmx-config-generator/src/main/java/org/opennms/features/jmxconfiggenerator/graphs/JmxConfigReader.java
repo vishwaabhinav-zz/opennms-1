@@ -1,31 +1,28 @@
-/*******************************************************************************
+/**
+ * *****************************************************************************
  * This file is part of OpenNMS(R).
  *
- * Copyright (C) 2012 The OpenNMS Group, Inc.
- * OpenNMS(R) is Copyright (C) 1999-2012 The OpenNMS Group, Inc.
+ * Copyright (C) 2013 The OpenNMS Group, Inc. OpenNMS(R) is Copyright (C)
+ * 1999-2013 The OpenNMS Group, Inc.
  *
  * OpenNMS(R) is a registered trademark of The OpenNMS Group, Inc.
  *
- * OpenNMS(R) is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published
- * by the Free Software Foundation, either version 3 of the License,
- * or (at your option) any later version.
+ * OpenNMS(R) is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
  *
- * OpenNMS(R) is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * OpenNMS(R) is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with OpenNMS(R).  If not, see:
- *      http://www.gnu.org/licenses/
+ * You should have received a copy of the GNU General Public License along with
+ * OpenNMS(R). If not, see: http://www.gnu.org/licenses/
  *
- * For more information contact:
- *     OpenNMS(R) Licensing <license@opennms.org>
- *     http://www.opennms.org/
- *     http://www.opennms.com/
- *******************************************************************************/
-
+ * For more information contact: OpenNMS(R) Licensing <license@opennms.org>
+ * http://www.opennms.org/ http://www.opennms.com/
+ ******************************************************************************
+ */
 package org.opennms.features.jmxconfiggenerator.graphs;
 
 import java.io.File;
@@ -49,16 +46,19 @@ public class JmxConfigReader {
     private final String MBEANREPORT = "MBeanReport";
     private final String COMPOSITEREPORT = "CompositeReport";
     private final String COMPOSITATTRIBEREPORT = "CompositeAttributeReport";
-   
-    public Collection<Report> generateReportsByJmxDatacollectionConfig(String jmxDatacollectionConfig) {
+
+    public Collection<Report> generateReportsByJmxDatacollectionConfig(String inputConfigFileName) {
+        return generateReportsByJmxDatacollectionConfig(
+                JAXB.unmarshal(
+                    new File(inputConfigFileName), 
+                    JmxDatacollectionConfig.class));
+    }
+
+    public Collection<Report> generateReportsByJmxDatacollectionConfig(JmxDatacollectionConfig inputConfig) {
         Collection<Report> reports = new ArrayList<Report>();
-        JmxDatacollectionConfig inputConfig = JAXB.unmarshal(new File(jmxDatacollectionConfig), JmxDatacollectionConfig.class);
-        
         for (JmxCollection jmxCollection : inputConfig.getJmxCollection()) {
             logger.debug("jmxCollection: '{}'", jmxCollection.getName());
-            Mbeans mbeans = jmxCollection.getMbeans();
-
-            for (Mbean mbean : mbeans.getMbean()) {
+            for (Mbean mbean : jmxCollection.getMbeans().getMbean()) {
                 reports.addAll(generateMbeanReportsByMBean(mbean));
                 reports.addAll(generateAttributeReporsByMBean(mbean));
 
@@ -119,9 +119,9 @@ public class JmxConfigReader {
 
         for (CompAttrib compAttrib : mbean.getCompAttrib()) {
             for (CompMember compMember : compAttrib.getCompMember()) {
-                
+
                 String reportId = StringUtils.deleteWhitespace(mbean.getName()) + "." + compAttrib.getName() + "." + compMember.getName() + "." + COMPOSITATTRIBEREPORT;
-                
+
                 Report report = new Report(reportId, reportId, reportId, "verticalLabel");
                 report.addGraph(new Graph(compMember.getAlias(), compMember.getName(), compMember.getAlias(), Colors.getNextColor(), Colors.getNextColor(), Colors.getNextColor()));
                 reports.add(report);

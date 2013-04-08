@@ -53,20 +53,18 @@ public class AttributesTable extends Table {
 
 	final private Map<Object, TextField> fieldsForIsValid = new HashMap<Object, TextField>();
 	private List<Field> fields = new ArrayList<Field>();
-//	private final MBeansController controller;
 	private final UniqueAttributeNameValidator uniqueAttributeNameValidator;
 	private final Callback callback;
 
 	public AttributesTable(NameProvider provider, MBeansController.Callback callback) {
-//		this.controller = controller;
 		this.callback = callback;
 		this.uniqueAttributeNameValidator =  new UniqueAttributeNameValidator(provider, fieldsForIsValid);
+		setSizeFull();
 		setSelectable(false);
 		setEditable(false);
 		setReadOnly(true);
 		setWriteThrough(false);
 		setTableFieldFactory(new AttributesTableFieldFactory());
-		setWidth(100, UNITS_PERCENTAGE);
 	}
 
 	public void modelChanged(Mbean bean) {

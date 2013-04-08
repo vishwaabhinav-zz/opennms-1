@@ -49,9 +49,10 @@ class MBeansTree extends Tree implements ModelChangeListener<InternalModel>, Vie
 	private final Action DESELECT = new Action("deselect");
 	private final Action[] ACTIONS = new Action[]{SELECT, DESELECT};
 
-	protected MBeansTree(NameEditForm mbeansForm, MBeansContentTabSheet mbeansTabSheet, final MBeansController controller) {
+	protected MBeansTree(final MBeansController controller) {
 		this.container = controller.getMBeansHierarchicalContainer();
 		this.controller = controller;
+		setSizeFull();
 		setCaption("MBeans");
 		setContainerDataSource(container);
 		setItemCaptionPropertyId(MetaMBeanItem.CAPTION);
@@ -72,23 +73,35 @@ class MBeansTree extends Tree implements ModelChangeListener<InternalModel>, Vie
 				controller.updateView(event);
 			}
 		});
-		setSizeFull();
 		setImmediate(true);
 		addActionHandler(this);
 	}
 
-	private void expandTree() {
+	/**
+	 * Expands all items in the tree, so the complete tree is expanded per default.
+	 * If there are any items the first itemId is returned.
+	 * @return The first itemId in the container if there is any, otherwise false.
+	 */
+	private Object expandTree() {
+		Object firstItemId = null;
 		for (Object itemId : getItemIds()) {
+			if (firstItemId == null) firstItemId = itemId;
 			expandItem(itemId);
-			select(itemId);
 		}
+		return firstItemId;
 	}
 
 	@Override
 	public void modelChanged(InternalModel internalModel) {
 		container.updateDataSource(internalModel);
-		select(null);
-		expandTree();
+		Object selectItemId = expandTree();
+		
+		// select anything in the tree
+		if (selectItemId != null) {
+			select(selectItemId); // first item
+		} else {
+			select(getNullSelectionItemId()); // no selection at all (there are no elements in the tree)
+		}
 	}
 
 	@Override

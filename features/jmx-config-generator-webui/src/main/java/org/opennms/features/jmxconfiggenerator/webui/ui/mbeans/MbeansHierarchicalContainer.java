@@ -63,6 +63,7 @@ public class MbeansHierarchicalContainer extends HierarchicalContainer {
 	}
 
 	public void updateDataSource(InternalModel model) {
+		mbeans.clear();
 		buildInternalTree(model);
 //		System.out.println(this);
 		updateContainer();

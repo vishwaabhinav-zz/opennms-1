@@ -59,11 +59,14 @@ public class MBeansContentTabSheet extends TabSheet implements ModelChangeListen
 
 	public MBeansContentTabSheet(final MBeansController controller) {
 		this.controller = controller;
+		setSizeFull();
 		attributesLayout = new AttributesLayout();
 		compositesLayout = new CompositesLayout();
+		attributesLayout.setSizeFull();
+		compositesLayout.setSizeFull();
+		
 		addTab(attributesLayout, "Attributes");
 		addTab(compositesLayout, "Composites");
-		setSizeFull();
 	}
 
 	@Override
@@ -98,11 +101,11 @@ public class MBeansContentTabSheet extends TabSheet implements ModelChangeListen
 		private int selectedCompositesTabPosition;
 		
 		public CompositesLayout() {
-			tabSheet.setWidth(100, UNITS_PERCENTAGE);
-			tabSheet.setHeight(300, UNITS_PIXELS);
-			addComponent(tabSheet);
+			setSizeFull();
 			setSpacing(false);
 			setMargin(false);
+			tabSheet.setSizeFull();
+			addComponent(tabSheet);
 		}
 
 		@Override
@@ -253,6 +256,7 @@ public class MBeansContentTabSheet extends TabSheet implements ModelChangeListen
 		private final EditControls footer;
 
 		private AttributesLayout() {
+//			setSizeFull();
 			attributesTable = new AttributesTable(controller, new Callback() {
 				@Override
 				public Container getContainer() {

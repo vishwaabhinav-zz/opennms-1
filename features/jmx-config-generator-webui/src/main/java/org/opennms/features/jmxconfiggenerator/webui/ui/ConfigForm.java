@@ -2,8 +2,8 @@
  * *****************************************************************************
  * This file is part of OpenNMS(R).
  *
- * Copyright (C) 2012 The OpenNMS Group, Inc. OpenNMS(R) is Copyright (C)
- * 1999-2012 The OpenNMS Group, Inc.
+ * Copyright (C) 2013 The OpenNMS Group, Inc. OpenNMS(R) is Copyright (C)
+ * 1999-2013 The OpenNMS Group, Inc.
  *
  * OpenNMS(R) is a registered trademark of The OpenNMS Group, Inc.
  *
@@ -21,13 +21,24 @@
  *
  * For more information contact: OpenNMS(R) Licensing <license@opennms.org>
  * http://www.opennms.org/ http://www.opennms.com/
- ******************************************************************************
+ * *****************************************************************************
  */
 package org.opennms.features.jmxconfiggenerator.webui.ui;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.kohsuke.args4j.Option;
+import org.opennms.features.jmxconfiggenerator.Starter;
+import org.opennms.features.jmxconfiggenerator.webui.JmxConfigGeneratorApplication;
+import org.opennms.features.jmxconfiggenerator.webui.data.ConfigModel;
+import org.opennms.features.jmxconfiggenerator.webui.data.InternalModel;
+import org.opennms.features.jmxconfiggenerator.webui.data.MetaConfigModel;
+import org.opennms.features.jmxconfiggenerator.webui.data.ModelChangeListener;
+
 import com.vaadin.data.Property;
-import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.data.util.BeanItem;
+import com.vaadin.data.validator.RegexpValidator;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Button.ClickListener;
@@ -35,34 +46,27 @@ import com.vaadin.ui.Form;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Layout;
 import com.vaadin.ui.TextField;
-import java.util.HashMap;
-import java.util.Map;
-import org.kohsuke.args4j.Option;
-import org.opennms.features.jmxconfiggenerator.webui.JmxConfigGeneratorApplication;
-import org.opennms.features.jmxconfiggenerator.webui.data.ConfigModel;
-import org.opennms.features.jmxconfiggenerator.webui.data.MetaConfigModel;
-import org.opennms.features.jmxconfiggenerator.Starter;
 
 /**
  * This form handles editing of a
  * <code>ConfigModel</code>.
  *
- * @author m.v.rueden
+ * @author Markus von Rüden <mvr@opennms.com>
  * @see ConfigModel
  */
-public class ConfigForm extends Form implements ClickListener {
+public class ConfigForm extends Form implements ClickListener, ModelChangeListener<InternalModel> {
 
     private Button next = new Button("fetch Mbeans", (ClickListener) this);
     private JmxConfigGeneratorApplication app;
+    private ConfigModel model = new ConfigModel();
 
     public ConfigForm(JmxConfigGeneratorApplication app) {
         this.app = app;
-        setCaption("config of jmx config generator");
-        setItemDataSource(new BeanItem<ConfigModel>(new ConfigModel()));
+        setItemDataSource(new BeanItem<ConfigModel>(model));
         setVisibleItemProperties(createVisibleItemProperties());
         setFooter(createFooter());
         setImmediate(true);
-        setSizeFull();
+        setWriteThrough(true);
         updateAuthenticationFields(false); //default -> hide those fields
         initFields();
         updateDescriptions();
@@ -70,6 +74,8 @@ public class ConfigForm extends Form implements ClickListener {
 
     private Object[] createVisibleItemProperties() {
         return new Object[]{
+            MetaConfigModel.SERVICE_NAME,
+            //            MetaConfigModel.PACKAGE_NAMES,
             MetaConfigModel.JMXMP,
             MetaConfigModel.HOST,
             MetaConfigModel.PORT,
@@ -102,7 +108,9 @@ public class ConfigForm extends Form implements ClickListener {
     @Override
     public void buttonClick(ClickEvent event) {
         if (event.getSource() == next) {
-            app.findMBeans();
+            if (isValid()) {
+                app.findMBeans();
+            }
         }
     }
 
@@ -121,6 +129,28 @@ public class ConfigForm extends Form implements ClickListener {
         ((TextField) getField(MetaConfigModel.USER)).setNullRepresentation("");
         ((TextField) getField(MetaConfigModel.PASSWORD)).setNullRepresentation("");
         ((TextField) getField(MetaConfigModel.PASSWORD)).setSecret(true); //use PasswordField instead
+
+        final TextField serviceNameField = ((TextField) getField(MetaConfigModel.SERVICE_NAME));
+        serviceNameField.setNullRepresentation("");
+        serviceNameField.setRequired(true);
+        serviceNameField.setRequiredError("required");
+        serviceNameField.addValidator(new RegexpValidator("^[A-Za-z0-9_-]+$", "You must specify a valid name. Allowed characters: (A-Za-z0-9_-)"));
+        serviceNameField.addListener(new Property.ValueChangeListener() {
+            @Override
+            public void valueChange(Property.ValueChangeEvent event) {
+                if (serviceNameField.getData() != null) {
+                    ((InternalModel) serviceNameField.getData()).setServiceName((String) event.getProperty().getValue());
+                }
+            }
+        });
+        
+        final TextField hostNameField = ((TextField) getField(MetaConfigModel.HOST));
+        hostNameField.setRequired(true);
+        hostNameField.setRequiredError("required");
+        
+        final TextField portField = ((TextField) getField(MetaConfigModel.PORT));
+        portField.setRequired(true);
+        portField.setRequiredError("required");
     }
 
     /**
@@ -163,5 +193,12 @@ public class ConfigForm extends Form implements ClickListener {
             optionDescriptions.put(ann.name().replaceAll("-", ""), ann.usage());
         }
         return optionDescriptions;
+    }
+
+    @Override
+    public void modelChanged(InternalModel newModel) {
+        ((TextField) getField(MetaConfigModel.SERVICE_NAME)).setData(newModel);
+        if (newModel == null) return;
+        ((TextField) getField(MetaConfigModel.SERVICE_NAME)).setValue(newModel.getServiceName());
     }
 }

@@ -60,7 +60,7 @@ public class Starter {
     @Option(name = "-jmx", usage = "Generate jmx-datacollection.xml by reading JMX over RMI")
     private boolean jmx = false;
 
-    @Option(name = "-service", usage = "Your optional service-name. Like cassandra, jboss, tomcat")
+    @Option(name = "-service", usage = "Your service-name. Like cassandra, jboss, tomcat")
     private String serviceName = "anyservice";
 
     @Option(name = "-host", usage = "Hostname or IP-Adress of JMX-RMI host")
