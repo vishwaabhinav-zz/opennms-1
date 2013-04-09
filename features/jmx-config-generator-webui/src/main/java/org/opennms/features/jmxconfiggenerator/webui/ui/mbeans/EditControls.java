@@ -28,6 +28,14 @@
 
 package org.opennms.features.jmxconfiggenerator.webui.ui.mbeans;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.opennms.features.jmxconfiggenerator.webui.ui.IconProvider;
+import org.opennms.features.jmxconfiggenerator.webui.ui.UIHelper;
+
 import com.vaadin.data.Property;
 import com.vaadin.data.Property.ReadOnlyStatusChangeListener;
 import com.vaadin.data.Property.ReadOnlyStatusChangeNotifier;
@@ -37,11 +45,6 @@ import com.vaadin.ui.Component;
 import com.vaadin.ui.Form;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Table;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.opennms.features.jmxconfiggenerator.webui.ui.IconProvider;
 
 /**
  * This class represents a "control panel", providing three buttons: edit, cancel, save. At the
@@ -91,9 +94,9 @@ class EditControls<T extends Component> extends HorizontalLayout implements Read
 		this.buttonHandler = buttonHandler;
 		//we need to do this, otherwise we don't notice when to hide/show buttons
 		callback.addListener((ReadOnlyStatusChangeListener) this);
-		save = createButton("save", IconProvider.BUTTON_SAVE);
-		cancel = createButton("cancel", IconProvider.BUTTON_CANCEL);
-		edit = createButton("edit", IconProvider.BUTTON_EDIT);
+		save = UIHelper.createButton("save", IconProvider.BUTTON_SAVE);
+		cancel = UIHelper.createButton("cancel", IconProvider.BUTTON_CANCEL);
+		edit = UIHelper.createButton("edit", IconProvider.BUTTON_EDIT);
 		addComponent(edit);
 		addComponent(save);
 		addComponent(cancel);
@@ -201,13 +204,6 @@ class EditControls<T extends Component> extends HorizontalLayout implements Read
 		return ButtonType.cancel;
 	}
 
-	private Button createButton(final String buttonDescription, final String iconName) {
-		Button button = new Button();
-		button.setCaption(buttonDescription);
-		button.setIcon(IconProvider.getIcon(iconName));
-		return button;
-	}
-	
 	//TODO mvonrued -> kommentieren
 	public static interface Callback<T extends Component> {
 		void callback(ButtonType type, T outer);

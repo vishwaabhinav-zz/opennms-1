@@ -28,21 +28,31 @@
 
 package org.opennms.features.jmxconfiggenerator.webui.ui;
 
+import java.io.BufferedReader;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+
+import org.opennms.core.utils.LogUtils;
+import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.ViewStateChangedEvent;
+
 import com.vaadin.ui.AbstractOrderedLayout;
+import com.vaadin.ui.Button;
+import com.vaadin.ui.Button.ClickListener;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.ComponentContainer;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.VerticalLayout;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.ViewStateChangedEvent;
 
 /**
- *
+ * 
  * @author m.v.rueden
  */
 public class UIHelper {
@@ -109,11 +119,12 @@ public class UIHelper {
 		}
 	}
 
-	//TODO --> comment
+	// TODO --> comment
 	public static boolean contains(final ComponentContainer root, final Object child) {
 		if (root == null) return false;
 		if (child == null) return false;
-		if (root == child) return true; //root is child, so contains returns true
+		if (root == child) return true; // root is child, so contains returns
+										// true
 		Iterator<Component> it = root.getComponentIterator();
 		while (it.hasNext()) {
 			Component c = it.next();
@@ -121,31 +132,47 @@ public class UIHelper {
 		}
 		return false;
 	}
-	
+
+	public static Button createButton(final String buttonCaption, final String iconName,
+			final ClickListener clickListener) {
+		Button button = new Button();
+		button.setCaption(buttonCaption);
+		button.setIcon(IconProvider.getIcon(iconName));
+		if (clickListener != null) button.addListener(clickListener);
+		return button;
+	}
+
+	public static Button createButton(final String buttonCaption, final String iconName) {
+		return createButton(buttonCaption, iconName, null);
+	}
+
 	/**
 	 * This method enables or disables all tabs in a tabSheet. Therefore the
-	 * <code>ViewStatechangedEvent</code> is used. If the new view state is Edit the method returns the last selected
-	 * tab position. If the new view state is not Edit the "
-	 * <code>oldSelectedTabPosition</code>" is selected in the given
-	 * <code>tabSheet</code>.
-	 *
-	 * @param tabSheet the tabsheet to enable or disable all tabs in
+	 * <code>ViewStatechangedEvent</code> is used. If the new view state is Edit
+	 * the method returns the last selected tab position. If the new view state
+	 * is not Edit the " <code>oldSelectedTabPosition</code>" is selected in the
+	 * given <code>tabSheet</code>.
+	 * 
+	 * @param tabSheet
+	 *            the tabsheet to enable or disable all tabs in
 	 * @param event
-	 * @param oldSelectedTabPosition which tab was selected before view state was Edit
+	 * @param oldSelectedTabPosition
+	 *            which tab was selected before view state was Edit
 	 * @return
 	 */
-	public static int enableTabs(final TabSheet tabSheet, final ViewStateChangedEvent event, final int oldSelectedTabPosition) {
+	public static int enableTabs(final TabSheet tabSheet, final ViewStateChangedEvent event,
+			final int oldSelectedTabPosition) {
 		boolean editMode = event.getNewState().isEdit();
 		boolean enabled = !editMode;
 		int newSelectedTabPosition = 0;
-		//remember which tab was selected (before editing)
+		// remember which tab was selected (before editing)
 		if (editMode) newSelectedTabPosition = getSelectedTabPosition(tabSheet);
-		//disable or enable
+		// disable or enable
 		for (int i = 0; i < tabSheet.getComponentCount(); i++)
 			tabSheet.getTab(i).setEnabled(enabled);
-		//select tab depending on selection (after editing)
+		// select tab depending on selection (after editing)
 		if (!editMode) tabSheet.setSelectedTab(tabSheet.getTab(oldSelectedTabPosition));
-		//return currently selected tab
+		// return currently selected tab
 		return editMode ? newSelectedTabPosition : getSelectedTabPosition(tabSheet);
 	}
 
@@ -154,5 +181,65 @@ public class UIHelper {
 		if (tabSheet.getSelectedTab() == null) return 0;
 		if (tabSheet.getTab(tabSheet.getSelectedTab()) == null) return 0;
 		return tabSheet.getTabPosition(tabSheet.getTab(tabSheet.getSelectedTab()));
+	}
+
+	/**
+	 * Closes the given Closeable silently. That means if an error during
+	 * {@link Closeable#close()} occurs, the IOException is catched and logged.
+	 * No further information is forwarded.
+	 */
+	public static final void closeSilently(Closeable closeable) {
+		if (closeable == null) return; // prevent NPE
+		try {
+			closeable.close();
+		} catch (IOException e) {
+			LogUtils.warnf(UIHelper.class, e, "Error while closing resource '%s'.", closeable);
+		}
+	}
+
+	/**
+	 * Loads the <code>resourceName</code> from the classpath using the given
+	 * <code>clazz</code>. If the resource couldn't be loaded an empty string is
+	 * returned.
+	 * 
+	 * @param clazz
+	 *            The class to use for loading the resource.
+	 * @param resourceName
+	 *            The name of the resource to be loaded (e.g.
+	 *            /folder/filename.txt)
+	 * @return The content of the file, each line separated by line.separator or
+	 *         empty string if the resource does not exist.
+	 */
+	public static String loadContentFromFile(final Class<?> clazz, final String resourceName) {
+		// prevent NullPointerException
+		if (clazz == null || resourceName == null) {
+			LogUtils.warnf(UIHelper.class, "loadContentFromFile not invoked, due to null arguments");
+			return "";
+		}
+
+		// check if resource is there
+		final InputStream is = clazz.getResourceAsStream(resourceName);
+		if (is == null) {
+			LogUtils.warnf(UIHelper.class, "Resource '%s' couldn't be loaded from class '%s'", resourceName,
+					clazz.getName());
+			return "";
+		}
+
+		// resource is there, so we can try loading it
+		BufferedReader bufferedReader = null;
+		StringBuilder result = new StringBuilder(100);
+		try {
+			bufferedReader = new BufferedReader(new InputStreamReader(is));
+			String eachLine = null;
+			while ((eachLine = bufferedReader.readLine()) != null) {
+				result.append(eachLine);
+				result.append(System.getProperty("line.separator"));
+			}
+		} catch (IOException ioEx) {
+			LogUtils.errorf(clazz, ioEx, "Error while reading resource from '%s'.", resourceName);
+		} finally {
+			closeSilently(bufferedReader);
+		}
+		return result.toString();
 	}
 }

@@ -26,27 +26,23 @@
 package org.opennms.features.jmxconfiggenerator.webui.ui;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.velocity.runtime.parser.node.SetExecutor;
 import org.opennms.features.jmxconfiggenerator.webui.JmxConfigGeneratorApplication;
 import org.opennms.features.jmxconfiggenerator.webui.data.InternalModel;
+import org.opennms.features.jmxconfiggenerator.webui.data.InternalModel.OutputKey;
 import org.opennms.features.jmxconfiggenerator.webui.data.ModelChangeListener;
 
 import com.vaadin.Application;
 import com.vaadin.terminal.DownloadStream;
-import com.vaadin.terminal.FileResource;
 import com.vaadin.terminal.StreamResource;
-import com.vaadin.terminal.StreamResource.StreamSource;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.CustomComponent;
-import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.HorizontalSplitPanel;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Panel;
@@ -58,7 +54,8 @@ import com.vaadin.ui.VerticalLayout;
  * 
  * @author Markus von Rüden <mvr@opennms.com>
  */
-public class ConfigResultView extends CustomComponent implements ModelChangeListener<InternalModel>, Button.ClickListener {
+public class ConfigResultView extends CustomComponent implements ModelChangeListener<InternalModel>,
+		Button.ClickListener {
 
 	private TabSheet tabSheet = new TabSheet();
 	private Map<InternalModel.OutputKey, TabContent> tabContentMap = new HashMap<InternalModel.OutputKey, TabContent>();
@@ -67,7 +64,6 @@ public class ConfigResultView extends CustomComponent implements ModelChangeList
 
 	private final JmxConfigGeneratorApplication app;
 
-	// TODO MVR make layout definition more concrete... do not use fixed pixels...
 	public ConfigResultView(JmxConfigGeneratorApplication app) {
 		this.app = app;
 		setSizeFull();
@@ -75,52 +71,56 @@ public class ConfigResultView extends CustomComponent implements ModelChangeList
 		VerticalLayout mainLayout = new VerticalLayout();
 		mainLayout.setSizeFull();
 		mainLayout.addComponent(tabSheet);
-		mainLayout.addComponent(previous); // TODO set Height to a concrete value
-//		layout.addComponent(download);
+		mainLayout.addComponent(new UIHelper.LayoutCreator().setHorizontal().withComponents(previous, download)
+				.withSpacing().toLayout());
 
 		tabSheet.setSizeFull();
 		// TODO set tab name differently (e.g. SNMP Graph properties snippet)
-		tabContentMap.put(InternalModel.OutputKey.JmxDataCollectionConfig, new TabContent("JmxDataCollectionConfig", getJmxDataCollectionConfigDescriptionText()));
-		tabContentMap.put(InternalModel.OutputKey.SnmpGraphProperties, new TabContent("SnmpGraphProperties", getSnmpGraphDescriptionText()));
-		// TODO add collectd.configuration.xml snippet
-		// TODO add description to an externa html file :)
+		tabContentMap.put(OutputKey.JmxDataCollectionConfig, new TabContent(OutputKey.JmxDataCollectionConfig));
+		tabContentMap.put(OutputKey.SnmpGraphProperties, new TabContent(OutputKey.SnmpGraphProperties));
+		tabContentMap.put(OutputKey.CollectdConfigSnippet, new TabContent(OutputKey.CollectdConfigSnippet));
 
 		// add all tabs
 		for (TabContent eachContent : tabContentMap.values())
-			tabSheet.addTab(eachContent, eachContent.getCaption());
+			tabSheet.addTab(eachContent, eachContent.getLabelText());
 		tabSheet.setSelectedTab(0); // select first component!
-		
+
 		mainLayout.setExpandRatio(tabSheet, 1);
 		setCompositionRoot(mainLayout);
 	}
 
-	private String getSnmpGraphDescriptionText() {
-		return "TODO enter description text here";
-	}
-
-	private String getJmxDataCollectionConfigDescriptionText() {
-		return "TODO enter description text here";
-	}
-
 	@Override
 	public void buttonClick(ClickEvent event) {
-		if (event.getSource() == previous) app.showMBeansView();
-		if (event.getSource() == download) downloadConfigFile(event);
+//		if (event.getSource() == previous) app.showMBeansView();
+//		if (event.getSource() == download) downloadConfigFile(event); // initiate
+//																		// download
 	}
-	
-	// TODO add download stuff here...
+
+	/**
+	 * Initiates the download of the String data shown in the currently selected
+	 * tab.
+	 * 
+	 * @param event
+	 *            The ClickEvent which indicates the download action.
+	 */
 	private void downloadConfigFile(ClickEvent event) {
 		final TabContent selectedTabContent = getSelectedTabContent();
-		event.getButton().getWindow().open(new DownloadResource(selectedTabContent.getText(), selectedTabContent.getFileName(), getApplication()));
+		event.getButton()
+				.getWindow()
+				.open(new DownloadResource(selectedTabContent.getText(), selectedTabContent.getDownloadFilename(),
+						getApplication()));
 	}
-	
+
+	/**
+	 * Returns the currently selected TabContent-Object from
+	 * {@linkplain #tabContentMap}. If no Tab is selected null is returned.
+	 * 
+	 * @return The currently selected TabContent-Object, or null if there is no
+	 *         tab selected.
+	 */
 	private TabContent getSelectedTabContent() {
-		for (InternalModel.OutputKey eachOutputKey : tabContentMap.keySet()) {
-			if (tabSheet.getSelectedTab().equals(tabContentMap.get(eachOutputKey))) {
-				return tabContentMap.get(eachOutputKey);
-			}
-		}
-		return null;
+		Component selectedTab = tabSheet.getSelectedTab();
+		return selectedTab == null ? null : (TabContent) selectedTab;
 	}
 
 	@Override
@@ -133,6 +133,14 @@ public class ConfigResultView extends CustomComponent implements ModelChangeList
 		}
 	}
 
+	/**
+	 * Represents a downloadable Resource. If opened in the Application Window a
+	 * download via the browser is initiated. Usually a "save or open"-dialogue
+	 * shows up.
+	 * 
+	 * @author Markus von Rüden <mvr@opennms.com>
+	 * 
+	 */
 	private static class DownloadResource extends StreamResource {
 
 		public DownloadResource(final String downloadString, final String filename, Application application) {
@@ -141,46 +149,72 @@ public class ConfigResultView extends CustomComponent implements ModelChangeList
 				public InputStream getStream() {
 					return new ByteArrayInputStream(downloadString.getBytes());
 				}
-			} , filename, application);
+			}, filename, application);
+			// for "older" browsers to force a download, otherwise it may not be
+			// downloaded
 			setMIMEType("application/unknown");
 		}
-		
+
+		/**
+		 * Set DownloadStream-Parameter "Content-Disposition" to atachment,
+		 * therefore the Stream is downloaded and is not parsed as for example
+		 * "normal" xml.
+		 */
+		@Override
 		public DownloadStream getStream() {
 			DownloadStream ds = super.getStream();
-			ds.setParameter("Content-Disposition", "attachment; filename=\"" +getFilename() + "\"");
+			ds.setParameter("Content-Disposition", "attachment; filename=\"" + getFilename() + "\"");
 			return ds;
-		}		
+		}
 	}
-	
-	// TODO MVR make layout definition more concrete... do not use fixed pixels...
-	private static class TabContent extends Panel {
 
-		private final TextArea text = new TextArea();
+	// TODO MVR make layout definition more concrete... do not use fixed
+	// pixels...
+	private class TabContent extends Panel {
 
-		private final Label label;
+		private final TextArea contentTextArea = new TextArea();
 
-		private TabContent(String caption, String description) {
+		private final String labelText;
+
+		private final Label description;
+
+		private final OutputKey key;
+
+		private TabContent(OutputKey key) {
+			this.key = key;
 			setSizeFull();
-			setContent(new HorizontalLayout());
+			HorizontalSplitPanel contentPanel = new HorizontalSplitPanel();
+			contentPanel.setLocked(false);
+			contentPanel.setSplitPosition(50, UNITS_PERCENTAGE);
+			setContent(contentPanel);
 			getContent().setSizeFull();
-			setCaption(caption);
-			text.setSizeFull();
-			label = new Label(description);
-			addComponent(text);
-			addComponent(label);
+			contentTextArea.setSizeFull();
+			labelText = key.name();
+			description = new Label(UIHelper.loadContentFromFile(
+					getClass(), getDescriptionFilename()),
+					Label.CONTENT_RAW);
+			addComponent(contentTextArea);
+			addComponent(description);
 		}
 
-		// TODO use better file name
-		public String getFileName() {
-			return label.getCaption() + ".txt";
+		public String getLabelText() {
+			return labelText;
 		}
 
 		public void setText(String newText) {
-			text.setValue(newText);
+			contentTextArea.setValue(newText);
 		}
 
 		public String getText() {
-			return text.getValue() == null ? "" : (String) text.getValue();
+			return contentTextArea.getValue() == null ? "" : (String) contentTextArea.getValue();
+		}
+
+		private String getDescriptionFilename() {
+			return key.getDescriptionFilename();
+		}
+
+		private String getDownloadFilename() {
+			return key.getDownloadFilename();
 		}
 	}
 }

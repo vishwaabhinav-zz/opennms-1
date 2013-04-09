@@ -15,7 +15,6 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <vaadin.version>6.8.1</vaadin.version>
         <gwt.version>2.3.0</gwt.version>
         <gwt.plugin.version>2.2.0</gwt.plugin.version>
         <guava.version>10.0.1</guava.version>
@@ -43,6 +42,8 @@
                 <configuration>
                     <bundles>
                         <bundle>mvn:org.opennms.features/jmxconfiggenerator.webui/${project.version}</bundle>
+<!--                         <bundle>wrap:mvn:org.opennms/opennms-config-model/${project.version}/</bundle> -->
+<!--                         <bundle>wrap:mvn:org.opennms/opennms-config/${project.version}/</bundle> -->
                         <bundle>wrap:mvn:com.google.guava/guava/${guava.version}</bundle>
                         <bundle>wrap:mvn:org.quartz-scheduler/quartz/${quartz.version}</bundle>
                     </bundles>
@@ -242,11 +243,12 @@
     </pluginRepositories>
 
     <dependencies>
-        <dependency>
-            <groupId>com.vaadin</groupId>
-            <artifactId>vaadin</artifactId>
-            <version>${vaadin.version}</version>
-        </dependency>
+       <dependency>
+			<groupId>org.opennms.osgi.features.topology</groupId>
+	      	<artifactId>vaadin</artifactId>
+	      	<version>${project.version}</version>
+	      	<type>pom</type>
+	    </dependency>
         <!-- This is also used by gwt-maven-plugin to deduce GWT version number. -->
         <dependency>
             <groupId>com.google.gwt</groupId>
@@ -305,17 +307,6 @@
             <groupId>args4j</groupId>
             <artifactId>args4j</artifactId>
             <version>2.0.16</version>
-            <scope>provided</scope>
-        </dependency>
-        <!-- OSGI PAX -->
-        <dependency>
-            <artifactId>service</artifactId>
-            <groupId>org.ops4j.pax.vaadin</groupId>
-            <version>0.1.0-ONMS-20120906</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
     </dependencies>

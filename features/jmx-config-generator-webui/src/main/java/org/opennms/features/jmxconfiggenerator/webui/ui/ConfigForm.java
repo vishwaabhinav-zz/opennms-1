@@ -54,17 +54,14 @@ import com.vaadin.ui.TextField;
  * @author Markus von Rüden <mvr@opennms.com>
  * @see ConfigModel
  */
-public class ConfigForm extends Form implements ClickListener, ModelChangeListener<InternalModel> {
+public class ConfigForm extends Form implements ModelChangeListener<InternalModel>, ButtonHandler {
 
-    private Button next = new Button("fetch Mbeans", (ClickListener) this);
     private JmxConfigGeneratorApplication app;
-    private ConfigModel model = new ConfigModel();
 
     public ConfigForm(JmxConfigGeneratorApplication app) {
         this.app = app;
-        setItemDataSource(new BeanItem<ConfigModel>(model));
+        setItemDataSource(new BeanItem<ConfigModel>(new ConfigModel()));
         setVisibleItemProperties(createVisibleItemProperties());
-        setFooter(createFooter());
         setImmediate(true);
         setWriteThrough(true);
         updateAuthenticationFields(false); //default -> hide those fields
@@ -75,7 +72,6 @@ public class ConfigForm extends Form implements ClickListener, ModelChangeListen
     private Object[] createVisibleItemProperties() {
         return new Object[]{
             MetaConfigModel.SERVICE_NAME,
-            //            MetaConfigModel.PACKAGE_NAMES,
             MetaConfigModel.JMXMP,
             MetaConfigModel.HOST,
             MetaConfigModel.PORT,
@@ -84,12 +80,6 @@ public class ConfigForm extends Form implements ClickListener, ModelChangeListen
             MetaConfigModel.PASSWORD,
             MetaConfigModel.SKIP_DEFAULT_VM,
             MetaConfigModel.RUN_WRITABLE_MBEANS};
-    }
-
-    private Layout createFooter() {
-        HorizontalLayout footer = new HorizontalLayout();
-        footer.addComponent(next);
-        return footer;
     }
 
     /**
@@ -102,15 +92,6 @@ public class ConfigForm extends Form implements ClickListener, ModelChangeListen
         if (!visible) {
             getField(MetaConfigModel.USER).setValue(null);
             getField(MetaConfigModel.PASSWORD).setValue(null);
-        }
-    }
-
-    @Override
-    public void buttonClick(ClickEvent event) {
-        if (event.getSource() == next) {
-            if (isValid()) {
-                app.findMBeans();
-            }
         }
     }
 
@@ -201,4 +182,10 @@ public class ConfigForm extends Form implements ClickListener, ModelChangeListen
         if (newModel == null) return;
         ((TextField) getField(MetaConfigModel.SERVICE_NAME)).setValue(newModel.getServiceName());
     }
+
+	@Override
+	public boolean perform(ActionType actionType) {
+		if (actionType == ActionType.next) return isValid();
+		return true;
+	}
 }

@@ -32,8 +32,9 @@ import com.vaadin.terminal.ThemeResource;
 import org.opennms.features.jmxconfiggenerator.webui.Config;
 
 /**
- * This class provides the application with icons. If any icon changes or new icons are needed, please put them below.
- *
+ * This class provides the application with icons. If any icon changes or new
+ * icons are needed, please put them below.
+ * 
  * @author m.v.rueden
  */
 public class IconProvider {
@@ -44,6 +45,10 @@ public class IconProvider {
 	public static final String BUTTON_EDIT = "crystal_project/button_edit.png";
 	public static final String BUTTON_SAVE = "crystal_project/button_save.png";
 	public static final String BUTTON_CANCEL = "crystal_project/button_cancel.png";
+	public static final String BUTTON_NEXT = "crystal_project/button_next.png";
+	public static final String BUTTON_PREVIOUS = "crystal_project/button_previous.png";
+	public static final String BUTTON_INFO = "crystal_project/button_info.png";
+
 	public static final String WORK_FOLDER = Config.IMG_FOLDER + "/";
 
 	public static ThemeResource getIcon(String icon) {
