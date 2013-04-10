@@ -28,7 +28,7 @@
 
 package org.opennms.features.jmxconfiggenerator.webui.ui.validators;
 
-import org.opennms.features.jmxconfiggenerator.webui.ui.validators.MBeansNameValidator;
+import org.opennms.features.jmxconfiggenerator.webui.ui.validators.NameValidator;
 import com.vaadin.data.Validator;
 import junit.framework.Assert;
 import org.junit.Test;
@@ -55,7 +55,7 @@ public class MBeansNameValidatorTest {
 		final String[] FAIL = new String[]{
 			"", ".", ".org", "opennms.", ".serviceopennms.org", "servicename!",
 			"service name", "service,name", "service, name", "straße", "schädel", "hühner", "hölle"};
-		MBeansNameValidator validator = new MBeansNameValidator();
+		NameValidator validator = new NameValidator();
 		validate(validator, OK, true);
 		validate(validator, FAIL, false);
 	}

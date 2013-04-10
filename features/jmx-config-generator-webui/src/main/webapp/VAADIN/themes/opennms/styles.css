@@ -1,11 +1,11 @@
 @import "../reindeer/styles.css";
 
-.v-textfield-error {
-	background-image: url('../reindeer/common/icons/error.png') !important;
-	background-repeat: no-repeat !important;
-    background-position: right 50% !important;
-    background-attachment: scroll !important;
-}
+/* .v-textfield-error { */
+/* 	background-image: url('../reindeer/common/icons/error.png') !important; */
+/* 	background-repeat: no-repeat !important; */
+/*     background-position: right 50% !important; */
+/*     background-attachment: scroll !important; */
+/* } */
 
 .editlayout .v-button {
       display: block;

@@ -28,13 +28,15 @@
 
 package org.opennms.features.jmxconfiggenerator.webui.ui.validators;
 
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.NameProvider;
+
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.vaadin.data.validator.AbstractValidator;
-import com.vaadin.ui.TextField;
-import java.util.Map;
-import java.util.Map.Entry;
-import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.NameProvider;
+import com.vaadin.ui.Field;
 
 /**
  *
@@ -43,10 +45,10 @@ import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.NameProvider;
 public class UniqueAttributeNameValidator extends AbstractValidator {
 
 	private final NameProvider provider;
-	private final Map<Object, TextField> textFieldItemMap;
+	private final Map<Object, Field> textFieldItemMap;
 
-	public UniqueAttributeNameValidator(NameProvider provider, Map<Object, TextField> fieldsForIsValid) {
-		super("The attribute name must be unique in whole collection!"); //TODO resource bundle
+	public UniqueAttributeNameValidator(NameProvider provider, Map<Object, Field> fieldsForIsValid) {
+		super("The attribute name must be unique in whole collection!");
 		this.provider = provider;
 		this.textFieldItemMap = fieldsForIsValid;
 	}

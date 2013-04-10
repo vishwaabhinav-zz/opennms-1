@@ -32,8 +32,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.opennms.features.jmxconfiggenerator.webui.JmxConfigGeneratorApplication;
-import org.opennms.features.jmxconfiggenerator.webui.data.InternalModel;
-import org.opennms.features.jmxconfiggenerator.webui.data.InternalModel.OutputKey;
+import org.opennms.features.jmxconfiggenerator.webui.data.UiModel;
+import org.opennms.features.jmxconfiggenerator.webui.data.UiModel.OutputDataKey;
 import org.opennms.features.jmxconfiggenerator.webui.data.ModelChangeListener;
 
 import com.vaadin.Application;
@@ -54,14 +54,11 @@ import com.vaadin.ui.VerticalLayout;
  * 
  * @author Markus von Rüden <mvr@opennms.com>
  */
-public class ConfigResultView extends CustomComponent implements ModelChangeListener<InternalModel>,
-		Button.ClickListener {
+public class ConfigResultView extends CustomComponent implements ModelChangeListener<UiModel>, Button.ClickListener {
 
 	private TabSheet tabSheet = new TabSheet();
-	private Map<InternalModel.OutputKey, TabContent> tabContentMap = new HashMap<InternalModel.OutputKey, TabContent>();
-	private Button previous = new Button("back", (Button.ClickListener) this);
-	private Button download = new Button("download", (Button.ClickListener) this);
-
+	private Map<UiModel.OutputDataKey, TabContent> tabContentMap = new HashMap<UiModel.OutputDataKey, TabContent>();
+	private final ButtonPanel buttonPanel = new ButtonPanel(this);
 	private final JmxConfigGeneratorApplication app;
 
 	public ConfigResultView(JmxConfigGeneratorApplication app) {
@@ -71,29 +68,30 @@ public class ConfigResultView extends CustomComponent implements ModelChangeList
 		VerticalLayout mainLayout = new VerticalLayout();
 		mainLayout.setSizeFull();
 		mainLayout.addComponent(tabSheet);
-		mainLayout.addComponent(new UIHelper.LayoutCreator().setHorizontal().withComponents(previous, download)
-				.withSpacing().toLayout());
+		mainLayout.addComponent(buttonPanel);
 
 		tabSheet.setSizeFull();
 		// TODO set tab name differently (e.g. SNMP Graph properties snippet)
-		tabContentMap.put(OutputKey.JmxDataCollectionConfig, new TabContent(OutputKey.JmxDataCollectionConfig));
-		tabContentMap.put(OutputKey.SnmpGraphProperties, new TabContent(OutputKey.SnmpGraphProperties));
-		tabContentMap.put(OutputKey.CollectdConfigSnippet, new TabContent(OutputKey.CollectdConfigSnippet));
+		tabContentMap.put(OutputDataKey.JmxDataCollectionConfig, new TabContent(OutputDataKey.JmxDataCollectionConfig));
+		tabContentMap.put(OutputDataKey.SnmpGraphProperties, new TabContent(OutputDataKey.SnmpGraphProperties));
+		tabContentMap.put(OutputDataKey.CollectdConfigSnippet, new TabContent(OutputDataKey.CollectdConfigSnippet));
 
 		// add all tabs
 		for (TabContent eachContent : tabContentMap.values())
 			tabSheet.addTab(eachContent, eachContent.getLabelText());
 		tabSheet.setSelectedTab(0); // select first component!
 
+		buttonPanel.getNext().setCaption("download all");
+		buttonPanel.getNext().setIcon(IconProvider.getIcon(IconProvider.BUTTON_SAVE));
+		
 		mainLayout.setExpandRatio(tabSheet, 1);
 		setCompositionRoot(mainLayout);
 	}
 
 	@Override
 	public void buttonClick(ClickEvent event) {
-//		if (event.getSource() == previous) app.showMBeansView();
-//		if (event.getSource() == download) downloadConfigFile(event); // initiate
-//																		// download
+		if (event.getSource().equals(buttonPanel.getPrevious())) app.updateView(UiState.MbeansView);
+		if (event.getSource().equals(buttonPanel.getNext())) downloadConfigFile(event);
 	}
 
 	/**
@@ -124,9 +122,9 @@ public class ConfigResultView extends CustomComponent implements ModelChangeList
 	}
 
 	@Override
-	public void modelChanged(InternalModel newValue) {
+	public void modelChanged(UiModel newValue) {
 		if (newValue == null) return;
-		for (Entry<InternalModel.OutputKey, String> eachEntry : newValue.getOutputMap().entrySet()) {
+		for (Entry<UiModel.OutputDataKey, String> eachEntry : newValue.getOutputMap().entrySet()) {
 			if (tabContentMap.get(eachEntry.getKey()) != null) {
 				tabContentMap.get(eachEntry.getKey()).setText(eachEntry.getValue());
 			}
@@ -178,9 +176,9 @@ public class ConfigResultView extends CustomComponent implements ModelChangeList
 
 		private final Label description;
 
-		private final OutputKey key;
+		private final OutputDataKey key;
 
-		private TabContent(OutputKey key) {
+		private TabContent(OutputDataKey key) {
 			this.key = key;
 			setSizeFull();
 			HorizontalSplitPanel contentPanel = new HorizontalSplitPanel();
@@ -190,8 +188,7 @@ public class ConfigResultView extends CustomComponent implements ModelChangeList
 			getContent().setSizeFull();
 			contentTextArea.setSizeFull();
 			labelText = key.name();
-			description = new Label(UIHelper.loadContentFromFile(
-					getClass(), getDescriptionFilename()),
+			description = new Label(UIHelper.loadContentFromFile(getClass(), getDescriptionFilename()),
 					Label.CONTENT_RAW);
 			addComponent(contentTextArea);
 			addComponent(description);

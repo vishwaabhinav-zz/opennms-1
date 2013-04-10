@@ -127,7 +127,7 @@ public class MBeansContentTabSheet extends TabSheet implements ModelChangeListen
 		}
 
 		private NameEditForm getCompositeForm(final Mbean mbean, final CompAttrib compAttrib) {
-			NameEditForm form = new NameEditForm(controller, new NameEditForm.FormParameter() {
+			NameEditForm form = new NameEditForm(controller, new FormParameter() {
 				@Override public boolean hasFooter() { return false; }
 				@Override public String getCaption() { return null; }
 				@Override public String getEditablePropertyName() { return "name"; }
@@ -135,7 +135,7 @@ public class MBeansContentTabSheet extends TabSheet implements ModelChangeListen
 				@Override public Object[] getVisiblePropertieNames() { return new Object[]{"selected", getNonEditablePropertyName(), getEditablePropertyName()};}
 				@Override public EditControls.Callback getAdditionalCallback() { return null; }
 			});
-			Item item = controller.getCompAttribContainer(mbean).getItem(compAttrib);
+			Item item = controller.getCompositeAttributeContainer(mbean).getItem(compAttrib);
 			form.setItemDataSource(item);
 			return form;
 		}
@@ -144,7 +144,7 @@ public class MBeansContentTabSheet extends TabSheet implements ModelChangeListen
 			AttributesTable memberTable = new AttributesTable(controller, new Callback() {
 				@Override
 				public Container getContainer() {
-					return controller.getCompMemberContainer(attrib);
+					return controller.getCompositeMemberContainer(attrib);
 				}
 			});
 			memberTable.modelChanged(mbean);
@@ -157,8 +157,6 @@ public class MBeansContentTabSheet extends TabSheet implements ModelChangeListen
 			private final Table compositeTable;
 			private final FormButtonHandler formButtonHandler;
 			private final TableButtonHandler tableButtonHandler;
-			//TODO mvonrued -> rename in EditControls 
-			//TODO mvonrued (optional) rename footer in editControls (but I don't like to do it... because it is ... *grr*)
 			private final EditControls footer;
 
 			private CompositeTabLayout(NameEditForm compositeForm, Table compositeTable) {
@@ -190,12 +188,14 @@ public class MBeansContentTabSheet extends TabSheet implements ModelChangeListen
 						return CompositeTabLayout.this;
 					}					
 				});
+				setSizeFull();
+				setSpacing(false);
+				setReadOnly(true);
 				addComponent(footer);
 				addComponent(compositeForm);
 				addComponent(compositeTable);
-				setSpacing(false);
-				setReadOnly(true);
 				addFooterHooks(footer);
+				setExpandRatio(compositeTable, 1);
 			}
 
 			@Override
@@ -225,7 +225,6 @@ public class MBeansContentTabSheet extends TabSheet implements ModelChangeListen
 				if (type == ButtonType.cancel) controller.fireViewStateChanged(ViewState.LeafSelected, outer);
 			}
 			
-			//TODO mvonrued -> todo :)
 			private void addFooterHooks(final EditControls footer) {
 				footer.addSaveHook(this);
 				footer.addCancelHook(this);
@@ -256,26 +255,40 @@ public class MBeansContentTabSheet extends TabSheet implements ModelChangeListen
 		private final EditControls footer;
 
 		private AttributesLayout() {
-//			setSizeFull();
 			attributesTable = new AttributesTable(controller, new Callback() {
 				@Override
 				public Container getContainer() {
-					return controller.getAttributesContainer(controller.getSelectedMBean());
+					return controller.getAttributeContainer(controller.getSelectedMBean());
 				}
 			});
 			footer = new EditControls(this.attributesTable);
+			setSizeFull();
 			addComponent(footer);
 			addComponent(attributesTable);
 			setSpacing(false);
 			setMargin(false);
 			addFooterHooks();
+			setExpandRatio(attributesTable, 1);
 		}
 
 		@Override
 		public void callback(ButtonType type, Table outer) {
-			if (type == ButtonType.save) controller.fireViewStateChanged(ViewState.LeafSelected, outer);
-			if (type == ButtonType.cancel) controller.fireViewStateChanged(ViewState.LeafSelected, outer);
-			if (type == ButtonType.edit) controller.fireViewStateChanged(ViewState.Edit, outer);
+			if (type == ButtonType.cancel) {
+				outer.discard();
+				controller.fireViewStateChanged(ViewState.LeafSelected, outer);
+			}
+			if (type == ButtonType.edit) {
+				controller.fireViewStateChanged(ViewState.Edit, outer);
+			} 
+			if (type == ButtonType.save) {
+				if (outer.isValid()) {
+					outer.commit();
+					controller.fireViewStateChanged(ViewState.LeafSelected, outer);
+				} else {
+					UIHelper.showValidationError(getWindow(),
+							"There are errors in this view. Please fix them first or cancel.");
+				}
+			}
 		}
 		
 		private void addFooterHooks() {

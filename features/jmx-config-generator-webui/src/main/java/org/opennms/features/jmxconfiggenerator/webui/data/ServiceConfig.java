@@ -33,15 +33,14 @@ package org.opennms.features.jmxconfiggenerator.webui.data;
  * is possible to provide further information for additional stuff in the
  * future.
  *
- * @author marskuh
+ * @author Markus von Rüden
  */
-public class ConfigModel {
+public class ServiceConfig {
 
-    private String serviceName = "";
-//    private List<String> packageNames = new ArrayList<String>();
+    private String serviceName = "anyservice";
     private boolean jmxmp = false;
     private String host = "localhost";
-    private String port = "8686";
+    private String port = "18980";
     private String outFile = "JmxConfig.xml";
     private String user = null;
     private String password = null;
@@ -130,26 +129,6 @@ public class ConfigModel {
         this.port = port;
     }
 
-//    public List<String> getPackageNames() {
-//        return packageNames;
-//    }
-//
-//    public void setPackageNames(Collection<CollectdPackage> someCollectdPackages) {
-//        packageNames.clear();
-//        addPackageNames(someCollectdPackages);
-//    }
-//    
-//    private void addPackageNames(Collection<CollectdPackage> someCollectdPackages) {
-//        for (CollectdPackage eachCollectdPackage : someCollectdPackages) {
-//            addPackageName(eachCollectdPackage);
-//        }
-//    }
-//    
-//    private void addPackageName(CollectdPackage collectdPackage) {
-//        if (collectdPackage != null && ! packageNames.contains(collectdPackage.getName()))
-//            packageNames.add(collectdPackage.getName());
-//    }
-    
     public String getServiceName() {
         return serviceName;
     }
@@ -157,8 +136,4 @@ public class ConfigModel {
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
     }
-
-//    public void clearPackageNames() {
-//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//    }
 }

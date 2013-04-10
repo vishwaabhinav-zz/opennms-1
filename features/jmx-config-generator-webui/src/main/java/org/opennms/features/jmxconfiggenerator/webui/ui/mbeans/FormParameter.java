@@ -25,26 +25,15 @@
  *     http://www.opennms.org/
  *     http://www.opennms.com/
  *******************************************************************************/
+package org.opennms.features.jmxconfiggenerator.webui.ui.mbeans;
 
-package org.opennms.features.jmxconfiggenerator.webui.data;
+// TODO comment
+public interface FormParameter {
+	String getCaption();
+	String getEditablePropertyName();
+	String getNonEditablePropertyName();
+	Object[] getVisiblePropertieNames();
+	EditControls.Callback getAdditionalCallback();
 
-/**
- * Meta interface to address all properties of an ConfigModel bean in vaadin framework. In this way we do not need use
- * strings!
- *
- * @author m.v.rueden
- * @see ServiceConfig
- */
-public interface MetaConfigModel {
-
-	String SERVICE_NAME = "serviceName";
-    String PACKAGE_NAMES = "packageNames";
-	String JMXMP = "jmxmp";
-	String HOST = "host";
-	String PASSWORD = "password";
-	String PORT = "port";
-	String AUTHENTICATE = "authenticate";
-	String USER = "user";
-	String SKIP_DEFAULT_VM = "skipDefaultVM";
-	String RUN_WRITABLE_MBEANS = "runWritableMBeans";
+	public boolean hasFooter();
 }

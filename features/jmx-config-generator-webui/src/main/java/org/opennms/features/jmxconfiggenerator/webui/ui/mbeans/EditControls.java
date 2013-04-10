@@ -320,8 +320,8 @@ class EditControls<T extends Component> extends HorizontalLayout implements Read
 		
 		@Override
 		protected void setEditAllowed(boolean editAllowed) {
-			getOuter().setReadOnly(!editAllowed); //to be consistent, we set readOnly
-			getOuter().setEditable(editAllowed);
+//			getOuter().setReadOnly(!editAllowed); //to be consistent, we set readOnly
+//			getOuter().setEditable(editAllowed);
 		}
 	};
 }

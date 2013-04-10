@@ -28,8 +28,11 @@
 
 package org.opennms.features.jmxconfiggenerator.webui.ui.mbeans;
 
+import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
+import com.google.common.collect.Iterables;
 import com.vaadin.data.Item;
+import com.vaadin.data.Property;
 import com.vaadin.data.util.HierarchicalContainer;
 import com.vaadin.terminal.Resource;
 import java.util.ArrayList;
@@ -37,9 +40,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import org.opennms.features.jmxconfiggenerator.webui.data.InternalModel;
+
+import org.opennms.features.jmxconfiggenerator.webui.data.JmxCollectionCloner;
+import org.opennms.features.jmxconfiggenerator.webui.data.SelectableBeanItemContainer;
+import org.opennms.features.jmxconfiggenerator.webui.data.UiModel;
 import org.opennms.features.jmxconfiggenerator.webui.data.MetaMBeanItem;
 import org.opennms.features.jmxconfiggenerator.webui.data.StringRenderer;
+import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.MBeansController.AttributesContainerCache;
+import org.opennms.xmlns.xsd.config.jmx_datacollection.Attrib;
+import org.opennms.xmlns.xsd.config.jmx_datacollection.CompAttrib;
+import org.opennms.xmlns.xsd.config.jmx_datacollection.CompMember;
+import org.opennms.xmlns.xsd.config.jmx_datacollection.JmxDatacollectionConfig;
 import org.opennms.xmlns.xsd.config.jmx_datacollection.Mbean;
 
 /**
@@ -48,6 +59,23 @@ import org.opennms.xmlns.xsd.config.jmx_datacollection.Mbean;
  */
 public class MbeansHierarchicalContainer extends HierarchicalContainer {
 
+
+	private class TreeNodeComparator implements Comparator<TreeNode> {
+
+		@Override
+		public int compare(TreeNode o1, TreeNode o2) {
+			String s1 = o1 == null ? "" : getStringComparable(o1.getData());
+			String s2 = o2 == null ? "" : getStringComparable(o2.getData());
+			return s1.compareTo(s2);
+		}
+		
+		private String getStringComparable(Object data) {
+			if (data == null) return "";
+			StringRenderer renderer = controller.getStringRenderer(data.getClass());
+			return renderer == null ? data.toString() : renderer.render(data);
+		}
+	}
+	
 	private final MBeansController controller;
 	private TreeNode root = new TreeNodeImpl();
 	private Collection<Mbean> mbeans = new ArrayList<Mbean>();
@@ -62,14 +90,14 @@ public class MbeansHierarchicalContainer extends HierarchicalContainer {
 		addContainerProperty(MetaMBeanItem.CAPTION, String.class, "");
 	}
 
-	public void updateDataSource(InternalModel model) {
+	public void updateDataSource(UiModel model) {
 		mbeans.clear();
 		buildInternalTree(model);
 //		System.out.println(this);
 		updateContainer();
 	}
 
-	private void buildInternalTree(InternalModel model) {
+	private void buildInternalTree(UiModel model) {
 		root = new TreeNodeImpl();
 		for (Mbean bean : getMBeans(model))
 			add(bean);
@@ -79,7 +107,7 @@ public class MbeansHierarchicalContainer extends HierarchicalContainer {
 		return this.mbeans;
 	}
 
-	private List<Mbean> getMBeans(InternalModel model) {
+	private List<Mbean> getMBeans(UiModel model) {
 		return model.getRawModel().getJmxCollection().get(0).getMbeans().getMbean();
 	}
 
@@ -154,22 +182,6 @@ public class MbeansHierarchicalContainer extends HierarchicalContainer {
 		for (TreeNode child : root.getChildren()) {
 			addItem(container, root, child);
 			updateChildren(container, child);
-		}
-	}
-
-	private class TreeNodeComparator implements Comparator<TreeNode> {
-
-		@Override
-		public int compare(TreeNode o1, TreeNode o2) {
-			String s1 = o1 == null ? "" : getStringComparable(o1.getData());
-			String s2 = o2 == null ? "" : getStringComparable(o2.getData());
-			return s1.compareTo(s2);
-		}
-		
-		private String getStringComparable(Object data) {
-			if (data == null) return "";
-			StringRenderer renderer = controller.getStringRenderer(data.getClass());
-			return renderer == null ? data.toString() : renderer.render(data);
 		}
 	}
 }

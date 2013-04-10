@@ -50,6 +50,8 @@ import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.Window;
+import com.vaadin.ui.Window.Notification;
 
 /**
  * 
@@ -241,5 +243,18 @@ public class UIHelper {
 			closeSilently(bufferedReader);
 		}
 		return result.toString();
+	}
+
+	/**
+	 * Shows a validation error to the user.
+	 * 
+	 * @param errorMessage
+	 *            the error message.
+	 */
+	public static void showValidationError(Window window, String errorMessage) {
+		if (window == null) return;
+		window.showNotification("Validation error.", errorMessage != null ? errorMessage : "An unknown error occured.",
+				Notification.TYPE_WARNING_MESSAGE);
+
 	}
 }

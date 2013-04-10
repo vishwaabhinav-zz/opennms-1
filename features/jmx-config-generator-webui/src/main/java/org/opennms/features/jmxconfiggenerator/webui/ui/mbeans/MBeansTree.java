@@ -33,7 +33,7 @@ import com.vaadin.event.ItemClickEvent;
 import com.vaadin.ui.AbstractSelect;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.Tree;
-import org.opennms.features.jmxconfiggenerator.webui.data.InternalModel;
+import org.opennms.features.jmxconfiggenerator.webui.data.UiModel;
 import org.opennms.features.jmxconfiggenerator.webui.data.MetaMBeanItem;
 import org.opennms.features.jmxconfiggenerator.webui.data.ModelChangeListener;
 
@@ -41,7 +41,7 @@ import org.opennms.features.jmxconfiggenerator.webui.data.ModelChangeListener;
  *
  * @author m.v.rueden
  */
-class MBeansTree extends Tree implements ModelChangeListener<InternalModel>, ViewStateChangedListener, Action.Handler {
+class MBeansTree extends Tree implements ModelChangeListener<UiModel>, ViewStateChangedListener, Action.Handler {
 
 	private final MBeansController controller;
 	private final MbeansHierarchicalContainer container;
@@ -92,7 +92,7 @@ class MBeansTree extends Tree implements ModelChangeListener<InternalModel>, Vie
 	}
 
 	@Override
-	public void modelChanged(InternalModel internalModel) {
+	public void modelChanged(UiModel internalModel) {
 		container.updateDataSource(internalModel);
 		Object selectItemId = expandTree();
 		

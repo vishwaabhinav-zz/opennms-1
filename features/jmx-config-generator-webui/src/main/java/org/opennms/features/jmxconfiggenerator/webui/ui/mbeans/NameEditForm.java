@@ -1,8 +1,8 @@
 /*******************************************************************************
  * This file is part of OpenNMS(R).
  *
- * Copyright (C) 2012 The OpenNMS Group, Inc.
- * OpenNMS(R) is Copyright (C) 1999-2012 The OpenNMS Group, Inc.
+ * Copyright (C) 2013 The OpenNMS Group, Inc.
+ * OpenNMS(R) is Copyright (C) 1999-2013 The OpenNMS Group, Inc.
  *
  * OpenNMS(R) is a registered trademark of The OpenNMS Group, Inc.
  *
@@ -28,6 +28,13 @@
 
 package org.opennms.features.jmxconfiggenerator.webui.ui.mbeans;
 
+import org.opennms.features.jmxconfiggenerator.webui.Config;
+import org.opennms.features.jmxconfiggenerator.webui.data.MetaMBeanItem;
+import org.opennms.features.jmxconfiggenerator.webui.data.ModelChangeListener;
+import org.opennms.features.jmxconfiggenerator.webui.ui.UIHelper;
+import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.EditControls.ButtonType;
+import org.opennms.features.jmxconfiggenerator.webui.ui.validators.NameValidator;
+
 import com.vaadin.data.Item;
 import com.vaadin.data.Validator;
 import com.vaadin.ui.CheckBox;
@@ -36,39 +43,23 @@ import com.vaadin.ui.Field;
 import com.vaadin.ui.Form;
 import com.vaadin.ui.FormFieldFactory;
 import com.vaadin.ui.TextField;
-import org.opennms.features.jmxconfiggenerator.webui.Config;
-import org.opennms.features.jmxconfiggenerator.webui.data.MetaMBeanItem;
-import org.opennms.features.jmxconfiggenerator.webui.data.ModelChangeListener;
-import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.EditControls.ButtonType;
-import org.opennms.features.jmxconfiggenerator.webui.ui.validators.MBeansNameValidator;
 
 /**
- *
- * @author m.v.rueden
+ * Handles the editing of the MBeans name.
+ * 
+ * @author Markus von Rüden
  */
-public class NameEditForm extends Form implements ModelChangeListener<Item>, ViewStateChangedListener, EditControls.Callback {
+public class NameEditForm extends Form implements ModelChangeListener<Item>, ViewStateChangedListener,
+		EditControls.Callback {
 
 	private final EditControls footer = new EditControls(this);
 	private final MBeansController controller;
-	private final Validator nameValidator = new MBeansNameValidator(); //TODO extract to "resource bundle"
+	private final Validator nameValidator = new NameValidator();
 	private final FormParameter parameter;
 
-	public static interface FormParameter {
-		String getCaption();
-		String getEditablePropertyName();
-		String getNonEditablePropertyName();
-		Object[] getVisiblePropertieNames();
-		EditControls.Callback getAdditionalCallback();
-
-		public boolean hasFooter();
-	}
-		
 	public NameEditForm(MBeansController controller, final FormParameter parameter) {
-		setCaption(parameter.getCaption());
 		this.controller = controller;
 		this.parameter = parameter;
-		setWidth(100, UNITS_PERCENTAGE);
-		setHeight(Config.NAME_EDIT_FORM_HEIGHT + (parameter.hasFooter() ? 0 : -60), UNITS_PIXELS);
 		setFormFieldFactory(new FormFieldFactory() {
 			@Override
 			public Field createField(Item item, Object propertyId, Component uiContext) {
@@ -80,28 +71,32 @@ public class NameEditForm extends Form implements ModelChangeListener<Item>, Vie
 					final TextField tf = new TextField(parameter.getNonEditablePropertyName()) {
 						@Override
 						public void setReadOnly(boolean readOnly) {
-							super.setReadOnly(true); //never ever edit me
+							super.setReadOnly(true); // never ever edit me
 						}
 					};
-					tf.setWidth(800, UNITS_PIXELS);
+					tf.setWidth(100, UNITS_PERCENTAGE);
 					return tf;
 				}
 				if (propertyId.toString().equals(parameter.getEditablePropertyName())) {
 					TextField tf = new TextField(parameter.getEditablePropertyName());
-					tf.setWidth(400, UNITS_PIXELS);
+					tf.setWidth(100, UNITS_PERCENTAGE);
 					tf.setValidationVisible(true);
 					tf.setRequired(true);
-					tf.setRequiredError("You must provide a MBeans name.");//TODO extract to "resource bundle"
-					tf.addValidator(nameValidator); //TODO extract to "resource bundle"
+					tf.setRequiredError("You must provide a name.");
+					tf.addValidator(nameValidator);
 					return tf;
 				}
 				return null;
 			}
 		});
+		setWidth(100, UNITS_PERCENTAGE);
+		setHeight(Config.NAME_EDIT_FORM_HEIGHT + (parameter.hasFooter() ? 0 : -60), UNITS_PIXELS);
 		setReadOnly(true);
+		setImmediate(true);
 		setWriteThrough(false);
 		if (parameter.hasFooter()) setFooter(footer);
 		addFooterHooks();
+		setCaption(parameter.getCaption());
 		setVisibleItemProperties(parameter.getVisiblePropertieNames());
 	}
 
@@ -116,12 +111,12 @@ public class NameEditForm extends Form implements ModelChangeListener<Item>, Vie
 		switch (event.getNewState()) {
 			case Init:
 			case NonLeafSelected:
-				modelChanged(null); //reset
-			case Edit:		//no reset, just hide
+				modelChanged(null); // reset
+			case Edit: // no reset, just hide
 				setEnabled(event.getSource() == this);
 				getFooter().setVisible(event.getSource() == this);
 				break;
-			//activate
+			// activate
 			case LeafSelected:
 				setReadOnly(true);
 				setEnabled(true);
@@ -130,19 +125,42 @@ public class NameEditForm extends Form implements ModelChangeListener<Item>, Vie
 		}
 	}
 
-	//lock or unlock the whole view!
+	// lock or unlock the whole view!
 	private void addFooterHooks() {
 		footer.addCancelHook(this);
-		footer.addSaveHook(this);
 		footer.addEditHook(this);
+		footer.addSaveHook(this);
 	}
 
 	@Override
 	public void callback(ButtonType type, Component outer) {
-		if (type == ButtonType.cancel) controller.fireViewStateChanged(ViewState.LeafSelected, this);
-		if (type == ButtonType.edit) controller.fireViewStateChanged(ViewState.Edit, this);
-		if (type == ButtonType.save) controller.fireViewStateChanged(ViewState.LeafSelected, this);
+		if (type == ButtonType.cancel) {
+			controller.fireViewStateChanged(ViewState.LeafSelected, this);
+			callAdditionalCallbacksIfThereAreAny(type, outer);
+		}
+		if (type == ButtonType.edit) {
+			controller.fireViewStateChanged(ViewState.Edit, this);
+			callAdditionalCallbacksIfThereAreAny(type, outer);
+		}
+		// save must be handled with care
+		if (type == ButtonType.save) {
+			if (isValid()) {
+				commit();
+				controller.fireViewStateChanged(ViewState.LeafSelected, this);
+				callAdditionalCallbacksIfThereAreAny(type, outer);
+			} else {
+				UIHelper.showValidationError(getWindow(),
+						"There are errors in this view. Please fix them first or cancel.");
+			}
+		}
+	}
+
+	private void callAdditionalCallbacksIfThereAreAny(ButtonType type, Component outer) {
 		if (parameter.getAdditionalCallback() == null) return;
 		parameter.getAdditionalCallback().callback(type, outer);
+	}
+	
+	protected FormParameter getFormParameter() {
+		return parameter;
 	}
 }

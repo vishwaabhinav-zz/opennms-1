@@ -28,8 +28,11 @@
 
 package org.opennms.features.jmxconfiggenerator.webui.ui.mbeans;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.vaadin.data.Container;
 import com.vaadin.data.Item;
+import com.vaadin.data.Property;
 import com.vaadin.data.util.HierarchicalContainer;
 import com.vaadin.event.ItemClickEvent;
 import java.util.ArrayList;
@@ -37,7 +40,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.opennms.features.jmxconfiggenerator.webui.data.InternalModel;
+
+import org.opennms.features.jmxconfiggenerator.webui.data.JmxCollectionCloner;
+import org.opennms.features.jmxconfiggenerator.webui.data.MetaMBeanItem;
+import org.opennms.features.jmxconfiggenerator.webui.data.UiModel;
 import org.opennms.features.jmxconfiggenerator.webui.data.ModelChangeListener;
 import org.opennms.features.jmxconfiggenerator.webui.data.ModelChangeNotifier;
 import org.opennms.features.jmxconfiggenerator.webui.data.SelectableBeanItemContainer;
@@ -46,14 +52,78 @@ import org.opennms.features.jmxconfiggenerator.webui.ui.ModelChangeRegistry;
 import org.opennms.xmlns.xsd.config.jmx_datacollection.Attrib;
 import org.opennms.xmlns.xsd.config.jmx_datacollection.CompAttrib;
 import org.opennms.xmlns.xsd.config.jmx_datacollection.CompMember;
+import org.opennms.xmlns.xsd.config.jmx_datacollection.JmxDatacollectionConfig;
 import org.opennms.xmlns.xsd.config.jmx_datacollection.Mbean;
 
 /**
  * Controls the "MbeansView".
- *
+ * 
  * @author m.v.rueden
  */
-public class MBeansController implements ModelChangeNotifier, ViewStateChangedListener, ModelChangeListener<InternalModel>, NameProvider {
+public class MBeansController implements ModelChangeNotifier, ViewStateChangedListener, ModelChangeListener<UiModel>,
+		NameProvider {
+	public static interface Callback {
+		Container getContainer();
+	}
+
+	/**
+	 * The MBeanTree shows all available MBeans. Each Mbean has one or more
+	 * attributes. Each attribute is selecatble. The MBean's attribute are shown
+	 * in a table. The problem is, that we must store the "is selected" state of
+	 * each AttributeItem. So we have two choices:<br/>
+	 * 
+	 * 1. add ALL attributes to the container of the table and show only the one
+	 * belonging to the selected Mbean.<br/>
+	 * 
+	 * 2. only add selected MBean's attributes to the container and save the
+	 * container for later use.<br/>
+	 * 
+	 * I stick to 2. So this class simply maps a container to its Mbean.
+	 * 
+	 * @param <IDTYPE>
+	 * @param <OUTERTYPE>
+	 * @author m.v.rueden@googlemail.com
+	 */
+	// TODO javadoc above does not fit to the current implementation
+	public static class AttributesContainerCache<IDTYPE, OUTERTYPE> {
+
+		private final Map<OUTERTYPE, SelectableBeanItemContainer<IDTYPE>> containerMap = new HashMap<OUTERTYPE, SelectableBeanItemContainer<IDTYPE>>();
+		public static final SelectableBeanItemContainer NULL = new SelectableBeanItemContainer(Object.class);
+		private final Class<? super IDTYPE> type;
+		private final AttributeCollector<IDTYPE, OUTERTYPE> attribCollector;
+
+		private AttributesContainerCache(Class<? super IDTYPE> type,
+				AttributeCollector<IDTYPE, OUTERTYPE> attribCollector) {
+			this.type = type;
+			this.attribCollector = attribCollector;
+		}
+
+		/**
+		 * Gets the container of the given bean. If there is no container a new
+		 * one is created, otherwise the earlier used container is returned.
+		 * 
+		 * @param bean
+		 * @return
+		 */
+		public SelectableBeanItemContainer<IDTYPE> getContainer(OUTERTYPE bean) {
+			if (bean == null) return NULL;
+			if (containerMap.get(bean) != null) return containerMap.get(bean);
+			containerMap.put(bean, new SelectableBeanItemContainer<IDTYPE>(type));
+			initContainer(containerMap.get(bean), bean);
+			return containerMap.get(bean);
+		}
+
+		private void initContainer(SelectableBeanItemContainer container, OUTERTYPE bean) {
+			for (IDTYPE att : attribCollector.getAttributes(bean)) {
+				container.addItem(att);
+			}
+		}
+
+		public static interface AttributeCollector<T, X> {
+
+			List<T> getAttributes(X outer);
+		}
+	}
 
 	/**
 	 * Vaadin container for the MbeansTree
@@ -64,8 +134,8 @@ public class MBeansController implements ModelChangeNotifier, ViewStateChangedLi
 	 */
 	private final ModelChangeRegistry registry = new ModelChangeRegistry();
 	/**
-	 * Collection to notify all view components if the ViewState changes. Any underlying component can invoke a
-	 * viewStateChange
+	 * Collection to notify all view components if the ViewState changes. Any
+	 * underlying component can invoke a viewStateChange
 	 */
 	private final Collection<ViewStateChangedListener> viewStateListener = new ArrayList<ViewStateChangedListener>();
 	private final MBeansItemStrategyHandler itemStrategyHandler = new MBeansItemStrategyHandler();
@@ -76,29 +146,35 @@ public class MBeansController implements ModelChangeNotifier, ViewStateChangedLi
 	/**
 	 * The state in which the view is currently
 	 */
-	private ViewState currentState = ViewState.Init; //this would be default, but we set it nevertheless
-	private AttributesContainerCache<Attrib, Mbean> attribContainerCache = new AttributesContainerCache<Attrib, Mbean>(Attrib.class, new AttributesContainerCache.AttributeCollector<Attrib, Mbean>() {
-		@Override
-		public List<Attrib> getAttributes(Mbean outer) {
-			return outer.getAttrib();
-		}
-	});
-		
-	//TODO mvonrued -> this is not correct, because we do not want all members, we just want specific ones
-	private AttributesContainerCache<CompAttrib, Mbean> compAttribContainerCache = new AttributesContainerCache<CompAttrib, Mbean>(CompAttrib.class, new AttributesContainerCache.AttributeCollector<CompAttrib, Mbean>() {
-		@Override
-		public List<CompAttrib> getAttributes(Mbean outer) {
-			return outer.getCompAttrib();
-		}
-	});
-	
-	private AttributesContainerCache<CompMember, CompAttrib> compMemberContainerCache = new AttributesContainerCache<CompMember, CompAttrib>(CompMember.class, new AttributesContainerCache.AttributeCollector<CompMember, CompAttrib>() {
-		@Override
-		public List<CompMember> getAttributes(CompAttrib outer) {
-			return outer.getCompMember();
-		}
-	});
-	
+	private ViewState currentState = ViewState.Init; // this would be default,
+														// but we set it
+														// nevertheless
+	private AttributesContainerCache<Attrib, Mbean> attribContainerCache = new AttributesContainerCache<Attrib, Mbean>(
+			Attrib.class, new AttributesContainerCache.AttributeCollector<Attrib, Mbean>() {
+				@Override
+				public List<Attrib> getAttributes(Mbean outer) {
+					return outer.getAttrib();
+				}
+			});
+
+	// TODO mvonrued -> this is not correct, because we do not want all members,
+	// we just want specific ones
+	private AttributesContainerCache<CompAttrib, Mbean> compAttribContainerCache = new AttributesContainerCache<CompAttrib, Mbean>(
+			CompAttrib.class, new AttributesContainerCache.AttributeCollector<CompAttrib, Mbean>() {
+				@Override
+				public List<CompAttrib> getAttributes(Mbean outer) {
+					return outer.getCompAttrib();
+				}
+			});
+
+	private AttributesContainerCache<CompMember, CompAttrib> compMemberContainerCache = new AttributesContainerCache<CompMember, CompAttrib>(
+			CompMember.class, new AttributesContainerCache.AttributeCollector<CompMember, CompAttrib>() {
+				@Override
+				public List<CompMember> getAttributes(CompAttrib outer) {
+					return outer.getCompMember();
+				}
+			});
+
 	@Override
 	public void registerListener(Class clazz, ModelChangeListener listener) {
 		registry.registerListener(clazz, listener);
@@ -114,14 +190,16 @@ public class MBeansController implements ModelChangeNotifier, ViewStateChangedLi
 	}
 
 	/**
-	 * Updates the view when the selected MBean changes. At first each ModelChangeListener are told, that there is a new
-	 * Mbean to take care of (in detail: change the view to list mbean details of new mbean). And of course set a new
-	 * ViewState (e.g. a non Mbean was selected and now a Mbean is selected)
-	 *
+	 * Updates the view when the selected MBean changes. At first each
+	 * ModelChangeListener are told, that there is a new Mbean to take care of
+	 * (in detail: change the view to list mbean details of new mbean). And of
+	 * course set a new ViewState (e.g. a non Mbean was selected and now a Mbean
+	 * is selected)
+	 * 
 	 * @param event
 	 */
 	protected void updateView(ItemClickEvent event) {
-		if (currentlySelected == event.getItemId()) return; //no change made
+		if (currentlySelected == event.getItemId()) return; // no change made
 		currentlySelected = event.getItemId() instanceof Mbean ? (Mbean) event.getItemId() : null;
 		registry.notifyObservers(Item.class, event.getItem());
 		registry.notifyObservers(event.getItemId().getClass(), event.getItemId());
@@ -130,10 +208,11 @@ public class MBeansController implements ModelChangeNotifier, ViewStateChangedLi
 
 	/**
 	 * Gets the next ViewState of the view.
-	 *
+	 * 
 	 * @param itemId
-	 * @return ViewState.Init if itemId is null, otherwise ViewState.LeafSelected on Mbean selection and NonLeafSelected
-	 * on non-Mbean selection
+	 * @return ViewState.Init if itemId is null, otherwise
+	 *         ViewState.LeafSelected on Mbean selection and NonLeafSelected on
+	 *         non-Mbean selection
 	 */
 	private ViewState getNextState(Object itemId) {
 		if (itemId == null) return ViewState.Init;
@@ -144,8 +223,18 @@ public class MBeansController implements ModelChangeNotifier, ViewStateChangedLi
 
 	private void setState(Object itemId) {
 		ViewState nextState = getNextState(itemId);
-		if (nextState == currentState) return; //nothing to do
-		fireViewStateChanged(new ViewStateChangedEvent(currentState, nextState, this)); //tell the underlying views to handle the view state change :)
+		if (nextState == currentState) return; // nothing to do
+		fireViewStateChanged(new ViewStateChangedEvent(currentState, nextState, this)); // tell
+																						// the
+																						// underlying
+																						// views
+																						// to
+																						// handle
+																						// the
+																						// view
+																						// state
+																						// change
+																						// :)
 	}
 
 	public void setItemProperties(Item item, Object itemId) {
@@ -171,14 +260,14 @@ public class MBeansController implements ModelChangeNotifier, ViewStateChangedLi
 	}
 
 	@Override
-	public void modelChanged(InternalModel newModel) {
+	public void modelChanged(UiModel newModel) {
 		fireViewStateChanged(new ViewStateChangedEvent(currentState, ViewState.Init, this));
 	}
-	
+
 	protected void fireViewStateChanged(ViewState newState, Object source) {
 		fireViewStateChanged(new ViewStateChangedEvent(currentState, newState, source));
 	}
-	
+
 	private void fireViewStateChanged(ViewStateChangedEvent event) {
 		for (ViewStateChangedListener listener : viewStateListener)
 			listener.viewStateChanged(event);
@@ -204,7 +293,7 @@ public class MBeansController implements ModelChangeNotifier, ViewStateChangedLi
 		itemStrategyHandler.getStrategy(Mbean.class).updateIcon(mbeansContainer.getItem(currentlySelected));
 	}
 
-	public SelectableBeanItemContainer<Attrib> getAttributesContainer(Mbean bean) {
+	public SelectableBeanItemContainer<Attrib> getAttributeContainer(Mbean bean) {
 		return attribContainerCache.getContainer(bean);
 	}
 
@@ -213,17 +302,18 @@ public class MBeansController implements ModelChangeNotifier, ViewStateChangedLi
 	}
 
 	protected void updateMBean() {
-		itemStrategyHandler.getStrategy(Mbean.class).updateModel(mbeansContainer.getItem(currentlySelected), currentlySelected);
+		itemStrategyHandler.getStrategy(Mbean.class).updateModel(mbeansContainer.getItem(currentlySelected),
+				currentlySelected);
 	}
 
-	public SelectableBeanItemContainer<CompMember> getCompMemberContainer(CompAttrib attrib) {
+	public SelectableBeanItemContainer<CompMember> getCompositeMemberContainer(CompAttrib attrib) {
 		return compMemberContainerCache.getContainer(attrib);
 	}
 
-	public SelectableBeanItemContainer<CompAttrib> getCompAttribContainer(Mbean mbean) {
+	public SelectableBeanItemContainer<CompAttrib> getCompositeAttributeContainer(Mbean mbean) {
 		return compAttribContainerCache.getContainer(mbean);
 	}
-	
+
 	@Override
 	public Map<Object, String> getNames() {
 		Map<Object, String> names = new HashMap<Object, String>();
@@ -237,69 +327,205 @@ public class MBeansController implements ModelChangeNotifier, ViewStateChangedLi
 			}
 		}
 		return names;
-		
+
 	}
 
 	protected Mbean getSelectedMBean() {
 		return currentlySelected;
 	}
-	
-	public static interface Callback {
-		Container getContainer();
-	}
-	
+
 	/**
-	 * The MBeanTree shows all available MBeans. Each Mbean has one or more attributes. Each attribute is selecatble.
-	 * The MBean's attribute are shown in a table. The problem is, that we must store the "is selected" state of each
-	 * AttributeItem. So we have two choices:<br/>
-	 *
-	 * 1. add ALL attributes to the container of the table and show only the one belonging to the selected Mbean.<br/>
-	 *
-	 * 2. only add selected MBean's attributes to the container and save the container for later use.<br/>
-	 *
-	 * I stick to 2. So this class simply maps a container to its Mbean.
-	 *
-	 * @param <IDTYPE>
-	 * @param <OUTERTYPE>
-	 * @author m.v.rueden@googlemail.com
+	 * The whole point was to select/deselect
+	 * Mbeans/Attribs/CompMembers/CompAttribs. In this method we simply create a
+	 * JmxDatacollectionConfig considering the choices we made in the gui. To do
+	 * this, we simply clone the original <code>JmxDatacollectionConfig</code>
+	 * loaded at the beginning. After that we remove all
+	 * MBeans/Attribs/CompMembers/CompAttribs and add them manually with the
+	 * changes made in the gui.
+	 * 
+	 * @param controller
+	 *            the MBeansController of the MbeansView (is needed to determine
+	 *            the changes made in gui)
+	 * @return
 	 */
-	//TODO javadoc above does not fit to the current implementation
-	public static class AttributesContainerCache<IDTYPE, OUTERTYPE> {
-
-		private final Map<OUTERTYPE, SelectableBeanItemContainer<IDTYPE>> containerMap = new HashMap<OUTERTYPE, SelectableBeanItemContainer<IDTYPE>>();
-		public static final SelectableBeanItemContainer NULL = new SelectableBeanItemContainer(Object.class);
-		private final Class<? super IDTYPE> type;
-		private final AttributeCollector<IDTYPE, OUTERTYPE> attribCollector;
-
-		private AttributesContainerCache(Class<? super IDTYPE> type, AttributeCollector<IDTYPE, OUTERTYPE> attribCollector) {
-			this.type = type;
-			this.attribCollector = attribCollector;
-		}
+	// TODO mvonrued -> I guess we do not need this clone-stuff at all ^^ and it
+	// is too complicated for such a simple
+	// task
+	public JmxDatacollectionConfig createJmxDataCollectionAccordingToSelection(UiModel uiModel) {
+		/**
+		 * At First we clone the original collection. This is done, because if
+		 * we make any modifications (e.g. deleting not selected elements) the
+		 * data isn't available in the GUI, too. To avoid reloading the data
+		 * from server, we just clone it.
+		 */
+		JmxDatacollectionConfig clone = JmxCollectionCloner.clone(uiModel.getRawModel());
 
 		/**
-		 * Gets the container of the given bean. If there is no container a new one is created, otherwise the earlier
-		 * used container is returned.
-		 *
-		 * @param bean
-		 * @return
+		 * At second we remove all MBeans from original data and get only
+		 * selected once.
 		 */
-		public SelectableBeanItemContainer<IDTYPE> getContainer(OUTERTYPE bean) {
-			if (bean == null) return NULL;
-			if (containerMap.get(bean) != null) return containerMap.get(bean);
-			containerMap.put(bean, new SelectableBeanItemContainer<IDTYPE>(type));
-			initContainer(containerMap.get(bean), bean);
-			return containerMap.get(bean);
-		}
-
-		private void initContainer(SelectableBeanItemContainer container, OUTERTYPE bean) {
-			for (IDTYPE att : attribCollector.getAttributes(bean)) {
-				container.addItem(att);
+		List<Mbean> exportBeans = clone.getJmxCollection().get(0).getMbeans().getMbean();
+		exportBeans.clear();
+		Iterable<Mbean> selectedMbeans = getSelectedMbeans(getMBeansHierarchicalContainer());
+		for (Mbean mbean : selectedMbeans) {
+			/**
+			 * At 3.1. we remove all Attributes from Mbean, because we only want
+			 * selected ones.
+			 */
+			Mbean exportBean = JmxCollectionCloner.clone(mbean);
+			exportBean.getAttrib().clear(); // we only want selected ones :)
+			for (Attrib att : getSelectedAttributes(mbean, getAttributeContainer(mbean))) {
+				exportBean.getAttrib().add(JmxCollectionCloner.clone(att));
+			}
+			if (!exportBean.getAttrib().isEmpty()) {
+				exportBeans.add(exportBean); // no attributes selected, don't
+												// add bean
+			}
+			/*
+			 * At 3.2. we remove all CompAttribs and CompMembers from MBean,
+			 * because we only want selected ones :)
+			 */
+			exportBean.getCompAttrib().clear();
+			for (CompAttrib compAtt : getSelectedCompositeAttributes(mbean, getCompositeAttributeContainer(mbean))) {
+				CompAttrib cloneCompAtt = JmxCollectionCloner.clone(compAtt);
+				cloneCompAtt.getCompMember().clear();
+				for (CompMember compMember : getSelectedCompositeMembers(compAtt, getCompositeMemberContainer(compAtt))) {
+					cloneCompAtt.getCompMember().add(JmxCollectionCloner.clone(compMember));
+				}
+				if (!cloneCompAtt.getCompMember().isEmpty()) {
+					exportBean.getCompAttrib().add(cloneCompAtt);
+				}
 			}
 		}
+		// Last but not least, we need to update the service name
+		clone.getJmxCollection().get(0).setName(uiModel.getServiceName());
+		return clone;
+	}
 
-		public static interface AttributeCollector<T, X> {
+	/**
+	 * Returns all mbeans which are selected.
+	 * 
+	 * @return all mbeans which are selected.
+	 */
+	protected Iterable<Mbean> getSelectedMbeans() {
+		return getSelectedMbeans(mbeansContainer);
+	}
 
-			List<T> getAttributes(X outer);
+	/**
+	 * Returns all selected Attributes for the given mbean. The mbean should be
+	 * also selected. There is no check if that is the case.
+	 * 
+	 * @param mbean
+	 *            The mbean to get all selected attributes from. The mbean
+	 *            should be also selected. There is no check if that is the
+	 *            case.
+	 * @return all selected attributes for the given mbean.
+	 */
+	protected Iterable<Attrib> getSelectedAttributes(Mbean mbean) {
+		return getSelectedAttributes(mbean, getAttributeContainer(mbean));
+	}
+
+	/**
+	 * Returns all selected composite attributes for the given mbean. The mbean
+	 * should be also selected. There is no check if that is the case.
+	 * 
+	 * @param mbean
+	 *            The mbean to get all selected composite attributes from. The
+	 *            mbean should be also selected. There is no check if that is
+	 *            the case.
+	 * @return all selected attributes for the given mbean.
+	 */
+	protected Iterable<CompAttrib> getSelectedCompositeAttributes(Mbean mbean) {
+		return getSelectedCompositeAttributes(mbean, getCompositeAttributeContainer(mbean));
+	}
+
+	/**
+	 * Returns all selected composite members for the given composite attribute.
+	 * The composite attribute should be also selected. There is no check if
+	 * that is the case.
+	 * 
+	 * @param mbean
+	 *            The composite attribute to get all selected composite members
+	 *            from. The composite attribute should be also selected. There
+	 *            is no check if that is the case.
+	 * @return all selected composite members for the given composite attribute.
+	 */
+	protected Iterable<CompMember> getSelectedCompositeMembers(CompAttrib compAttrib) {
+		return getSelectedCompositeMembers(compAttrib, getCompositeMemberContainer(compAttrib));
+	}
+
+	/**
+	 * @param container
+	 * @return all Mbeans which are selected
+	 */
+	private static Iterable<Mbean> getSelectedMbeans(final MbeansHierarchicalContainer container) {
+		return Iterables.filter(container.getMBeans(), new Predicate<Mbean>() {
+			@Override
+			public boolean apply(final Mbean bean) {
+				Item item = container.getItem(bean);
+				Property itemProperty = item.getItemProperty(MetaMBeanItem.SELECTED);
+				if (itemProperty != null && itemProperty.getValue() != null) {
+					return (Boolean) itemProperty.getValue();
+				}
+				return false;
+			}
+		});
+	}
+
+	/**
+	 * 
+	 * @param mbean
+	 * @param compAttribContainer
+	 * @return all CompAttrib elements which are selected
+	 */
+	private static Iterable<CompAttrib> getSelectedCompositeAttributes(final Mbean mbean,
+			final SelectableBeanItemContainer<CompAttrib> compAttribContainer) {
+		if (AttributesContainerCache.NULL == compAttribContainer) {
+			return mbean.getCompAttrib();
 		}
+		return Iterables.filter(mbean.getCompAttrib(), new Predicate<CompAttrib>() {
+			@Override
+			public boolean apply(CompAttrib compAtt) {
+				return compAttribContainer.getItem(compAtt).isSelected();
+			}
+		});
+	}
+
+	/**
+	 * 
+	 * @param compAtt
+	 * @param compMemberContainer
+	 * @return all <code>CompMember</code>s which are selected.
+	 */
+	private static Iterable<CompMember> getSelectedCompositeMembers(final CompAttrib compAtt,
+			final SelectableBeanItemContainer<CompMember> compMemberContainer) {
+		if (AttributesContainerCache.NULL == compMemberContainer) {
+			return compAtt.getCompMember();
+		}
+		return Iterables.filter(compAtt.getCompMember(), new Predicate<CompMember>() {
+			@Override
+			public boolean apply(CompMember compMember) {
+				return compMemberContainer.getItem(compMember).isSelected();
+			}
+		});
+	}
+
+	/**
+	 * 
+	 * @param mbean
+	 * @param attributesContainer
+	 * @return all Attributes which are selected.
+	 */
+	private static Iterable<Attrib> getSelectedAttributes(final Mbean mbean,
+			final SelectableBeanItemContainer<Attrib> attributesContainer) {
+		if (AttributesContainerCache.NULL == attributesContainer) {
+			return mbean.getAttrib(); // no change made, return all
+		}
+		return Iterables.filter(mbean.getAttrib(), new Predicate<Attrib>() {
+			@Override
+			public boolean apply(Attrib attrib) {
+				return attributesContainer.getItem(attrib).isSelected();
+			}
+		});
 	}
 }

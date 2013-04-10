@@ -25,9 +25,12 @@
  */
 package org.opennms.features.jmxconfiggenerator.webui.data;
 
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.xml.bind.JAXB;
 
 import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.MBeansController;
 import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.MBeansController.AttributesContainerCache;
@@ -52,11 +55,11 @@ import com.vaadin.data.Property;
  * 
  * @author m.v.rueden
  */
-public class InternalModel {
+public class UiModel {
 
 	// TODO rename in something more clear, not OutputKey
 	// TODO add logic to load tab name :)
-	public static enum OutputKey {
+	public static enum OutputDataKey {
 
 		JmxDataCollectionConfig, SnmpGraphProperties, CollectdConfigSnippet;
 
@@ -69,15 +72,17 @@ public class InternalModel {
 		}
 	}
 
-	private String serviceName;
 	private JmxDatacollectionConfig rawModel;
+	private ServiceConfig configModel = new ServiceConfig();
 //	 private CollectdConfig collectdConfig;
-	private final Map<OutputKey, String> outputMap = new HashMap<OutputKey, String>();
+	private final Map<OutputDataKey, String> outputMap = new HashMap<OutputDataKey, String>();
+	private JmxDatacollectionConfig outputConfig;
+	private String snmpGraphProperties;
 
 	/**
 	 * Set the real model and get the data we need out of it
 	 */
-	public InternalModel setRawModel(JmxDatacollectionConfig rawModel) {
+	public UiModel setRawModel(JmxDatacollectionConfig rawModel) {
 		if (!isValid(rawModel)) {
 			throw new IllegalArgumentException("Model is not valid.");
 		}
@@ -101,118 +106,9 @@ public class InternalModel {
 		return rawModel;
 	}
 	
-	/**
-	 * The whole point was to select/deselect
-	 * Mbeans/Attribs/CompMembers/CompAttribs. In this method we simply create a
-	 * JmxDatacollectionConfig considering the choices we made in the gui. To do
-	 * this, we simply clone the original <code>JmxDatacollectionConfig</code>
-	 * loaded at the beginning. After that we remove all
-	 * MBeans/Attribs/CompMembers/CompAttribs and add them manually with the
-	 * changes made in the gui.
-	 * 
-	 * @param controller
-	 *            the MBeansController of the MbeansView (is needed to determine
-	 *            the changes made in gui)
-	 * @return
-	 */
-	// TODO mvonrued -> I guess we do not need this clone-stuff at all ^^ and it
-	// is too complicated for such a simple
-	// task
-	public JmxDatacollectionConfig getRawModelIncludeSelection(MBeansController controller) {
-		/**
-		 * At First we clone the original collection. This is done, because if
-		 * we make any modifications (e.g. deleting not selected elements) the
-		 * data isn't available in the GUI, too. To avoid reloading the data
-		 * from server, we just clone it.
-		 */
-		JmxDatacollectionConfig clone = JmxCollectionCloner.clone(getRawModel());
-		/**
-		 * At second we remove all MBeans from original data and get only
-		 * selected once.
-		 */
-		List<Mbean> exportBeans = clone.getJmxCollection().get(0).getMbeans().getMbean();
-		exportBeans.clear();
-		Iterable<Mbean> selectedMbeans = getSelectedMbeans(controller.getMBeansHierarchicalContainer());
-		for (Mbean mbean : selectedMbeans) {
-			/**
-			 * At 3.1. we remove all Attributes from Mbean, because we only want
-			 * selected ones.
-			 */
-			Mbean exportBean = JmxCollectionCloner.clone(mbean);
-			exportBean.getAttrib().clear(); // we only want selected ones :)
-			for (Attrib att : getSelectedAttributes(mbean, controller.getAttributesContainer(mbean))) {
-				exportBean.getAttrib().add(JmxCollectionCloner.clone(att));
-			}
-			if (!exportBean.getAttrib().isEmpty()) {
-				exportBeans.add(exportBean); // no attributes selected, don't
-												// add bean
-			}
-			/*
-			 * At 3.2. we remove all CompAttribs and CompMembers from MBean,
-			 * because we only want selected ones :)
-			 */
-			exportBean.getCompAttrib().clear();
-			for (CompAttrib compAtt : getSelectedCompAttributes(mbean, controller.getCompAttribContainer(mbean))) {
-				CompAttrib cloneCompAtt = JmxCollectionCloner.clone(compAtt);
-				cloneCompAtt.getCompMember().clear();
-				for (CompMember compMember : getSelectedCompMembers(compAtt, controller.getCompMemberContainer(compAtt))) {
-					cloneCompAtt.getCompMember().add(JmxCollectionCloner.clone(compMember));
-				}
-				if (!cloneCompAtt.getCompMember().isEmpty()) {
-					exportBean.getCompAttrib().add(cloneCompAtt);
-				}
-			}
-		}
-		// Last but not least, we need to update the service name
-		clone.getJmxCollection().get(0).setName(serviceName);
-		return clone;
-	}
-
-	/**
-	 * @param container
-	 * @return all Mbeans which are selected
-	 */
-	private Iterable<Mbean> getSelectedMbeans(final MbeansHierarchicalContainer container) {
-		return Iterables.filter(container.getMBeans(), new Predicate<Mbean>() {
-			@Override
-			public boolean apply(final Mbean bean) {
-				Item item = container.getItem(bean);
-				Property itemProperty = item.getItemProperty(MetaMBeanItem.SELECTED);
-				if (itemProperty != null && itemProperty.getValue() != null) {
-					return (Boolean) itemProperty.getValue();
-				}
-				return false;
-				// return (Boolean)
-				// container.getItem(bean).getItemProperty(MetaMBeanItem.SELECTED).getValue();
-			}
-		});
-	}
-
-	/**
-	 * 
-	 * @param mbean
-	 * @param attributesContainer
-	 * @return all Attributes which are selected.
-	 */
-	private Iterable<Attrib> getSelectedAttributes(final Mbean mbean,
-			final SelectableBeanItemContainer<Attrib> attributesContainer) {
-		if (AttributesContainerCache.NULL == attributesContainer) {
-			return mbean.getAttrib(); // no change made, return all
-		}
-		return Iterables.filter(mbean.getAttrib(), new Predicate<Attrib>() {
-			@Override
-			public boolean apply(Attrib attrib) {
-				return attributesContainer.getItem(attrib).isSelected();
-			}
-		});
-	}
 
 	public String getServiceName() {
-		return serviceName;
-	}
-
-	public void setServiceName(String serviceName) {
-		this.serviceName = serviceName;
+		return this.configModel.getServiceName();
 	}
 
 	// public void setCollectdConfig(CollectdConfig collectdConfig) {
@@ -223,50 +119,35 @@ public class InternalModel {
 	// return collectdConfig;
 	// }
 
-	public void setOutput(OutputKey output, String value) {
+	public void setOutput(OutputDataKey output, String value) {
 		outputMap.put(output, value);
 	}
 
-	public Map<OutputKey, String> getOutputMap() {
+	public Map<OutputDataKey, String> getOutputMap() {
 		return outputMap;
 	}
 
-	/**
-	 * 
-	 * @param mbean
-	 * @param compAttribContainer
-	 * @return all CompAttrib elements which are selected
-	 */
-	private Iterable<CompAttrib> getSelectedCompAttributes(final Mbean mbean,
-			final SelectableBeanItemContainer<CompAttrib> compAttribContainer) {
-		if (AttributesContainerCache.NULL == compAttribContainer) {
-			return mbean.getCompAttrib();
-		}
-		return Iterables.filter(mbean.getCompAttrib(), new Predicate<CompAttrib>() {
-			@Override
-			public boolean apply(CompAttrib compAtt) {
-				return compAttribContainer.getItem(compAtt).isSelected();
-			}
-		});
+	public ServiceConfig getServiceConfig() {
+		return configModel;
 	}
 
-	/**
-	 * 
-	 * @param compAtt
-	 * @param compMemberContainer
-	 * @return all <code>CompMember</code>s which are selected.
-	 */
-	private Iterable<CompMember> getSelectedCompMembers(final CompAttrib compAtt,
-			final SelectableBeanItemContainer<CompMember> compMemberContainer) {
-		if (AttributesContainerCache.NULL == compMemberContainer) {
-			return compAtt.getCompMember();
-		}
-		return Iterables.filter(compAtt.getCompMember(), new Predicate<CompMember>() {
-			@Override
-			public boolean apply(CompMember compMember) {
-				return compMemberContainer.getItem(compMember).isSelected();
-			}
-		});
+	public void setJmxDataCollectionAccordingToSelection(
+			JmxDatacollectionConfig outputConfig) {
+		this.outputConfig = outputConfig;
+	}
+	
+	public JmxDatacollectionConfig getOutputConfig() {
+		return outputConfig;
+	}
+
+	public void updateOutput() {
+		setOutput(OutputDataKey.JmxDataCollectionConfig, marshal(getOutputConfig()));
+		setOutput(OutputDataKey.SnmpGraphProperties, snmpGraphProperties);
+		setOutput(OutputDataKey.CollectdConfigSnippet, "TODO");
+	}
+
+	public void setSnmpGraphProperties(String generatedSnmpGraphProperties) {
+		snmpGraphProperties = generatedSnmpGraphProperties;
 	}
 
 	/**
@@ -332,4 +213,10 @@ public class InternalModel {
 //		parameter.setValue(value);
 //		return parameter;
 //	}
+	
+	public static String marshal(Object anyObject) {
+		StringWriter stringWriter = new StringWriter();
+		JAXB.marshal(anyObject, stringWriter);
+		return stringWriter.getBuffer().toString();
+	}
 }
