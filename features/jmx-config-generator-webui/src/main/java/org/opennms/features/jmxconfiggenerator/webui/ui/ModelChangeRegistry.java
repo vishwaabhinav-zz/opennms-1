@@ -36,9 +36,9 @@ import org.opennms.features.jmxconfiggenerator.webui.data.ModelChangeListener;
 import org.opennms.features.jmxconfiggenerator.webui.data.ModelChangeNotifier;
 
 /**
- * Straigt forward implementation of ModelChangeNotifier.
+ * Straight forward implementation of ModelChangeNotifier.
  *
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public class ModelChangeRegistry implements ModelChangeNotifier {
 

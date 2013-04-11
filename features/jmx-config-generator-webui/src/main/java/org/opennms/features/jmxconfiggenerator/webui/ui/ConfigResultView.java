@@ -81,7 +81,7 @@ public class ConfigResultView extends CustomComponent implements ModelChangeList
 			tabSheet.addTab(eachContent, eachContent.getLabelText());
 		tabSheet.setSelectedTab(0); // select first component!
 
-		buttonPanel.getNext().setCaption("download all");
+		buttonPanel.getNext().setCaption("download");
 		buttonPanel.getNext().setIcon(IconProvider.getIcon(IconProvider.BUTTON_SAVE));
 		
 		mainLayout.setExpandRatio(tabSheet, 1);
@@ -166,8 +166,6 @@ public class ConfigResultView extends CustomComponent implements ModelChangeList
 		}
 	}
 
-	// TODO MVR make layout definition more concrete... do not use fixed
-	// pixels...
 	private class TabContent extends Panel {
 
 		private final TextArea contentTextArea = new TextArea();

@@ -29,10 +29,10 @@
 package org.opennms.features.jmxconfiggenerator.webui.data;
 
 /**
- * Meta interface to address all properties of an Mbean bean in vaadin framework. In this way we do not need use
- * strings!
- *
- * @author m.v.rueden
+ * Meta interface to address all properties of an Mbean bean in vaadin
+ * framework. In this way we do not need use strings!
+ * 
+ * @author Markus von Rüden
  * @see org.opennms.xmlns.xsd.config.jmx_datacollection.Mbean
  */
 public interface MetaMBeanItem {

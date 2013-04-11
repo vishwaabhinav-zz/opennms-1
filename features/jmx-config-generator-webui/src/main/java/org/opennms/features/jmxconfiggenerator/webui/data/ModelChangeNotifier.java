@@ -31,7 +31,7 @@ package org.opennms.features.jmxconfiggenerator.webui.data;
 /**
  * One part of the Observer pattern.
  *
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public interface ModelChangeNotifier {
 
@@ -41,7 +41,7 @@ public interface ModelChangeNotifier {
 	 * @param clazz The type of the Model. 
 	 * @param listener The listener to get invoked if the model of type <code>clazz</code> changed.
 	 */
-	void registerListener(Class clazz, ModelChangeListener listener);
+	void registerListener(Class<?> clazz, ModelChangeListener<?> listener);
 
 	/**
 	 * Notify all observers, which has been registered to type
@@ -50,5 +50,5 @@ public interface ModelChangeNotifier {
 	 * @param clazz the type of the model.
 	 * @param newModel the model which has been changed.
 	 */
-	void notifyObservers(Class clazz, Object newModel);
+	void notifyObservers(Class<?> clazz, Object newModel);
 }

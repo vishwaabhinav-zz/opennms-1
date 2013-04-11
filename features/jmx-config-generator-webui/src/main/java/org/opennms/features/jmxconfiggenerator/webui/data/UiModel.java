@@ -27,24 +27,11 @@ package org.opennms.features.jmxconfiggenerator.webui.data;
 
 import java.io.StringWriter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.xml.bind.JAXB;
 
-import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.MBeansController;
-import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.MBeansController.AttributesContainerCache;
-import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.MbeansHierarchicalContainer;
-import org.opennms.xmlns.xsd.config.jmx_datacollection.Attrib;
-import org.opennms.xmlns.xsd.config.jmx_datacollection.CompAttrib;
-import org.opennms.xmlns.xsd.config.jmx_datacollection.CompMember;
 import org.opennms.xmlns.xsd.config.jmx_datacollection.JmxDatacollectionConfig;
-import org.opennms.xmlns.xsd.config.jmx_datacollection.Mbean;
-
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.vaadin.data.Item;
-import com.vaadin.data.Property;
 
 /**
  * This class wraps the <code>JmxDatacollectionConfig</code> and provides some
@@ -53,12 +40,10 @@ import com.vaadin.data.Property;
  * so on. Or we find out, that we do not need this class, then we will remove
  * it.
  * 
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public class UiModel {
 
-	// TODO rename in something more clear, not OutputKey
-	// TODO add logic to load tab name :)
 	public static enum OutputDataKey {
 
 		JmxDataCollectionConfig, SnmpGraphProperties, CollectdConfigSnippet;
@@ -74,7 +59,7 @@ public class UiModel {
 
 	private JmxDatacollectionConfig rawModel;
 	private ServiceConfig configModel = new ServiceConfig();
-//	 private CollectdConfig collectdConfig;
+	// private CollectdConfig collectdConfig;
 	private final Map<OutputDataKey, String> outputMap = new HashMap<OutputDataKey, String>();
 	private JmxDatacollectionConfig outputConfig;
 	private String snmpGraphProperties;
@@ -105,7 +90,6 @@ public class UiModel {
 	public JmxDatacollectionConfig getRawModel() {
 		return rawModel;
 	}
-	
 
 	public String getServiceName() {
 		return this.configModel.getServiceName();
@@ -131,11 +115,10 @@ public class UiModel {
 		return configModel;
 	}
 
-	public void setJmxDataCollectionAccordingToSelection(
-			JmxDatacollectionConfig outputConfig) {
+	public void setJmxDataCollectionAccordingToSelection(JmxDatacollectionConfig outputConfig) {
 		this.outputConfig = outputConfig;
 	}
-	
+
 	public JmxDatacollectionConfig getOutputConfig() {
 		return outputConfig;
 	}
@@ -156,64 +139,66 @@ public class UiModel {
 	 * @return The CollecdConfiguration snippet depending on the data saved in
 	 *         this model.
 	 */
-//	public CollectdConfiguration getCollectdConfiguration() {
-//		CollectdConfiguration config = new CollectdConfiguration();
-//
-//		// set default package
-//		Package defaultPackage = new Package();
-//		defaultPackage.setName("DUMMY-Default-Package-Name");
-//
-//		// set service
-//		Service service = new Service();
-//		service.setName(getServiceName());
-//		service.setInterval(30000); // TODO set default
-//		service.setUserDefined(Boolean.TRUE.toString());
-//		service.setStatus("on");
-//
-//		// add parameters to service
-//		service.addParameter(createParameter("port", "17199")); // TODO define
-//																// dynamically
-//		service.addParameter(createParameter("retry", "1"));
-//		service.addParameter(createParameter("timeout", "3000"));
-//		service.addParameter(createParameter("protocol", "rmi"));
-//		service.addParameter(createParameter("urlPath", "/jmxrmi"));
-//		service.addParameter(createParameter("rrd-base-name", "java"));
-//		service.addParameter(createParameter("ds-name", getServiceName()));
-//		service.addParameter(createParameter("friendly-name", getServiceName()));
-//		service.addParameter(createParameter("collection", getServiceName()));
-//		service.addParameter(createParameter("thresholding-enabled", Boolean.TRUE.toString()));
-//
-//		// create Collector
-//		Collector collector = new Collector();
-//		collector.setService(getServiceName());
-//		collector.setClassName("abc"); // TODO define dynamically
-//		// collector.setClassName(Jsr160Collector.class.getName());
-//
-//		// register service, package and collector to configuration
-//		config.addPackage(defaultPackage);
-//		config.addCollector(collector);
-//		defaultPackage.addService(service);
-//
-//		return config;
-//	}
+	// public CollectdConfiguration getCollectdConfiguration() {
+	// CollectdConfiguration config = new CollectdConfiguration();
+	//
+	// // set default package
+	// Package defaultPackage = new Package();
+	// defaultPackage.setName("DUMMY-Default-Package-Name");
+	//
+	// // set service
+	// Service service = new Service();
+	// service.setName(getServiceName());
+	// service.setInterval(30000); // TODO set default
+	// service.setUserDefined(Boolean.TRUE.toString());
+	// service.setStatus("on");
+	//
+	// // add parameters to service
+	// service.addParameter(createParameter("port", "17199")); // TODO define
+	// // dynamically
+	// service.addParameter(createParameter("retry", "1"));
+	// service.addParameter(createParameter("timeout", "3000"));
+	// service.addParameter(createParameter("protocol", "rmi"));
+	// service.addParameter(createParameter("urlPath", "/jmxrmi"));
+	// service.addParameter(createParameter("rrd-base-name", "java"));
+	// service.addParameter(createParameter("ds-name", getServiceName()));
+	// service.addParameter(createParameter("friendly-name", getServiceName()));
+	// service.addParameter(createParameter("collection", getServiceName()));
+	// service.addParameter(createParameter("thresholding-enabled",
+	// Boolean.TRUE.toString()));
+	//
+	// // create Collector
+	// Collector collector = new Collector();
+	// collector.setService(getServiceName());
+	// collector.setClassName("abc"); // TODO define dynamically
+	// // collector.setClassName(Jsr160Collector.class.getName());
+	//
+	// // register service, package and collector to configuration
+	// config.addPackage(defaultPackage);
+	// config.addCollector(collector);
+	// defaultPackage.addService(service);
+	//
+	// return config;
+	// }
 
-//	/**
-//	 * Creates a Parameter object and sets the key and value.
-//	 * 
-//	 * @param key
-//	 *            The key for the Parameter object. Should not be null.
-//	 * @param value
-//	 *            The value for the Parameter object. Should not be null.
-//	 * @return The Parameter object with key value according to method
-//	 *         arguments.
-//	 */
-//	private static Parameter createParameter(final String key, final String value) {
-//		Parameter parameter = new Parameter();
-//		parameter.setKey(key);
-//		parameter.setValue(value);
-//		return parameter;
-//	}
-	
+	// /**
+	// * Creates a Parameter object and sets the key and value.
+	// *
+	// * @param key
+	// * The key for the Parameter object. Should not be null.
+	// * @param value
+	// * The value for the Parameter object. Should not be null.
+	// * @return The Parameter object with key value according to method
+	// * arguments.
+	// */
+	// private static Parameter createParameter(final String key, final String
+	// value) {
+	// Parameter parameter = new Parameter();
+	// parameter.setKey(key);
+	// parameter.setValue(value);
+	// return parameter;
+	// }
+
 	public static String marshal(Object anyObject) {
 		StringWriter stringWriter = new StringWriter();
 		JAXB.marshal(anyObject, stringWriter);

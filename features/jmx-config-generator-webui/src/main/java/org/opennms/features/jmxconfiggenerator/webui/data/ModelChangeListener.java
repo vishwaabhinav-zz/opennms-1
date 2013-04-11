@@ -32,7 +32,7 @@ package org.opennms.features.jmxconfiggenerator.webui.data;
  * One part of the observer pattern. It indicates if the given model <code>T</code> has changed.
  * In future releases a ModelChangeEvent may be introduced.
  * 
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public interface ModelChangeListener<T extends Object> {
 

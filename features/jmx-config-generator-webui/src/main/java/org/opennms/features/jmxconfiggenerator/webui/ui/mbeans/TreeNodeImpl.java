@@ -32,9 +32,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Simple straigt forward implementation of {@link TreeNode}.
+ * Simple straight forward implementation of {@link TreeNode}.
  *
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public class TreeNodeImpl implements TreeNode {
 

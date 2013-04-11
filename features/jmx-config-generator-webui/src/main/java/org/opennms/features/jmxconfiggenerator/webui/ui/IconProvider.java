@@ -35,7 +35,7 @@ import org.opennms.features.jmxconfiggenerator.webui.Config;
  * This class provides the application with icons. If any icon changes or new
  * icons are needed, please put them below.
  * 
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public class IconProvider {
 

@@ -32,7 +32,7 @@ import java.util.Map;
 
 /**
  *
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public interface NameProvider {
 

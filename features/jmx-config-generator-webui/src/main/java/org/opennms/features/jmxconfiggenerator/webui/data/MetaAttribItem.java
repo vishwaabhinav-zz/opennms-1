@@ -32,30 +32,30 @@ import org.opennms.xmlns.xsd.config.jmx_datacollection.Attrib;
 import org.opennms.xmlns.xsd.config.jmx_datacollection.CompAttrib;
 
 /**
- * Meta interface to address all properties of an Attrib bean in vaadin framework. In this way we do not need use
- * strings!
- *
- * @author m.v.rueden
+ * Meta interface to address all properties of an Attrib bean in vaadin
+ * framework. In this way we do not need use strings!
+ * 
+ * @author Markus von Rüden
  * @see org.opennms.xmlns.xsd.config.jmx_datacollection.Attrib
  */
 public interface MetaAttribItem {
 
 	public static enum AttribType {
 		counter, gauge;
-		
+
 		public static AttribType valueOf(Object object) {
-			return gauge; 
+			return gauge;
 		}
-		
+
 		public static AttribType valueOf(Attrib attrib) {
 			return attrib == null ? gauge : valueOf(attrib.getType());
 		}
-		
+
 		public static AttribType valueOf(CompAttrib attrib) {
 			return attrib == null ? gauge : valueOf(attrib.getType());
 		}
 	}
-	
+
 	String NAME = "name";
 	String SELECTED = "selected";
 	String ALIAS = "alias";

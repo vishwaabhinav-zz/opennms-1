@@ -34,7 +34,7 @@ import java.util.List;
  * This interface defines a tree node to provide a simple tree implementation. A node can have none or multiple child. A
  * node can be a root or a leaf node. A node can also have user data to save (getData()).
  *
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public interface TreeNode {
 

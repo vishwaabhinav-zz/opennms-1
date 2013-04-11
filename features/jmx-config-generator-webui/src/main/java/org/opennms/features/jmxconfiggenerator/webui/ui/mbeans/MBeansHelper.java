@@ -39,9 +39,10 @@ import org.opennms.features.jmxconfiggenerator.webui.data.SimpleEntry;
 import org.opennms.xmlns.xsd.config.jmx_datacollection.Mbean;
 
 /**
- * This class is a helper to build a tree representation or the MBean's objectname for the MBeantree.
- *
- * @author m.v.rueden
+ * This class is a helper to build a tree representation or the MBean's
+ * objectname for the MBeantree.
+ * 
+ * @author Markus von Rüden
  */
 public class MBeansHelper {
 
@@ -62,21 +63,26 @@ public class MBeansHelper {
 	}
 
 	/**
-	 *
-	 * @param input any Mbean
-	 * @param removeLastElement should last element be removed?
+	 * 
+	 * @param input
+	 *            any Mbean
+	 * @param removeLastElement
+	 *            should last element be removed?
 	 * @return a List of Elements to build the MBeanTree.
 	 */
 	private static List getMBeansTreeElements(Mbean input, boolean removeLastElement) {
 		List names = new ArrayList();
 		try {
 			/**
-			 * By default, the MBeans are displayed in the tree based on their object names. The order of key properties
-			 * specified when the object names are created is preserved by the MBeans tab when it adds MBeans to the
-			 * MBean tree. The exact key property list that the MBeans tab will use to build the MBean tree will be the
-			 * one returned by the method ObjectName.getKeyPropertyListString(), with type as the first key, and
-			 * j2eeType, if present, as the second key.(http://visualvm.java.net/mbeans_tab.html).
-			 *
+			 * By default, the MBeans are displayed in the tree based on their
+			 * object names. The order of key properties specified when the
+			 * object names are created is preserved by the MBeans tab when it
+			 * adds MBeans to the MBean tree. The exact key property list that
+			 * the MBeans tab will use to build the MBean tree will be the one
+			 * returned by the method ObjectName.getKeyPropertyListString(),
+			 * with type as the first key, and j2eeType, if present, as the
+			 * second key.(http://visualvm.java.net/mbeans_tab.html).
+			 * 
 			 * Below is the implementation of the above definition.
 			 */
 			ObjectName obj = ObjectName.getInstance(input.getObjectname());
@@ -85,7 +91,10 @@ public class MBeansHelper {
 			addIfNotNull(names, keyProperty, "type");
 			addIfNotNull(names, keyProperty, "j2eeType");
 			names.addAll(keyProperty.entrySet());
-			if (removeLastElement) names.remove(names.size() - 1); //remove last element if needed
+			if (removeLastElement) names.remove(names.size() - 1); // remove
+																	// last
+																	// element
+																	// if needed
 		} catch (MalformedObjectNameException ex) {
 		}
 		return names;
@@ -98,20 +107,22 @@ public class MBeansHelper {
 	}
 
 	/**
-	 * Builds the class hierarchy of the given
-	 * <code>clazz</code> and returns the value of the given map if any class in the hierarchy of
+	 * Builds the class hierarchy of the given <code>clazz</code> and returns
+	 * the value of the given map if any class in the hierarchy of
 	 * <code>clazz</code> is registered as a key to the map.
-	 *
-	 * @param <T> type of the value in the map
-	 * @param map a map to lookup for any class in <code>clazz</code> hierarchy.
-	 * @param clazz the class to look up any value in <code>map</code>
+	 * 
+	 * @param <T>
+	 *            type of the value in the map
+	 * @param map
+	 *            a map to lookup for any class in <code>clazz</code> hierarchy.
+	 * @param clazz
+	 *            the class to look up any value in <code>map</code>
 	 * @return T if a key is found in <code>map</code>, otherwise null.
 	 */
 	public static <T> T getValueForClass(Map<Class<?>, T> map, Class<?> clazz) {
 		List<Class> classes = Reflections.buildClassHierarchy(clazz);
 		for (int i = classes.size() - 1; i >= 0; i--) {
-			if (map.get(classes.get(i)) != null)
-				return map.get(classes.get(i));
+			if (map.get(classes.get(i)) != null) return map.get(classes.get(i));
 		}
 		return null;
 	}

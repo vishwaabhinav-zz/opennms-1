@@ -55,7 +55,7 @@ import org.opennms.xmlns.xsd.config.jmx_datacollection.Mbean;
 
 /**
  *
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public class MbeansHierarchicalContainer extends HierarchicalContainer {
 
@@ -93,7 +93,6 @@ public class MbeansHierarchicalContainer extends HierarchicalContainer {
 	public void updateDataSource(UiModel model) {
 		mbeans.clear();
 		buildInternalTree(model);
-//		System.out.println(this);
 		updateContainer();
 	}
 
@@ -147,7 +146,6 @@ public class MbeansHierarchicalContainer extends HierarchicalContainer {
 		return ret;
 	}
 
-	//TODO ....
 	private TreeNode addChild(TreeNode root, Object childData) {
 		TreeNode node = findNodeForData(root, childData);
 		if (node != null)
@@ -158,7 +156,6 @@ public class MbeansHierarchicalContainer extends HierarchicalContainer {
 		return node;
 	}
 
-	//TODO ...
 	private TreeNode findNodeForData(TreeNode root, Object data) {
 		if (root == null) return null;
 		if (root.getData() != null && root.getData().equals(data)) return root;

@@ -39,7 +39,7 @@ import org.opennms.features.jmxconfiggenerator.webui.data.ModelChangeListener;
 
 /**
  *
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 class MBeansTree extends Tree implements ModelChangeListener<UiModel>, ViewStateChangedListener, Action.Handler {
 

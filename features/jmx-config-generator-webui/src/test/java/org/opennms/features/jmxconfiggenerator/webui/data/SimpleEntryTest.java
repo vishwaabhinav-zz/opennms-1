@@ -34,7 +34,7 @@ import org.junit.Test;
 
 /**
  *
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public class SimpleEntryTest {
 	

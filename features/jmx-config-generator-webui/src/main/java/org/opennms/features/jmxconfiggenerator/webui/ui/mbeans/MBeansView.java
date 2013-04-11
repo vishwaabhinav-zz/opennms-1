@@ -153,8 +153,9 @@ public class MBeansView extends VerticalLayout implements ClickListener, ModelCh
 		layout.setSizeFull();
 		layout.setLocked(false);
 		layout.setSplitPosition(20, UNITS_PERCENTAGE);
-		layout.setFirstComponent(wrapToPanel(first));
+		layout.setFirstComponent(first);
 		layout.setSecondComponent(second);
+		layout.setCaption(first.getCaption());
 		return layout;
 	}
 
@@ -189,6 +190,7 @@ public class MBeansView extends VerticalLayout implements ClickListener, ModelCh
 
 		panel.setContent(layout);
 		component.setCaption(null);
+		panel.setScrollable(true);
 		return panel;
 	}
 

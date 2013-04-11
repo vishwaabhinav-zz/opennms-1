@@ -42,12 +42,12 @@ import java.util.Map;
  * <code>BeanItemContainer</code> or
  * <code>AbstractBeanContainer</code> would be the best container to use. But we need to add a property to the
  * container items which indicates if any item is selected. Due to some limitations we cannot inherit BeanItemContainer
- * or AbstractBeanContainer to fullfill this requirement. Therefore this class is mainly a rough copy of the
+ * or AbstractBeanContainer to fulfill this requirement. Therefore this class is mainly a rough copy of the
  * <code>BeanItemContainer</code> but does not support any kind of filtering. This may be included in future releases.
  *
  *
  * @param <T> the type of the bean we want to store in SelectableItem
- * @author m.v.rueden
+ * @author Markus von Rüden
  * @see SelectableItem
  */
 public class SelectableBeanItemContainer<T> extends AbstractInMemoryContainer<T, String, SelectableItem<T>> {
@@ -150,7 +150,6 @@ public class SelectableBeanItemContainer<T> extends AbstractInMemoryContainer<T,
 	 */
 	@Override
 	public boolean addContainerProperty(Object propertyId, Class<?> type, Object defaultValue) throws UnsupportedOperationException {
-		//TODO we do not allow this
 		throw new UnsupportedOperationException("Adding container properties not supported. Override the addContainerProperty() method if required.");
 	}
 

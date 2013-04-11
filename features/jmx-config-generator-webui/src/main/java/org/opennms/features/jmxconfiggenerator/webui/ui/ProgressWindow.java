@@ -34,10 +34,10 @@ import com.vaadin.ui.ProgressIndicator;
 import com.vaadin.ui.Window;
 
 /**
- * A modal "PopUp" which shows some text to the user and a "sandglass" (ok it is a turning circle.. but you get my point
- * ;)).
- *
- * @author m.v.rueden
+ * A modal "PopUp" which shows some text to the user and a "sandglass" (ok it is
+ * a turning circle.. but you get my point ;)).
+ * 
+ * @author Markus von Rüden
  */
 public class ProgressWindow extends Window {
 

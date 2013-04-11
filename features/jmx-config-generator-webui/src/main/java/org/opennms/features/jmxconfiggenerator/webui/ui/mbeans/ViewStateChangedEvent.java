@@ -30,7 +30,7 @@ package org.opennms.features.jmxconfiggenerator.webui.ui.mbeans;
 
 /**
  *
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public class ViewStateChangedEvent {
 

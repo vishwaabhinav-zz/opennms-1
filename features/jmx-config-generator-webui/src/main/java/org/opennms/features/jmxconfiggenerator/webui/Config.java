@@ -28,16 +28,12 @@ package org.opennms.features.jmxconfiggenerator.webui;
 /**
  * Config class. Nothing more, nothing less.
  *
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public interface Config {
 
-    boolean DEBUG = true;
     String STYLE_NAME = "opennms";
     String IMG_FOLDER = "img";
     int ATTRIBUTES_ALIAS_MAX_LENGTH = 19;
     int NAME_EDIT_FORM_HEIGHT = 170;
-    int MBEANS_TAB_HEIGHT = 350;
-    // TODO remove
-//    int MBEANS_OVERALL_HEIGHT = NAME_EDIT_FORM_HEIGHT + MBEANS_TAB_HEIGHT;
 }

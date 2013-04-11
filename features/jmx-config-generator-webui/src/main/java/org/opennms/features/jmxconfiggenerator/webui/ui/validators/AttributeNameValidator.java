@@ -32,11 +32,11 @@ import com.vaadin.data.validator.RegexpValidator;
 
 /**
  *
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public class AttributeNameValidator extends RegexpValidator {
 
 	public AttributeNameValidator() {
-		super("[a-zA-Z0-9]+", "You must specify a valid attribute name. Only characters a-z, A-Z and 0-9 are allowed."); //TODO resource bundle...
+		super("[a-zA-Z0-9]+", "You must specify a valid attribute name. Only characters a-z, A-Z and 0-9 are allowed.");
 	}
 }

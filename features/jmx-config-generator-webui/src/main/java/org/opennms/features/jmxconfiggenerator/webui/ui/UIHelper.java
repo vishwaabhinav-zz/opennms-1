@@ -54,11 +54,21 @@ import com.vaadin.ui.Window;
 import com.vaadin.ui.Window.Notification;
 
 /**
+ * This class provides several helper methods for ui stuff, e.g. creating a
+ * button. So the amount of code is reduced generally.
  * 
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public class UIHelper {
 
+	/**
+	 * Helper to create a layout (Horizontal, Vertical, Form, ...) with none, one or
+	 * multiple components and allow basic configuration of the layout using
+	 * fluent API.
+	 * 
+	 * @author Markus von Rüden
+	 * 
+	 */
 	public static class LayoutCreator {
 
 		private Class<?> layoutType = null;
@@ -70,21 +80,38 @@ public class UIHelper {
 			return this;
 		}
 
+		/**
+		 * Create a Horizontal Layout.
+		 * @return this.
+		 */
 		public LayoutCreator setHorizontal() {
 			this.layoutType = HorizontalLayout.class;
 			return this;
 		}
 
+		/**
+		 * Create a Vertical Layout.
+		 * @return this.
+		 */
 		public LayoutCreator setVertical() {
 			this.layoutType = VerticalLayout.class;
 			return this;
 		}
 
+		/**
+		 * Create a Form.
+		 * @return this.
+		 */
 		public LayoutCreator setForm() {
 			this.layoutType = FormLayout.class;
 			return this;
 		}
 
+		/**
+		 * Add the component to the layout during creation.
+		 * @param component
+		 * @return
+		 */
 		public LayoutCreator withComponent(Component component) {
 			this.components.add(component);
 			return this;
@@ -119,20 +146,6 @@ public class UIHelper {
 			}
 			return null;
 		}
-	}
-
-	// TODO --> comment
-	public static boolean contains(final ComponentContainer root, final Object child) {
-		if (root == null) return false;
-		if (child == null) return false;
-		if (root == child) return true; // root is child, so contains returns
-										// true
-		Iterator<Component> it = root.getComponentIterator();
-		while (it.hasNext()) {
-			Component c = it.next();
-			if (c == child) return true;
-		}
-		return false;
 	}
 
 	public static Button createButton(final String buttonCaption, final String iconName,

@@ -39,7 +39,7 @@ import org.opennms.xmlns.xsd.config.jmx_datacollection.Mbean;
 
 /**
  *
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 //TODO mvonrued -> comment
 class MBeansItemStrategyHandler {
@@ -86,7 +86,6 @@ class MBeansItemStrategyHandler {
 		getStrategy(itemId.getClass()).setItemProperties(item, itemId);
 	}
 
-	//TODO das hier muss auch noch anders gemacht werden
 	protected static interface ItemStrategy {
 
 		void setItemProperties(Item item, Object itemId);

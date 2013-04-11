@@ -40,7 +40,7 @@ import com.vaadin.ui.Field;
 
 /**
  *
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public class UniqueAttributeNameValidator extends AbstractValidator {
 

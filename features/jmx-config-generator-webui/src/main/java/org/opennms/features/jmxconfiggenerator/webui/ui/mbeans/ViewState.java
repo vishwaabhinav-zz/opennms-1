@@ -31,7 +31,7 @@ package org.opennms.features.jmxconfiggenerator.webui.ui.mbeans;
 /**
  * Represents a view state of the MbeanView
  *
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public enum ViewState {
 

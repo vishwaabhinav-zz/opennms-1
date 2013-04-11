@@ -79,8 +79,6 @@ public class JmxConfigGeneratorApplication extends com.vaadin.Application implem
 
 	private ProgressWindow progressWindow;
 
-	// TODO rename InternalModel to something more accurate, e.g.
-	// JmxConfigUiModel or so...
 	private UiModel model = new UiModel();
 	private ModelChangeRegistry modelChangeRegistry = new ModelChangeRegistry();
 	private Map<UiState, Component> viewCache = new HashMap<UiState, Component>();
@@ -182,16 +180,6 @@ public class JmxConfigGeneratorApplication extends com.vaadin.Application implem
 		return viewCache.get(uiState);
 	}
 
-	// public void generateJmxConfig(MBeansController mbeansController) {
-	// showProgressWindow("Generating xml file. This may take a while...");
-	// new CreateOutputWorkerThread(mbeansController).start();
-	// }
-
-	// public void findMBeans() {
-	// showProgressWindow("Getting all available MBeans... This may take a while");
-	// new DetectMBeansWorkerThread().start();
-	// }
-
 	private ProgressWindow getProgressWindow() {
 		if (progressWindow == null) {
 			progressWindow = new ProgressWindow();
@@ -199,29 +187,10 @@ public class JmxConfigGeneratorApplication extends com.vaadin.Application implem
 		return progressWindow;
 	}
 
-	// public void showConfigView(InternalModel internalModel) {
-	// setMainComponent(getConfigView());
-	// notifyObservers(InternalModel.class, internalModel);
-	// }
-	//
-	// public void showMBeansView() {
-	// setMainComponent(getMBeansView());
-	// }
-	//
-	// public void showMBeansView(InternalModel newModel) {
-	// setMainComponent(getMBeansView());
-	// notifyObservers(InternalModel.class, newModel);
-	// }
-
 	public void showProgressWindow(String label) {
 		getProgressWindow().setLabelText(label);
 		getMainWindow().addWindow(getProgressWindow());
 	}
-
-	// public void showOutputView(InternalModel newModel) {
-	// setMainComponent(getJmxConfigView());
-	// notifyObservers(InternalModel.class, newModel);
-	// }
 
 	private void registerListener(Class<?> aClass, ModelChangeListener<?> listener) {
 		modelChangeRegistry.registerListener(aClass, listener);
@@ -231,7 +200,6 @@ public class JmxConfigGeneratorApplication extends com.vaadin.Application implem
 		modelChangeRegistry.notifyObservers(aClass, object);
 	}
 	
-	  // TODO MVR Thread-Handling not this way...
     private class DetectMBeansWorkerThread extends Thread {
 
         @Override
@@ -265,8 +233,6 @@ public class JmxConfigGeneratorApplication extends com.vaadin.Application implem
         }
     }
 
-	// TODO MVR comment
-	// TODO MVR Thread-Handling not this way...
 	private class CreateOutputWorkerThread extends Thread {
 
 		@Override

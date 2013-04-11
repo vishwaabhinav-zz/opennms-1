@@ -32,7 +32,11 @@ import com.vaadin.data.Container;
 import com.vaadin.data.Item;
 import com.vaadin.data.Property;
 import com.vaadin.data.Property.ReadOnlyStatusChangeListener;
+import com.vaadin.data.Validator.InvalidValueException;
+import com.vaadin.ui.AbstractField;
 import com.vaadin.ui.Component;
+import com.vaadin.ui.CustomComponent;
+import com.vaadin.ui.Field;
 import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.Table;
 import com.vaadin.ui.VerticalLayout;
@@ -48,7 +52,7 @@ import org.opennms.xmlns.xsd.config.jmx_datacollection.Mbean;
 
 /**
  *
- * @author m.v.rueden
+ * @author Markus von Rüden
  */
 public class MBeansContentTabSheet extends TabSheet implements ModelChangeListener<Mbean>, ViewStateChangedListener {
 
@@ -155,20 +159,24 @@ public class MBeansContentTabSheet extends TabSheet implements ModelChangeListen
 
 			private final NameEditForm compositeForm;
 			private final Table compositeTable;
-			private final FormButtonHandler formButtonHandler;
-			private final TableButtonHandler tableButtonHandler;
-			private final EditControls footer;
+			private final FormButtonHandler<NameEditForm> formButtonHandler;
+			private final TableButtonHandler<Table> tableButtonHandler;
+			private final EditControls<AbstractField> footer;
 
 			private CompositeTabLayout(NameEditForm compositeForm, Table compositeTable) {
 				this.compositeForm = compositeForm;
 				this.compositeTable = compositeTable;
-				formButtonHandler = new FormButtonHandler(compositeForm);
-				tableButtonHandler = new TableButtonHandler(compositeTable);
-				footer = new EditControls(this, new ButtonHandler<CompositeTabLayout>() {
+				formButtonHandler = new FormButtonHandler<NameEditForm>(compositeForm);
+				tableButtonHandler = new TableButtonHandler<Table>(compositeTable);
+				footer = new EditControls<AbstractField>(this, new ButtonHandler<AbstractField>() {
 					@Override
 					public void handleSave() {
-						formButtonHandler.handleSave();
-						tableButtonHandler.handleSave();
+						if (formButtonHandler.getOuter().isValid() && tableButtonHandler.getOuter().isValid()) {
+							formButtonHandler.handleSave();
+							tableButtonHandler.handleSave();
+						} else {
+							UIHelper.showValidationError(getWindow(),  "There are some errors on this view. Please fix them first");
+						}
 					}
 
 					@Override
@@ -184,8 +192,8 @@ public class MBeansContentTabSheet extends TabSheet implements ModelChangeListen
 					}
 
 					@Override
-					public CompositeTabLayout getOuter() {
-						return CompositeTabLayout.this;
+					public AbstractField getOuter() {
+						return null;
 					}					
 				});
 				setSizeFull();
@@ -220,9 +228,15 @@ public class MBeansContentTabSheet extends TabSheet implements ModelChangeListen
 
 			@Override
 			public void callback(ButtonType type, Component outer) {
-				if (type == ButtonType.save) controller.fireViewStateChanged(ViewState.LeafSelected, outer);
-				if (type == ButtonType.edit) controller.fireViewStateChanged(ViewState.Edit, outer);
-				if (type == ButtonType.cancel) controller.fireViewStateChanged(ViewState.LeafSelected, outer);
+				if (type == ButtonType.edit) {
+					controller.fireViewStateChanged(ViewState.Edit, outer);
+				}
+				if (type == ButtonType.cancel){
+					controller.fireViewStateChanged(ViewState.LeafSelected, outer);
+				}
+				if (type == ButtonType.save && compositeForm.isValid() && compositeTable.isValid()) {
+					controller.fireViewStateChanged(ViewState.LeafSelected, CompositeTabLayout.this);
+				}
 			}
 			
 			private void addFooterHooks(final EditControls footer) {

@@ -31,17 +31,17 @@ package org.opennms.features.jmxconfiggenerator.webui.data;
 import org.opennms.xmlns.xsd.config.jmx_datacollection.*;
 
 /**
- * Simple Helper to clone any member of
- * <code>JmxDatacollectionConfig</code> or the whole object itself. I used this way, because I do not like
+ * Simple Helper to clone any member of <code>JmxDatacollectionConfig</code> or
+ * the whole object itself. I used this way, because I do not like
  * implementing/overwriting clone().
- *
- * @author m.v.rueden
+ * 
+ * @author Markus von Rüden
  */
 public class JmxCollectionCloner {
 
 	/**
 	 * Clones a whole JmxCollectionConfig. Makes a deep copy!
-	 *
+	 * 
 	 * @param input
 	 * @return
 	 */
@@ -56,7 +56,7 @@ public class JmxCollectionCloner {
 
 	/**
 	 * Clones a whole JmxCollection. Makes a deep copy!
-	 *
+	 * 
 	 * @param input
 	 * @return
 	 */
@@ -71,7 +71,7 @@ public class JmxCollectionCloner {
 
 	/**
 	 * Clones a Rrd object. Makes a deep copy!
-	 *
+	 * 
 	 * @param input
 	 * @return
 	 */
@@ -84,7 +84,7 @@ public class JmxCollectionCloner {
 
 	/**
 	 * Clones a Mbeans object. Makes a deep copy!
-	 *
+	 * 
 	 * @param input
 	 * @return
 	 */
@@ -98,7 +98,7 @@ public class JmxCollectionCloner {
 
 	/**
 	 * Clones a Mbean object. Makes a deep copy!
-	 *
+	 * 
 	 * @param input
 	 * @return
 	 */
@@ -121,7 +121,7 @@ public class JmxCollectionCloner {
 
 	/**
 	 * Clones an Attrib object. Makes a deep copy!
-	 *
+	 * 
 	 * @param input
 	 * @return
 	 */
@@ -137,7 +137,7 @@ public class JmxCollectionCloner {
 
 	/**
 	 * Clones a CompAttrib object. Makes a deep copy!
-	 *
+	 * 
 	 * @param input
 	 * @return
 	 */
@@ -154,7 +154,7 @@ public class JmxCollectionCloner {
 
 	/**
 	 * Clones a CompMember object. Makes a deep copy!
-	 *
+	 * 
 	 * @param input
 	 * @return
 	 */
