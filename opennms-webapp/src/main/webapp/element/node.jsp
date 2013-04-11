@@ -342,7 +342,7 @@
   
 
   <!-- Asset box, if info available --> 
-  <c:if test="${! empty model.asset && (! empty model.asset.description || ! empty model.asset.comments || ! empty model.asset.geolocation)}">
+  <c:if test="${! empty model.asset && (! empty model.asset.description || ! empty model.asset.comments)}">
     <h3 class="o-box">Asset Information</h3>
     <table class="o-box">
       <tr>
@@ -415,10 +415,10 @@
     <table class="o-box">
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Status</th>
+          <th>Vlan ID</th>
+          <th>Vlan Name</th>
+          <th>Vlan Type</th>
+          <th>Vlan Status</th>
           <th>Status</th>
           <th>Last Poll Time</th>
         </tr>

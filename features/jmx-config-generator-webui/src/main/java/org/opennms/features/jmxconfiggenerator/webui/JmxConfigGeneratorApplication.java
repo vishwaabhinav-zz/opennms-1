@@ -26,14 +26,12 @@
 package org.opennms.features.jmxconfiggenerator.webui;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.management.remote.JMXConnector;
-import javax.xml.bind.JAXB;
 
 import org.opennms.core.utils.LogUtils;
 import org.opennms.features.jmxconfiggenerator.Starter;
@@ -41,9 +39,9 @@ import org.opennms.features.jmxconfiggenerator.graphs.GraphConfigGenerator;
 import org.opennms.features.jmxconfiggenerator.graphs.JmxConfigReader;
 import org.opennms.features.jmxconfiggenerator.graphs.Report;
 import org.opennms.features.jmxconfiggenerator.jmxconfig.JmxDatacollectionConfiggenerator;
+import org.opennms.features.jmxconfiggenerator.webui.data.ModelChangeListener;
 import org.opennms.features.jmxconfiggenerator.webui.data.ServiceConfig;
 import org.opennms.features.jmxconfiggenerator.webui.data.UiModel;
-import org.opennms.features.jmxconfiggenerator.webui.data.ModelChangeListener;
 import org.opennms.features.jmxconfiggenerator.webui.ui.ConfigForm;
 import org.opennms.features.jmxconfiggenerator.webui.ui.ConfigResultView;
 import org.opennms.features.jmxconfiggenerator.webui.ui.HeaderPanel;
@@ -51,7 +49,6 @@ import org.opennms.features.jmxconfiggenerator.webui.ui.IntroductionView;
 import org.opennms.features.jmxconfiggenerator.webui.ui.ModelChangeRegistry;
 import org.opennms.features.jmxconfiggenerator.webui.ui.ProgressWindow;
 import org.opennms.features.jmxconfiggenerator.webui.ui.UiState;
-import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.MBeansController;
 import org.opennms.features.jmxconfiggenerator.webui.ui.mbeans.MBeansView;
 import org.opennms.xmlns.xsd.config.jmx_datacollection.JmxDatacollectionConfig;
 
