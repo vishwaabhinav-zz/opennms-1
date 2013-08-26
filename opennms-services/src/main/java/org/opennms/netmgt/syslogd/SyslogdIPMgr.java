@@ -28,13 +28,15 @@
 
 package org.opennms.netmgt.syslogd;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.opennms.core.db.DataSourceFactory;
+import org.opennms.core.utils.InetAddressUtils;
+import org.opennms.netmgt.dao.hibernate.IpInterfaceDaoHibernate;
+import org.opennms.netmgt.model.OnmsIpInterface;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * This class represents a singular instance that is used to map trap IP
@@ -47,15 +49,11 @@ import org.opennms.core.db.DataSourceFactory;
  */
 final class SyslogdIPMgr {
     /**
-     * The SQL statement used to extract the list of currently known IP
-     * addresses and their node IDs from the IP Interface table.
-     */
-    private final static String IP_LOAD_SQL = "SELECT ipAddr, nodeid FROM ipInterface";
-
-    /**
      * A Map of IP addresses and node IDs
      */
     private static Map<String,Long> m_knownips = new ConcurrentHashMap<String,Long>();
+
+    private static IpInterfaceDaoHibernate m_ipInterfaceDao;
 
     /**
      * Clears and synchronizes the internal known IP address cache with the
@@ -68,39 +66,11 @@ final class SyslogdIPMgr {
      *             error occurs.
      */
     static synchronized void dataSourceSync() throws SQLException {
-        java.sql.Connection c = null;
-        Statement s = null;
-        try {
-            // Get database connection
-            c = DataSourceFactory.getInstance().getConnection();
-
-            // Run with it
-            //
-            // c.setReadOnly(true);
-
-            s = c.createStatement();
-            final ResultSet rs = s.executeQuery(IP_LOAD_SQL);
-
-            if (rs != null) {
-                m_knownips.clear();
-                while (rs.next()) {
-                    m_knownips.put(rs.getString(1), rs.getLong(2));
-                }
-                rs.close();
-            }
-
-        } finally {
-            if (s != null) {
-                try {
-                    s.close();
-                } catch (final SQLException sqlE) {
-                }
-            }
-            if (c != null) {
-                try {
-                    c.close();
-                } catch (final SQLException sqlE) {
-                }
+        List<OnmsIpInterface> ipInterfaceList = m_ipInterfaceDao.findAll();
+        if (ipInterfaceList != null) {
+            m_knownips.clear();
+            for(OnmsIpInterface ipInterface : ipInterfaceList) {
+                m_knownips.put(InetAddressUtils.str(ipInterface.getIpAddress()), Long.valueOf(ipInterface.getNode().getId()));
             }
         }
     }
@@ -148,4 +118,9 @@ final class SyslogdIPMgr {
         return (result == null ? -1 : result);
     }
 
+    @Autowired
+    public static void setipInterfaceDao(
+            IpInterfaceDaoHibernate m_ipInterfaceDao) {
+        SyslogdIPMgr.m_ipInterfaceDao = m_ipInterfaceDao;
+    }
 } // end SyslodIPMgr

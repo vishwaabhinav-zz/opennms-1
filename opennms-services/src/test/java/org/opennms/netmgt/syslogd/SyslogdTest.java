@@ -85,7 +85,7 @@ import org.springframework.transaction.annotation.Transactional;
 @JUnitConfigurationEnvironment
 @JUnitTemporaryDatabase(dirtiesContext=false,tempDbClass=MockDatabase.class)
 @Transactional
-public class SyslogdTest implements InitializingBean {
+public class SyslogdTest{
     
     String m_localhost = "127.0.0.1";
 
@@ -99,10 +99,10 @@ public class SyslogdTest implements InitializingBean {
     @Autowired
     private MockEventIpcManager m_eventIpcManager;
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        BeanUtils.assertAutowiring(this);
-    }
+//    @Override
+//    public void afterPropertiesSet() throws Exception {
+//        BeanUtils.assertAutowiring(this);
+//    }
 
     @Before
     public void setUp() throws Exception {
