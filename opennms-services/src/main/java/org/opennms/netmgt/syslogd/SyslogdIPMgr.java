@@ -28,15 +28,13 @@
 
 package org.opennms.netmgt.syslogd;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.opennms.core.utils.InetAddressUtils;
-import org.opennms.netmgt.dao.hibernate.IpInterfaceDaoHibernate;
+import org.opennms.netmgt.dao.api.IpInterfaceDao;
 import org.opennms.netmgt.model.OnmsIpInterface;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * This class represents a singular instance that is used to map trap IP
@@ -53,20 +51,14 @@ final class SyslogdIPMgr {
      */
     private static Map<String,Long> m_knownips = new ConcurrentHashMap<String,Long>();
 
-    private static IpInterfaceDaoHibernate m_ipInterfaceDao;
-
     /**
      * Clears and synchronizes the internal known IP address cache with the
      * current information contained in the database. To synchronize the cache
      * the method opens a new connection to the database, loads the address,
      * and then closes it's connection.
-     *
-     * @throws java.sql.SQLException
-     *             Thrown if the connection cannot be created or a database
-     *             error occurs.
      */
-    static synchronized void dataSourceSync() throws SQLException {
-        List<OnmsIpInterface> ipInterfaceList = m_ipInterfaceDao.findAll();
+    static synchronized void dataSourceSync(IpInterfaceDao ipInterfaceDao) {
+        List<OnmsIpInterface> ipInterfaceList = ipInterfaceDao.findAll();
         if (ipInterfaceList != null) {
             m_knownips.clear();
             for(OnmsIpInterface ipInterface : ipInterfaceList) {
@@ -116,11 +108,5 @@ final class SyslogdIPMgr {
 
     private static long longValue(final Long result) {
         return (result == null ? -1 : result);
-    }
-
-    @Autowired
-    public static void setipInterfaceDao(
-            IpInterfaceDaoHibernate m_ipInterfaceDao) {
-        SyslogdIPMgr.m_ipInterfaceDao = m_ipInterfaceDao;
     }
 } // end SyslodIPMgr

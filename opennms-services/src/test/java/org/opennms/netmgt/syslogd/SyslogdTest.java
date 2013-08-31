@@ -75,20 +75,23 @@ import org.springframework.transaction.annotation.Transactional;
 @ContextConfiguration(locations={
         "classpath:/META-INF/opennms/applicationContext-soa.xml",
         "classpath:/META-INF/opennms/applicationContext-dao.xml",
-        "classpath*:/META-INF/opennms/component-dao.xml",
+        "classpath:/META-INF/opennms/applicationContext-commonConfigs.xml",
         "classpath:/META-INF/opennms/applicationContext-daemon.xml",
-        "classpath:/META-INF/opennms/mockEventIpcManager.xml",
         "classpath:/META-INF/opennms/applicationContext-setupIpLike-enabled.xml",
+        "classpath:/META-INF/opennms/mockEventIpcManager.xml",
         "classpath:/META-INF/opennms/applicationContext-databasePopulator.xml",
+        "classpath:/META-INF/opennms/applicationContext-eventDaemon.xml",
+        "classpath:/syslogdTest.xml",
         "classpath:/META-INF/opennms/applicationContext-minimal-conf.xml"
 })
 @JUnitConfigurationEnvironment
 @JUnitTemporaryDatabase(dirtiesContext=false,tempDbClass=MockDatabase.class)
 @Transactional
-public class SyslogdTest{
+public class SyslogdTest implements InitializingBean {
     
     String m_localhost = "127.0.0.1";
 
+    @Autowired
     private Syslogd m_syslogd;
 
     private final List<ExecutorService> m_executorServices = Arrays.asList(new ExecutorService[] {
@@ -99,10 +102,10 @@ public class SyslogdTest{
     @Autowired
     private MockEventIpcManager m_eventIpcManager;
 
-//    @Override
-//    public void afterPropertiesSet() throws Exception {
-//        BeanUtils.assertAutowiring(this);
-//    }
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        BeanUtils.assertAutowiring(this);
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -118,7 +121,6 @@ public class SyslogdTest{
             }
         }
 
-        m_syslogd = new Syslogd();
         m_syslogd.init();
 
         // Verify that the test syslogd-configuration.xml file was loaded

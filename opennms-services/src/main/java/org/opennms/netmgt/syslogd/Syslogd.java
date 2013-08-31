@@ -30,15 +30,15 @@ package org.opennms.netmgt.syslogd;
 
 import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.sql.SQLException;
 
 import org.exolab.castor.xml.MarshalException;
 import org.exolab.castor.xml.ValidationException;
 import org.opennms.netmgt.config.SyslogdConfigFactory;
 import org.opennms.netmgt.daemon.AbstractServiceDaemon;
-import org.opennms.netmgt.dao.api.EventDao;
+import org.opennms.netmgt.dao.api.IpInterfaceDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * The received messages are converted into XML and sent to eventd
@@ -83,12 +83,12 @@ import org.slf4j.LoggerFactory;
 
     private SyslogHandler m_udpEventReceiver;
 
-    private EventDao m_eventDao;
+    private IpInterfaceDao m_ipInterfaceDao;
 
     /**
      * <p>Constructor for Syslogd.</p>
      */
-    public Syslogd() {
+    protected Syslogd() {
         super(LOG4J_CATEGORY);
     }
 
@@ -111,14 +111,9 @@ import org.slf4j.LoggerFactory;
             LOG.error("Failed to load configuration", e);
             throw new UndeclaredThrowableException(e);
         }
-
-        try {
-            // clear out the known nodes
-            SyslogdIPMgr.dataSourceSync();
-        } catch (SQLException e) {
-            LOG.error("Failed to load known IP address list", e);
-            throw new UndeclaredThrowableException(e);
-        }
+        
+        // clear out the known nodes
+        SyslogdIPMgr.dataSourceSync(m_ipInterfaceDao);
 
         SyslogHandler.setSyslogConfig(SyslogdConfigFactory.getInstance());
         LOG.debug("Starting SyslogProcessor");
@@ -179,24 +174,13 @@ import org.slf4j.LoggerFactory;
         return m_singleton;
     }
 
-    /*
-    * @return EventDao
-     */
     /**
-     * <p>getEventDao</p>
-     *
-     * @return a {@link org.opennms.netmgt.dao.api.EventDao} object.
+     * @param ipInterfaceDao the ipInterfaceDao to set
      */
-    public EventDao getEventDao() {
-        return m_eventDao;
+    @Autowired
+    public void setIpInterfaceDao(IpInterfaceDao ipInterfaceDao) {
+        m_ipInterfaceDao = ipInterfaceDao;
     }
-
-    /**
-     * <p>setEventDao</p>
-     *
-     * @param eventDao a {@link org.opennms.netmgt.dao.api.EventDao} object.
-     */
-    public void setEventDao(EventDao eventDao) {
-        m_eventDao = eventDao;
-    }
+    
+    
 }
