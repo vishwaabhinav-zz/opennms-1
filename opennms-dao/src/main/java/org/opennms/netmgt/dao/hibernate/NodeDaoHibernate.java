@@ -78,6 +78,9 @@ public class NodeDaoHibernate extends AbstractDaoHibernate<OnmsNode, Integer> im
         return get(Integer.parseInt(lookupCriteria));
     }
 
+    public OnmsNode getNodeForId(Integer Id) {
+        return findUnique("select * from OnmsNode as n where n.id = ?", Id);
+    }
     /**
      * Test the ability to simply retrieve a String object (node label) without
      * having to return a bulky Node object.

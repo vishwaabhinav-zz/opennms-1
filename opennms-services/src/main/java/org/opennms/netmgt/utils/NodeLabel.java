@@ -30,8 +30,6 @@ package org.opennms.netmgt.utils;
 
 import java.net.InetAddress;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -39,12 +37,16 @@ import java.util.List;
 
 import org.opennms.core.resource.Vault;
 import org.opennms.core.utils.ByteArrayComparator;
-import org.opennms.core.utils.DBUtils;
 import org.opennms.core.utils.InetAddressUtils;
 import org.opennms.netmgt.dao.api.NodeDao;
+import org.opennms.netmgt.dao.hibernate.IpInterfaceDaoHibernate;
+import org.opennms.netmgt.dao.hibernate.NodeDaoHibernate;
+import org.opennms.netmgt.model.OnmsIpInterface;
+import org.opennms.netmgt.model.OnmsNode;
 import org.opennms.netmgt.model.OnmsNode.NodeLabelSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * <P>
@@ -72,42 +74,6 @@ public class NodeLabel {
 	
 	private final static Logger LOG = LoggerFactory.getLogger(NodeLabel.class);
 	
-    /**
-     * The SQL statement to update the 'nodelabel' and 'nodelabelsource' fields
-     * of 'node' table
-     */
-    private final static String SQL_DB_UPDATE_NODE_LABEL = "UPDATE node SET nodelabel=?,nodelabelsource=? WHERE nodeid=?";
-
-    /**
-     * The SQL statement to retrieve the NetBIOS name associated with a
-     * particular nodeID
-     */
-    private final static String SQL_DB_RETRIEVE_NETBIOS_NAME = "SELECT nodenetbiosname FROM node WHERE nodeid=?";
-
-    /**
-     * The SQL statement to retrieve all managed IP address & hostName values
-     * associated with a particular nodeID
-     */
-    private final static String SQL_DB_RETRIEVE_MANAGED_INTERFACES = "SELECT ipaddr,iphostname FROM ipinterface WHERE nodeid=? AND ismanaged='M'";
-
-    /**
-     * The SQL statement to retrieve all non-managed IP address & hostName
-     * values associated with a particular nodeID
-     */
-    private final static String SQL_DB_RETRIEVE_NON_MANAGED_INTERFACES = "SELECT ipaddr,iphostname FROM ipinterface WHERE nodeid=? AND ismanaged!='M'";
-
-    /**
-     * The SQL statement to retrieve the MIB-II sysname field from the node
-     * table
-     */
-    private final static String SQL_DB_RETRIEVE_SYSNAME = "SELECT nodesysname FROM node WHERE nodeid=?";
-
-    /**
-     * The SQL statement to retrieve the current node label and node label
-     * source values associated with a node.
-     */
-    private final static String SQL_DB_RETRIEVE_NODELABEL = "SELECT nodelabel,nodelabelsource FROM node WHERE nodeid=?";
-
     /**
      * Maximum length for node label
      */
@@ -141,13 +107,17 @@ public class NodeLabel {
      * Flag describing source of node label
      */
     private final NodeLabelSource m_nodeLabelSource;
+    
+    private static NodeDaoHibernate m_nodeDao;
 
+    private static IpInterfaceDaoHibernate m_ipInterfaceDao;
+    
     /**
      * The property string in the properties file which specifies the method to
      * use for determining which interface is primary on a multi-interface box.
      */
     public static final String PROP_PRIMARY_INTERFACE_SELECT_METHOD = "org.opennms.bluebird.dp.primaryInterfaceSelectMethod";
-
+    
     /**
      * Default constructor
      */
@@ -244,28 +214,12 @@ public class NodeLabel {
     public static NodeLabel retrieveLabel(int nodeID, Connection dbConnection) throws SQLException {
         String nodeLabel = null;
         String nodeLabelSource = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        final DBUtils d = new DBUtils(NodeLabel.class);
 
-        LOG.debug("NodeLabel.retrieveLabel: sql: {} node id: {}", SQL_DB_RETRIEVE_NODELABEL, nodeID);
-
-        try {
-            stmt = dbConnection.prepareStatement(SQL_DB_RETRIEVE_NODELABEL);
-            d.watch(stmt);
-            stmt.setInt(1, nodeID);
-
-            // Issue database query
-            rs = stmt.executeQuery();
-            d.watch(rs);
-
-            // Process result set, retrieve node's sysname
-            if (rs.next()) {
-                nodeLabel = rs.getString(1);
-                nodeLabelSource = rs.getString(2);
-            }
-        } finally {
-            d.cleanUp();
+        LOG.debug("NodeLabel.retrieveLabel: node id: {}", nodeID);
+        OnmsNode node = m_nodeDao.getNodeForId(nodeID); 
+        if (  node != null ) {
+            nodeLabel = node.getLabel();
+            nodeLabelSource = node.getLabelSource().toString();            
         }
 
         if (NodeLabelSource.ADDRESS.toString().equals(nodeLabelSource)) {
@@ -334,39 +288,24 @@ public class NodeLabel {
             nodeLabel = computeLabel(nodeID, dbConnection);
         }
 
-        PreparedStatement stmt = null;
-        final DBUtils d = new DBUtils(NodeLabel.class);
+        OnmsNode node = m_nodeDao.getNodeForId(nodeID);
+        
+        // Node Label
+        LOG.debug("NodeLabel.assignLabel: Node label: {} source: {}", nodeLabel.getLabel(), nodeLabel.getSource());
 
-        try {
-            // Issue SQL update to assign the 'nodelabel' && 'nodelabelsource' fields of the 'node' table
-            stmt = dbConnection.prepareStatement(SQL_DB_UPDATE_NODE_LABEL);
-            d.watch(stmt);
-            int column = 1;
-
-            // Node Label
-            LOG.debug("NodeLabel.assignLabel: Node label: {} source: {}", nodeLabel.getLabel(), nodeLabel.getSource());
-
-            if (nodeLabel.getLabel() != null) {
-                // nodeLabel may not exceed MAX_NODELABEL_LEN.if it does truncate it
-                String label = nodeLabel.getLabel();
-                if (label.length() > MAX_NODE_LABEL_LENGTH) {
-                    label = label.substring(0, MAX_NODE_LABEL_LENGTH);
-                }
-                stmt.setString(column++, label);
-            } else {
-                stmt.setNull(column++, java.sql.Types.VARCHAR);
+        if (nodeLabel.getLabel() != null) {
+            // nodeLabel may not exceed MAX_NODELABEL_LEN.if it does truncate it
+            String label = nodeLabel.getLabel();
+            if (label.length() > MAX_NODE_LABEL_LENGTH) {
+                label = label.substring(0, MAX_NODE_LABEL_LENGTH);
             }
-
-            // Node Label Source
-            stmt.setString(column++, String.valueOf(nodeLabel.getSource()));
-
-            // Node ID
-            stmt.setInt(column++, nodeID);
-
-            stmt.executeUpdate();
-        } finally {
-            d.cleanUp();
+            node.setLabel(label);
+        } else {
+            node.setLabel(null);
         }
+
+        // Node Label Source
+        node.setLabelSource(nodeLabel.getSource());
     }
 
     /**
@@ -427,36 +366,20 @@ public class NodeLabel {
     public static NodeLabel computeLabel(int nodeID, Connection dbConnection) throws SQLException {
         // Issue SQL query to retrieve NetBIOS name associated with the node
         String netbiosName = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        final DBUtils d = new DBUtils(NodeLabel.class);
-
-        try {
-            stmt = dbConnection.prepareStatement(SQL_DB_RETRIEVE_NETBIOS_NAME);
-            d.watch(stmt);
-            stmt.setInt(1, nodeID);
-
-            rs = stmt.executeQuery();
-            d.watch(rs);
-
-            // Process result set, retrieve node's sysname
-            while (rs.next()) {
-                netbiosName = rs.getString(1);
+        
+        netbiosName = m_nodeDao.getNodeForId(nodeID) != null 
+                ? m_nodeDao.getNodeForId(nodeID).getNetBiosName() : "";
+        
+        if (netbiosName != null) {
+            // Truncate sysName if it exceeds max node label length
+            if (netbiosName.length() > MAX_NODE_LABEL_LENGTH) {
+                netbiosName = netbiosName.substring(0, MAX_NODE_LABEL_LENGTH);
             }
 
-            if (netbiosName != null) {
-                // Truncate sysName if it exceeds max node label length
-                if (netbiosName.length() > MAX_NODE_LABEL_LENGTH) {
-                    netbiosName = netbiosName.substring(0, MAX_NODE_LABEL_LENGTH);
-                }
+            LOG.debug("NodeLabel.computeLabel: returning NetBIOS name as nodeLabel: {}", netbiosName);
 
-                LOG.debug("NodeLabel.computeLabel: returning NetBIOS name as nodeLabel: {}", netbiosName);
-                    
-                NodeLabel nodeLabel = new NodeLabel(netbiosName, NodeLabelSource.NETBIOS);
-                return nodeLabel;
-            }
-        } finally {
-            d.cleanUp();
+            NodeLabel nodeLabel = new NodeLabel(netbiosName, NodeLabelSource.NETBIOS);
+            return nodeLabel;
         }
 
         // OK, if we get this far the node has no NetBIOS name associated with it so,
@@ -478,20 +401,17 @@ public class NodeLabel {
         List<String> ipHostNameList = new ArrayList<String>();
 
         // Issue SQL query to retrieve all managed interface IP addresses from 'ipinterface' table
-        try {
-            stmt = dbConnection.prepareStatement(SQL_DB_RETRIEVE_MANAGED_INTERFACES);
-            d.watch(stmt);
-            stmt.setInt(1, nodeID);
-            rs = stmt.executeQuery();
-            d.watch(rs);
-
-            // Process result set, store retrieved addresses/host names in lists
-            loadAddressList(rs, ipv4AddrList, ipHostNameList);
-        } catch (Throwable e) {
-            LOG.warn("Exception thrown while fetching managed interfaces: {}", e.getMessage(), e);
-        } finally {
-            d.cleanUp();
+        List<OnmsIpInterface> ipInterfaceList = m_ipInterfaceDao.findByNodeId(nodeID);
+        List<OnmsIpInterface> nonManagedList = new ArrayList<OnmsIpInterface>();
+        for (OnmsIpInterface ipInterface : ipInterfaceList) {
+            if(ipInterface.getIsManaged() != "M") {
+                ipInterfaceList.remove(ipInterface);
+                nonManagedList.add(ipInterface);
+            }
         }
+        
+        // Process result set, store retrieved addresses/host names in lists
+        loadAddressList(ipInterfaceList, ipv4AddrList, ipHostNameList);
 
         InetAddress primaryAddr = selectPrimaryAddress(ipv4AddrList, method);
 
@@ -504,20 +424,14 @@ public class NodeLabel {
 
             ipv4AddrList.clear();
             ipHostNameList.clear();
-
-            try {
-                // retrieve all non-managed interface IP addresses from 'ipinterface' table
-                stmt = dbConnection.prepareStatement(SQL_DB_RETRIEVE_NON_MANAGED_INTERFACES);
-                d.watch(stmt);
-                stmt.setInt(1, nodeID);
-                rs = stmt.executeQuery();
-                d.watch(rs);
-                loadAddressList(rs, ipv4AddrList, ipHostNameList);
-            } catch (Throwable e) {
-                LOG.warn("Exception thrown while fetching managed interfaces: {}", e.getMessage(), e);
-            } finally {
-                d.cleanUp();
+            
+            for (OnmsIpInterface ipInterface : ipInterfaceList) {
+                if(ipInterface.getIsManaged() != "M") {
+                    ipInterfaceList.remove(ipInterface);
+                }
             }
+
+            loadAddressList(nonManagedList, ipv4AddrList, ipHostNameList);
 
             primaryAddr = selectPrimaryAddress(ipv4AddrList, method);
         }
@@ -547,20 +461,8 @@ public class NodeLabel {
         // so we need to use the node's sysName if available...
 
         // retrieve sysName for the node
-        String primarySysName = null;
-        try {
-            stmt = dbConnection.prepareStatement(SQL_DB_RETRIEVE_SYSNAME);
-            d.watch(stmt);
-            stmt.setInt(1, nodeID);
-            rs = stmt.executeQuery();
-            d.watch(rs);
-            while (rs.next()) {
-                primarySysName = rs.getString(1);
-            }
-        } finally {
-            d.cleanUp();
-        }
-
+        String primarySysName = m_nodeDao.getNodeForId(nodeID) != null ? m_nodeDao.getNodeForId(nodeID).getSysName() : "";
+        
         if (primarySysName != null && primarySysName.length() > 0) {
             // Truncate sysName if it exceeds max node label length
             if (primarySysName.length() > MAX_NODE_LABEL_LENGTH) {
@@ -592,13 +494,13 @@ public class NodeLabel {
      *             if there is any problem processing the information in the
      *             result set.
      */
-    private static void loadAddressList(ResultSet rs, List<InetAddress> ipv4AddrList, List<String> ipHostNameList) throws SQLException {
+    private static void loadAddressList(List<OnmsIpInterface> ipInterfaceList, List<InetAddress> ipv4AddrList, List<String> ipHostNameList) throws SQLException {
 
         // Process result set, store retrieved addresses/host names in lists
-        while (rs.next()) {
-            InetAddress inetAddr = InetAddressUtils.getInetAddress(rs.getString(1));
+        for(OnmsIpInterface ipInterface : ipInterfaceList) {
+            InetAddress inetAddr = ipInterface.getIpAddress();
             ipv4AddrList.add(inetAddr);
-            String hostName = rs.getString(2);
+            String hostName = ipInterface.getIpHostName();
 
             // As a hack to get around the fact that the 'iphostname' field
             // will contain the IP address of the interface if the IP hostname
@@ -679,4 +581,25 @@ public class NodeLabel {
 
         return buffer.toString();
     }
+    
+
+    public NodeDaoHibernate getNodeDao() {
+        return m_nodeDao;
+    }
+
+    @Autowired
+    public void setNodeDao(NodeDaoHibernate nodeDao) {
+        m_nodeDao = nodeDao;
+    }
+    
+    public IpInterfaceDaoHibernate getIpInterfaceDao() {
+        return m_ipInterfaceDao;
+    }
+    
+    @Autowired
+    public void setIpInterfaceDao(
+            IpInterfaceDaoHibernate m_ipInterfaceDao) {
+        NodeLabel.m_ipInterfaceDao = m_ipInterfaceDao;
+    }
+
 }
