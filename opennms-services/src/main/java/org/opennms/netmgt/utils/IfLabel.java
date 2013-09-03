@@ -33,6 +33,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -40,8 +41,11 @@ import org.opennms.core.resource.Vault;
 import org.opennms.core.utils.AlphaNumeric;
 import org.opennms.core.utils.Querier;
 import org.opennms.core.utils.RowProcessor;
+import org.opennms.netmgt.dao.hibernate.SnmpInterfaceDaoHibernate;
+import org.opennms.netmgt.model.OnmsSnmpInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * A convenience class for methods to encode/decode ifLabel descriptions for
@@ -55,7 +59,8 @@ public class IfLabel extends Object {
 
 	private static final Logger LOG = LoggerFactory.getLogger(IfLabel.class);
 	
-
+	private static SnmpInterfaceDaoHibernate m_snmpInterfaceDao;
+	
     /**
      * Return a map of useful SNMP information for the interface specified by
      * the nodeId and ifLabel. Essentially a "decoding" algorithm for the
@@ -154,28 +159,16 @@ public class IfLabel extends Object {
      */
     public static String[] getIfLabels(int nodeId) throws SQLException {
         
-        String query = "" +
-        		"SELECT DISTINCT snmpifname, snmpifdescr,snmpphysaddr " +
-        		"  FROM snmpinterface, ipinterface " +
-        		" WHERE (ipinterface.ismanaged!='D') " +
-        		"   AND ipinterface.nodeid=snmpinterface.nodeid " +
-        		"   AND ifindex = snmpifindex " +
-        		"   AND ipinterface.nodeid="+nodeId;
-        
         final ArrayList<String> list = new ArrayList<String>();
+        List<OnmsSnmpInterface> snmpInterfaceList = m_snmpInterfaceDao.findByNodeId(nodeId);
         
-        Querier q = new Querier(Vault.getDataSource(), query, new RowProcessor() {
-            @Override
-            public void processRow(ResultSet rs) throws SQLException {
-                String name = rs.getString("snmpifname");
-                String descr = rs.getString("snmpifdescr");
-                String physAddr = rs.getString("snmpphysaddr");
+        for (OnmsSnmpInterface snmpInterface : snmpInterfaceList) {
+                String name = snmpInterface.getIfName();
+                String descr = snmpInterface.getIfDescr();
+                String physAddr = snmpInterface.getPhysAddr();
 
                 list.add(getIfLabel(name, descr, physAddr));
-            }
-            
-        });
-        q.execute();
+        }
         String[] labels = list.toArray(new String[list.size()]);
         return labels;
     }
@@ -208,32 +201,21 @@ public class IfLabel extends Object {
         
         final LabelHolder holder = new LabelHolder();
 
-        String query = "" +
-        		"SELECT DISTINCT snmpifname, snmpifdescr,snmpphysaddr " +
-        		"  FROM snmpinterface, ipinterface " +
-        		" WHERE (ipinterface.ismanaged!='D') " +
-        		"   AND ipinterface.nodeid=snmpinterface.nodeid " +
-        		"   AND ifindex=snmpifindex " +
-        		"   AND ipinterface.nodeid = "+nodeId+
-        		"   AND ipinterface.ipaddr = '"+inetAddr+"'";
+        List<OnmsSnmpInterface> snmpInterfaceList = m_snmpInterfaceDao.findByNodeIdAndIpAddr(nodeId, inetAddr);
         
-        Querier q = new Querier(Vault.getDataSource(), query, new RowProcessor() {
-            @Override
-            public void processRow(ResultSet rs) throws SQLException {
-                String name = rs.getString("snmpifname");
-                String descr = rs.getString("snmpifdescr");
-                String physAddr = rs.getString("snmpphysaddr");
+        for (OnmsSnmpInterface snmpInterface : snmpInterfaceList) {
+            String name = snmpInterface.getIfName();
+            String descr = snmpInterface.getIfDescr();
+            String physAddr = snmpInterface.getPhysAddr();
 
-                if (name != null || descr != null) {
-                    holder.setLabel(getIfLabel(name, descr, physAddr));
-                } else {
-                    LOG.warn("Interface (nodeId/ipAddr={}/{}) has no ifName and no ifDescr...setting to label to 'no_ifLabel'.", nodeId, ipAddr);
-                    holder.setLabel("no_ifLabel");
-                }
+            if (name != null || descr != null) {
+                holder.setLabel(getIfLabel(name, descr, physAddr));
+            } else {
+                LOG.warn("Interface (nodeId/ipAddr={}/{}) has no ifName and no ifDescr...setting to label to 'no_ifLabel'.", nodeId, ipAddr);
+                holder.setLabel("no_ifLabel");
             }
-        });
-        q.execute();
-        
+        }
+
         return holder.getLabel();
     }
 
@@ -270,35 +252,20 @@ public class IfLabel extends Object {
         
         final LabelHolder holder = new LabelHolder();
         
-        String query = "" +
-        		"SELECT DISTINCT snmpifname, snmpifdescr,snmpphysaddr " +
-        		"  FROM snmpinterface, ipinterface " +
-        		" WHERE (ipinterface.ismanaged!='D') " +
-        		"   AND ipinterface.nodeid=snmpinterface.nodeid " +
-        		"   AND ifindex=snmpifindex " +
-        		"   AND ipinterface.nodeid= "+nodeId+
-        		"   AND ipinterface.ipaddr= '"+inetAddr+"'"+
-        		"   AND ipinterface.ifindex= "+ifIndex;
+        List<OnmsSnmpInterface> snmpInterfaceList = m_snmpInterfaceDao.findByNodeIdAndIpAddr(nodeId, inetAddr);
         
-        
-        Querier q = new Querier(Vault.getDataSource(), query, new RowProcessor() {
+        for (OnmsSnmpInterface snmpInterface : snmpInterfaceList) {
+            String name = snmpInterface.getIfName();
+            String descr = snmpInterface.getIfDescr();
+            String physAddr = snmpInterface.getPhysAddr();
 
-            @Override
-            public void processRow(ResultSet rs) throws SQLException {
-                String name = rs.getString("snmpifname");
-                String descr = rs.getString("snmpifdescr");
-                String physAddr = rs.getString("snmpphysaddr");
-
-                if (name != null || descr != null) {
-                    holder.setLabel(getIfLabel(name, descr, physAddr));
-                } else {
-                    LOG.warn("Interface (nodeId/ipAddr={}/{}) has no ifName and no ifDescr...setting to label to 'no_ifLabel'.", nodeId, ipAddr);
-                    holder.setLabel("no_ifLabel");
-                }
+            if (name != null || descr != null) {
+                holder.setLabel(getIfLabel(name, descr, physAddr));
+            } else {
+                LOG.warn("Interface (nodeId/ipAddr={}/{}) has no ifName and no ifDescr...setting to label to 'no_ifLabel'.", nodeId, ipAddr);
+                holder.setLabel("no_ifLabel");
             }
-            
-        });
-        q.execute();
+        }
         
         return holder.getLabel();
     }
@@ -327,31 +294,18 @@ public class IfLabel extends Object {
         
         final LabelHolder holder = new LabelHolder();
         
-        String query = "" +
-                "SELECT DISTINCT snmpifname, snmpifdescr,snmpphysaddr " +
-                "  FROM snmpinterface " +
-                "   WHERE nodeid= "+nodeId+
-                "   AND snmpifindex= "+ifIndex;
+        OnmsSnmpInterface snmpInterface = m_snmpInterfaceDao.findByNodeIdAndIfIndex(nodeId, ifIndex);
         
-        
-        Querier q = new Querier(Vault.getDataSource(), query, new RowProcessor() {
+        String name = snmpInterface.getIfName();
+        String descr = snmpInterface.getIfDescr();
+        String physAddr = snmpInterface.getPhysAddr();
 
-            @Override
-            public void processRow(ResultSet rs) throws SQLException {
-                String name = rs.getString("snmpifname");
-                String descr = rs.getString("snmpifdescr");
-                String physAddr = rs.getString("snmpphysaddr");
-
-                if (name != null || descr != null) {
-                    holder.setLabel(getIfLabel(name, descr, physAddr));
-                } else {
-                    LOG.warn("Interface (nodeId/ifIndex={}/{}) has no ifName and no ifDescr...setting to label to 'no_ifLabel'.", nodeId, ifIndex);
-                    holder.setLabel("no_ifLabel");
-                }
-            }
-            
-        });
-        q.execute();
+        if (name != null || descr != null) {
+            holder.setLabel(getIfLabel(name, descr, physAddr));
+        } else {
+            LOG.warn("Interface (nodeId/ifIndex={}/{}) has no ifName and no ifDescr...setting to label to 'no_ifLabel'.", nodeId, ifIndex);
+            holder.setLabel("no_ifLabel");
+        }
         
         return holder.getLabel();
     }    
@@ -398,4 +352,15 @@ public class IfLabel extends Object {
 
         return label;
     }
+    
+    public static SnmpInterfaceDaoHibernate getSnmpInterfaceDao() {
+        return m_snmpInterfaceDao;
+    }
+
+    @Autowired
+    public static void setSnmpInterfaceDao(
+            SnmpInterfaceDaoHibernate m_snmpInterfaceDao) {
+        IfLabel.m_snmpInterfaceDao = m_snmpInterfaceDao;
+    }
+
 }

@@ -80,6 +80,31 @@ public class SnmpInterfaceDaoHibernate extends
                           ifIndex);
     }
 
-	
-
+    public List<OnmsSnmpInterface> findByNodeId(Integer nodeId)
+    {
+        Assert.notNull(nodeId, "nodeId may not be null");
+        return find("select snmpIf from OnmsSnmpInterface as snmpIf, OnmsIpInterface as ipInterface " +
+        		"where ipInterface.node.id = snmpIf.node.id and snmpIf.ifIndex = ipInterface.ifIndex " +
+        		"and ipInterface.isManaged != 'D' and ipInterface.node.id = ?", nodeId);
+    }
+    
+    public List<OnmsSnmpInterface> findByNodeIdAndIpAddr(Integer nodeId, String ipAddr)
+    {
+        Assert.notNull(nodeId, "nodeId may not be null");
+        Assert.notNull(ipAddr, "ipAddress may not be null");
+        return find("select snmpIf from OnmsSnmpInterface as snmpIf, OnmsIpInterface as ipInterface " +
+                        "where ipInterface.node.id = snmpIf.node.id and snmpIf.ifIndex = ipInterface.ifIndex " +
+                        "and ipInterface.isManaged != 'D' and ipInterface.node.id = ? and ipInterface.ipAddress", nodeId, ipAddr);
+    }
+    
+    public List<OnmsSnmpInterface> findByNodeIdIpAddrAndIfIndex(Integer nodeId, String ipAddr, Integer ifIndex)
+    {
+        Assert.notNull(nodeId,  "nodeId may not be null");
+        Assert.notNull(ipAddr,  "ipAddress may not be null");
+        Assert.notNull(ifIndex, "ifIndex may not be null");
+        return find("select snmpIf from OnmsSnmpInterface as snmpIf, OnmsIpInterface as ipInterface " +
+                        "where ipInterface.node.id = snmpIf.node.id and snmpIf.ifIndex = ipInterface.ifIndex " +
+                        "and ipInterface.isManaged != 'D' and ipInterface.node.id = ? and ipInterface.ipAddress and ipInterface.ifIndex", nodeId, ipAddr, ifIndex);
+    }
 }
+
