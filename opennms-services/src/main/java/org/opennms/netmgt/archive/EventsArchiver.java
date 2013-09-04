@@ -36,6 +36,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.List;
 
 import org.exolab.castor.xml.MarshalException;
 import org.exolab.castor.xml.ValidationException;
@@ -43,8 +44,13 @@ import org.opennms.core.db.DataSourceFactory;
 import org.opennms.core.logging.Logging;
 import org.opennms.core.utils.TimeConverter;
 import org.opennms.netmgt.config.EventsArchiverConfigFactory;
+import org.opennms.netmgt.dao.hibernate.EventDaoHibernate;
+import org.opennms.netmgt.model.OnmsEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.sun.jna.platform.win32.Sspi.TimeStamp;
 
 /**
  * <pre>
@@ -171,6 +177,8 @@ public class EventsArchiver {
      * The prepared statement to delete the events
      */
     private PreparedStatement m_eventDeleteStmt;
+    
+    private EventDaoHibernate m_eventDao;
 
     /**
      * Read the required properties and set up the logs, the archive etc.
@@ -263,13 +271,7 @@ public class EventsArchiver {
      * the ResultSet.deleteRow() implemented! - so use the eventID to delete!
      */
     private boolean removeEvent(Integer eventID) {
-        try {
-            m_eventDeleteStmt.setInt(1, eventID);
-            m_eventDeleteStmt.executeUpdate();
-        } catch (SQLException sqle) {
-            LOG.error("Unable to delete event '{}': {}", eventID, sqle.getMessage());
-            return false;
-        }
+        m_eventDao.delete(eventID);
 
         // debug logs
         LOG.debug("EventID: {} removed from events table", eventID);
@@ -292,10 +294,14 @@ public class EventsArchiver {
         int remCount = 0;
 
         ResultSet eventsRS = null;
-        try {
-            m_eventsGetStmt.setTimestamp(1, new Timestamp(m_archAge));
-            eventsRS = m_eventsGetStmt.executeQuery();
-            int colCount = eventsRS.getMetaData().getColumnCount();
+        Timestamp creationTime = new Timestamp(m_archAge);
+        List<OnmsEvent> eventList = m_eventDao.findAll();
+        for(OnmsEvent event : eventList) {
+            if (event.getEventCreateTime().compareTo(creationTime) > 0) {
+                eventList.remove(event);
+            }
+        }
+            int colCount = eventList.size();
             Integer eventID;
             String eventUEI;
             String eventLog;
@@ -304,21 +310,21 @@ public class EventsArchiver {
 
             boolean ret;
 
-            while (eventsRS.next()) {
+            for (OnmsEvent event : eventList) {
                 // get the eventID for the event
-                eventID = eventsRS.getInt(EVENT_ID);
+                eventID = event.getId();
 
                 // get uei for event
-                eventUEI = eventsRS.getString("eventUei");
+                eventUEI = event.getEventUei();
 
                 // get eventLog for this row
-                eventLog = eventsRS.getString(EVENT_LOG);
+                eventLog = event.getEventLog();
 
                 // get eventDisplay for this row
-                eventDisplay = eventsRS.getString(EVENT_DISPLAY);
+                eventDisplay = event.getEventDisplay();
 
                 // eventAckUser for this event
-                eventAckUser = eventsRS.getString(EVENT_ACK_USER);
+                eventAckUser = event.getEventAckUser();
 
                 LOG.debug("Event id: {} uei: {} log: {} display: {} eventAck: {}", eventID, eventUEI, eventLog, eventDisplay, eventAckUser);
 
@@ -373,17 +379,6 @@ public class EventsArchiver {
 
             LOG.info("Number of events removed from the event table: {}", remCount);
             LOG.info("Number of events sent to the archive: {}", archCount);
-        } catch (Throwable oe) {
-            LOG.error("EventsArchiver: Error reading events for archival: ");
-            LOG.error(oe.getMessage());
-        } finally {
-            try {
-                eventsRS.close();
-            } catch (Throwable e) {
-                LOG.info("EventsArchiver: Exception while events result set: message -> {}", e.getMessage());
-            }
-        }
-
     }
 
     /**
@@ -475,7 +470,7 @@ public class EventsArchiver {
      * @param args an array of {@link java.lang.String} objects.
      */
     public static void main(String[] args) {
-    	Logging.withPrefix("archiver", new Runnable() {
+        Logging.withPrefix("archiver", new Runnable() {
 
             @Override
             public void run() {
@@ -496,5 +491,15 @@ public class EventsArchiver {
                 }
             }
         });
+    }
+    
+
+    public EventDaoHibernate getEventDao() {
+        return m_eventDao;
+    }
+    
+    @Autowired
+    public void setEventDao(EventDaoHibernate eventDao) {
+        m_eventDao = eventDao;
     }
 }
