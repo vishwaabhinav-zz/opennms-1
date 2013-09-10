@@ -49,10 +49,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.opennms.netmgt.EventConstants;
 import org.opennms.netmgt.config.xmlrpcd.XmlrpcServer;
+import org.opennms.netmgt.dao.hibernate.NodeDaoHibernate;
 import org.opennms.netmgt.xml.event.Event;
 import org.opennms.netmgt.xml.event.Parm;
 import org.opennms.netmgt.xml.event.Snmp;
 import org.opennms.netmgt.xml.event.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 
 /**
@@ -160,6 +162,8 @@ public final class XmlRpcNotifier {
      * The host NMS server name
      */
     private String m_localServer;
+    
+    private NodeDaoHibernate m_nodeDao;
     
     //private ExternalEventRecipient m_recipient;
 
@@ -543,32 +547,8 @@ public final class XmlRpcNotifier {
      *            the nodeId to retrieve the node label for.
      */
     private String getNodeLabel(final long nodeId) {
-        Connection dbConn = null;
         String nodeLabel = null;
-
-        final DBUtils d = new DBUtils(getClass());
-        try {
-            dbConn = DataSourceFactory.getInstance().getConnection();
-            d.watch(dbConn);
-
-            LOG.debug("getNodeLabel: retrieve node label for: {}", nodeId);
-
-            final PreparedStatement stmt = dbConn.prepareStatement("SELECT nodelabel FROM NODE WHERE nodeid = ?");
-            d.watch(stmt);
-            stmt.setLong(1, nodeId);
-            final ResultSet rs = stmt.executeQuery();
-            d.watch(rs);
-
-            while (rs.next()) {
-                nodeLabel = rs.getString(1);
-            }
-
-        } catch (final SQLException sqle) {
-            LOG.warn("SQL exception while retrieving nodeLabel for: {}", nodeId, sqle);
-        } finally {
-            d.cleanUp();
-        }
-
+        nodeLabel = m_nodeDao.getLabelForId((int) nodeId);
         LOG.debug("getNodeLabel: retrieved node label '{}' for: {}", nodeLabel, nodeId);
 
         return nodeLabel;
@@ -695,5 +675,14 @@ public final class XmlRpcNotifier {
             LOG.error("Can not set up communication with any XMLRPC server");
             m_xmlrpcClient = null;
         }
+    }
+
+    public NodeDaoHibernate getNodeDao() {
+        return m_nodeDao;
+    }
+    
+    @Autowired
+    public void setNodeDao(NodeDaoHibernate nodeDao) {
+        m_nodeDao = nodeDao;
     }
 }
