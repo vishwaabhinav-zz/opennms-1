@@ -30,10 +30,6 @@ package org.opennms.netmgt.discovery;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -44,14 +40,14 @@ import java.util.concurrent.locks.Lock;
 
 import org.exolab.castor.xml.MarshalException;
 import org.exolab.castor.xml.ValidationException;
-import org.opennms.core.db.DataSourceFactory;
-import org.opennms.core.utils.DBUtils;
 import org.opennms.core.utils.InetAddressUtils;
 import org.opennms.netmgt.EventConstants;
 import org.opennms.netmgt.config.DiscoveryConfigFactory;
 import org.opennms.netmgt.daemon.AbstractServiceDaemon;
+import org.opennms.netmgt.dao.hibernate.IpInterfaceDaoHibernate;
 import org.opennms.netmgt.eventd.EventIpcManagerFactory;
 import org.opennms.netmgt.icmp.Pinger;
+import org.opennms.netmgt.model.OnmsIpInterface;
 import org.opennms.netmgt.model.discovery.IPPollAddress;
 import org.opennms.netmgt.model.events.EventBuilder;
 import org.opennms.netmgt.model.events.EventForwarder;
@@ -61,6 +57,7 @@ import org.opennms.netmgt.xml.event.Event;
 import org.opennms.netmgt.xml.event.Parm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 
 /**
@@ -90,11 +87,6 @@ public class Discovery extends AbstractServiceDaemon {
     private static final int PING_FINISHING = 2;
     
     /**
-     * The SQL query used to get the list of managed IP addresses from the database
-     */
-    private static final String ALL_IP_ADDRS_SQL = "SELECT DISTINCT ipAddr FROM ipInterface WHERE isManaged <> 'D'";
-    
-    /**
      * a set of devices to skip discovery on
      */
     private Set<String> m_alreadyDiscovered = Collections.synchronizedSet(new HashSet<String>());
@@ -108,6 +100,8 @@ public class Discovery extends AbstractServiceDaemon {
     private volatile EventForwarder m_eventForwarder;
 
     private Pinger m_pinger;
+    
+    private IpInterfaceDaoHibernate m_ipInterfaceDao;
     
     /**
      * <p>setEventForwarder</p>
@@ -331,29 +325,21 @@ public class Discovery extends AbstractServiceDaemon {
     	 * in there
     	 */
     	Set<String> newAlreadyDiscovered = Collections.synchronizedSet(new HashSet<String>());
-    	Connection conn = null;
-        final DBUtils d = new DBUtils(getClass());
 
-    	try {
-    		conn = DataSourceFactory.getInstance().getConnection();
-    		d.watch(conn);
-    		PreparedStatement stmt = conn.prepareStatement(ALL_IP_ADDRS_SQL);
-    		d.watch(stmt);
-    		ResultSet rs = stmt.executeQuery();
-    		d.watch(rs);
-    		if (rs != null) {
-    			while (rs.next()) {
-    				newAlreadyDiscovered.add(rs.getString(1));
-    			}
-    		} else {
-    			LOG.warn("Got null ResultSet from query for all IP addresses");
-    		}
-    		m_alreadyDiscovered = newAlreadyDiscovered;
-    	} catch (SQLException sqle) {
-		LOG.warn("Caught SQLException while trying to query for all IP addresses: {}", sqle.getMessage());
-    	} finally {
-    	    d.cleanUp();
-    	}
+        List<OnmsIpInterface> ipInterfaceList = m_ipInterfaceDao.findAll();
+
+        if (ipInterfaceList != null) {
+            for (OnmsIpInterface ipInterface : ipInterfaceList) {
+                if(ipInterface.getIsManaged() != "D") {
+                    ipInterfaceList.remove(ipInterface);
+                    newAlreadyDiscovered.add(InetAddressUtils.str(ipInterface.getIpAddress()));
+                }
+            }
+        } else {
+            LOG.warn("Got null ResultSet from query for all IP addresses");
+        }
+        m_alreadyDiscovered = newAlreadyDiscovered;
+        
 	LOG.info("syncAlreadyDiscovered initialized list of managed IP addresses with {} members", m_alreadyDiscovered.size());
     }
 
@@ -484,4 +470,14 @@ public class Discovery extends AbstractServiceDaemon {
     public static String getLoggingCategory() {
         return LOG4J_CATEGORY;
     }
+    
+    public IpInterfaceDaoHibernate getIpInterfaceDao() {
+        return m_ipInterfaceDao;
+    }
+
+    @Autowired
+    public void setIpInterfaceDao(IpInterfaceDaoHibernate ipInterfaceDao) {
+        m_ipInterfaceDao = ipInterfaceDao;
+    }
+
 }
